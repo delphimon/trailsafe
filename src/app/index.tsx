@@ -1,98 +1,146 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+import { router } from "expo-router";
+import {
+  Backpack,
+  BookOpen,
+  ClipboardList,
+  Siren,
+  ArrowUpRight,
+} from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import Svg, { Path } from "react-native-svg";
+import {
+  Button,
+  C,
+  Card,
+  fonts,
+  FooterNote,
+  Kicker,
+  Row,
+  Screen,
+  T,
+} from "@/components/trailsafe/ui";
+import { useStore } from "@/state/store";
+export default function Home() {
+  const { data } = useStore();
+  const plan = data.plans.find((p) => p.status === "current");
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
+    <Screen title="TrailSafe" subtitle="King County Explorer Search & Rescue">
+      <LinearGradient
+        colors={["#25503F", "#132720"]}
+        style={{
+          borderRadius: 16,
+          padding: 22,
+          overflow: "hidden",
+          marginBottom: 24,
+        }}
+      >
+        <Svg
+          width="450"
+          height="290"
+          viewBox="0 0 450 290"
+          style={{ position: "absolute", right: -65, top: -5 }}
+          pointerEvents="none"
+        >
+          {Array.from({ length: 11 }, (_, i) => (
+            <Path
+              key={i}
+              d={`M${180 + i * 9} -30 C ${410 + i * 8} ${20 + i * 6}, ${90 - i * 8} ${130 + i * 8}, ${410 + i * 7} ${300 + i * 4}`}
+              fill="none"
+              stroke="#AFCDBB"
+              strokeOpacity={0.1}
+              strokeWidth={1.5}
+            />
+          ))}
+        </Svg>
+        <T
+          style={{
+            fontFamily: fonts.display,
+            fontSize: 16,
+            color: "#BFD3C6",
+            letterSpacing: 2,
+            marginBottom: 3,
+          }}
+        >
+          KCESAR
+        </T>
+        <T
+          style={{
+            fontFamily: fonts.display,
+            fontSize: 48,
+            lineHeight: 55,
+            color: "white",
+            marginBottom: 12,
+          }}
+        >
+          TrailSafe
+        </T>
+        <T
+          style={{
+            fontSize: 14,
+            lineHeight: 22,
+            color: "#D7E6DC",
+            marginBottom: 22,
+            maxWidth: 360,
+          }}
+        >
+          Prepare for ordinary trips, know when to ask for help, and give
+          rescuers what they need — even with no signal.
+        </T>
+        <Button
+          label="NEED HELP?"
+          icon={Siren}
+          variant="orange"
+          onPress={() => router.navigate("/emergency")}
+        />
+      </LinearGradient>
+      <T
+        accessibilityRole="header"
+        style={{
+          fontFamily: fonts.display,
+          fontSize: 17,
+          color: C.green,
+          marginBottom: 2,
+        }}
+      >
+        Get ready
+      </T>
+      <Row
+        title="Leave a Trip Plan"
+        subtitle="Give someone the information SAR would need"
+        icon={ClipboardList}
+        onPress={() => router.push("/plans")}
+      />
+      <Row
+        title="Before You Go"
+        subtitle="Essentials, phone readiness, and trip prep"
+        icon={Backpack}
+        onPress={() => router.navigate("/prepare")}
+      />
+      <Row
+        title="Safety Guide"
+        subtitle="What to do if you’re lost, hurt, stranded, or overdue"
+        icon={BookOpen}
+        onPress={() => router.navigate("/guide")}
+      />
+      {plan && (
+        <>
+          <Kicker>Your current plan</Kicker>
+          <Card>
+            <Row
+              title={plan.title}
+              subtitle={`${plan.date} · Expected back ${plan.returnTime}`}
+              icon={ArrowUpRight}
+              onPress={() =>
+                router.push({
+                  pathname: "/plans/[id]",
+                  params: { id: plan.id },
+                })
+              }
+            />
+          </Card>
+        </>
+      )}
+      <FooterNote />
+    </Screen>
   );
 }
-
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
-});

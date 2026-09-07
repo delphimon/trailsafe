@@ -1,56 +1,102 @@
-# Welcome to your Expo app 👋
+# KCESAR TrailSafe
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+An offline-first wilderness safety companion built with React Native 0.86, TypeScript, and Expo SDK 57. It follows the supplied **TrailSafe** HTML prototype’s design and content, adapting the older TrailReady product definition to Expo for iOS and Android. Web is available for development and workflow review.
 
-## Get started
+## Run
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```sh
+npm ci
+npm start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Open with an SDK 57-compatible Expo Go, or create a native development build:
 
-### Other setup steps
+```sh
+npm run ios
+npm run android
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Native builds require the matching Xcode / Android SDK toolchains. On this Mac, Xcode is installed at `/Applications/Xcode-beta.app`; use `DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer npm run ios` if command-line tools point elsewhere. These commands do not publish the app.
 
-## Learn more
+### Standalone install on a personal iPhone
 
-To learn more about developing your project with Expo, look at the following resources:
+A signed **Release** build includes the app code, fonts, and content and runs without Expo Go, Metro, or a connection to the Mac. Pair the iPhone with Xcode, enable Developer Mode on the phone, and sign into your Apple developer account in Xcode. Find the phone identifier with `xcrun devicectl list devices`.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+With the native iOS project generated (`npx expo prebuild --platform ios` on a fresh checkout), build and install using your phone identifier and Apple team ID:
 
-## Join the community
+```sh
+DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
+  bash scripts/install-iphone.sh YOUR_IPHONE_UDID YOUR_APPLE_TEAM_ID
+```
 
-Join our community of developers creating universal apps.
+This uses automatic Apple development signing and installs directly on the selected phone. Xcode may request account authentication or keychain access. The signed app is under `builds/iphone/Build/Products/Release-iphoneos/TrailSafe.app`. Installation is limited by the embedded provisioning profile's allowed devices and expiry; rebuild before that profile expires. This is a personal device install, with no App Store submission.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+The local `plugins/with-ios-scenes.cjs` plugin adds the scene lifecycle required on iOS 27 when building with Xcode 27. It preserves Expo startup, lifecycle callbacks, and incoming links and is reapplied by Expo prebuild.
+
+For a browser preview:
+
+```sh
+npm run web
+```
+
+For a production-style local web preview:
+
+```sh
+npx expo export --platform web
+node scripts/serve-preview.cjs
+# http://127.0.0.1:8082
+```
+
+The preview server supports dynamic routes for device-local trip plans and bundled articles. Web geolocation requires localhost or HTTPS. The native installed app includes its content and fonts; web requires the initial app load and does not install an offline service worker.
+
+## Implemented
+
+- **Home:** prototype forest-green / orange / paper styling, bundled Public Sans and Barlow Condensed fonts, prominent emergency entry, persistent five-section navigation.
+- **Emergency:** native call/text handoffs, location-first text drafts, no-delivery claims, bounce-back guidance, and a practice mode that blocks all emergency handoffs.
+- **Automatic location:** begins when Emergency opens, after the operating system’s required permission prompt. No Get Location button. Foreground-only updates stop when leaving Emergency or backgrounding the app.
+- **Coordinate dropdown:** WGS84 decimal degrees, degrees and decimal minutes (DDM), and UTM. Format persists. Includes uncertainty, real fix timestamp/age, stale and poor-accuracy warnings, copy/share, and Maps handoff. UTM handles Norway/Svalbard exceptions, both hemispheres, and polar exclusions.
+- **Trip plans:** create, edit, save draft, mark current, complete, duplicate, delete, text preview, copy, share, and PDF/print. Explicit start/return/overdue dates support overnight trips. Updated plans are labeled. Optional SAR details stay collapsed initially.
+- **Reusable profile:** local name/contact, vehicle, equipment, and optional medical considerations prefill new plans. Existing plans retain their original details.
+- **Prepare:** persistent Ten Essentials and phone checklists, trip-type add-ons, an explicit food reminder, reset, and external condition resources.
+- **Guide:** 20 bundled articles, missing-versus-overdue branching, full-text search, and source references.
+- **About:** organization distinctions, privacy, content version/review status, source directory, profile management, and local data deletion.
+
+There is no account, backend, analytics, automatic emergency notification, or background tracking. Plans are not monitored. Copy, share, Maps, and phone/message actions are explicit. Device backups may include saved local app data.
+
+## Validate
+
+```sh
+npm run typecheck
+npm run lint
+npm test
+npm run export
+```
+
+Browser tests use **synthetic locations and intercepted handoffs**, never live 911:
+
+```sh
+npx playwright install chromium
+# Start the export preview server in another terminal first.
+TRAILSAFE_TEST_URL=http://127.0.0.1:8082 npm run test:e2e
+```
+
+Set `TRAILSAFE_BROWSER` to an existing Chromium executable if needed. See [validation notes](docs/VALIDATION.md) for results and remaining device checks.
+
+## Source and maintenance
+
+- `src/app/`: Expo Router screens.
+- `src/components/trailsafe/`: native shared UI, coordinate card, emergency controls.
+- `src/content/library.json`: editable offline content blocks and metadata; no HTML/WebView runtime.
+- `src/lib/`: coordinate conversion, trip logic, safe PDF text escaping, persistence validation, and emergency action guard.
+- `src/state/`: local storage and shared application state.
+- `src/hooks/use-location.ts`: foreground lifecycle, native Expo Location, and browser geolocation adapter.
+- `docs/reference/`: unchanged supplied documents for provenance.
+- [Implementation decisions](docs/IMPLEMENTATION.md): scope reconciliation, design, technical limits, and content corrections.
+
+Content changes should normally edit `src/content/library.json` directly. `npm run content:extract` is a one-time reconstruction tool for the supplied prototype and will replace subsequent manual edits; do not run it casually. The extractor parses data literals rather than executing the reference document’s JavaScript.
+
+## Release status
+
+This is a development implementation, not an official KCESAR release. Medical guidance, dispatch-facing wording, organizational endorsement, accessibility on physical devices, and real phone/SMS handoffs need their respective validation before public release. Do not send uncoordinated test calls or texts to 911.
+
+The existing Expo owner and EAS project association were preserved. The provisional native identifier is `com.appliedinteractions.trailsafe`; no App Store / Play Store upload or deployment was performed.

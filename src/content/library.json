@@ -1,0 +1,1184 @@
+{
+  "ESSENTIALS": [
+    [
+      "Hydration",
+      "Dehydration causes fatigue and poor decisions before you even feel thirsty."
+    ],
+    [
+      "Navigation",
+      "A map, compass, or downloaded offline maps still work when your phone has no signal or battery."
+    ],
+    [
+      "Insulation",
+      "Cascade weather can shift fast — an extra layer keeps a cold snap from becoming hypothermia."
+    ],
+    [
+      "Illumination",
+      "A dedicated headlamp means fading daylight doesn’t force you to burn your phone battery."
+    ],
+    [
+      "Combustion",
+      "A reliable way to start a fire or heat water matters if you end up out longer than planned."
+    ],
+    [
+      "Communication",
+      "A charged phone and a backup way to reach help matter more than almost anything else you carry."
+    ],
+    [
+      "Repair kit",
+      "Basic tools and tape fix the small gear failures that turn into big delays."
+    ],
+    [
+      "Sun protection",
+      "Sunburn and glare add up fast at elevation and on snow."
+    ],
+    [
+      "Shelter",
+      "An emergency bivy or space blanket can get you through a night you didn’t plan for."
+    ],
+    [
+      "First aid",
+      "Basic supplies let you manage a minor injury before it becomes a reason to call for help."
+    ]
+  ],
+  "PHONE_CHECKLIST": [
+    "Phone fully charged before I leave",
+    "Portable battery pack carried",
+    "Dedicated headlamp or flashlight carried — not just my phone",
+    "Offline maps downloaded in my normal navigation app",
+    "A trusted person knows my plan",
+    "I know how my satellite messenger or PLB works, if I’m carrying one",
+    "My phone’s emergency features (Medical ID, Emergency SOS) are set up",
+    "I understand that little or no cellular service is normal in the backcountry"
+  ],
+  "ADD_ONS": {
+    "day": {
+      "title": "Day hike add-ons",
+      "items": [
+        "Headlamp — yes, even for a short hike",
+        "Emergency shelter (bivy or space blanket)"
+      ]
+    },
+    "overnight": {
+      "title": "Overnight add-ons",
+      "items": [
+        "Sleep system for expected conditions",
+        "Extra food",
+        "Water treatment",
+        "Any overnight medications"
+      ]
+    },
+    "winter": {
+      "title": "Winter add-ons",
+      "items": [
+        "Traction — microspikes or crampons",
+        "Insulating layers",
+        "Waterproof outer layers",
+        "Emergency shelter",
+        "Winter-capable communication",
+        "Avalanche gear — only in avalanche terrain, and only with training"
+      ]
+    }
+  },
+  "RESOURCES": [
+    {
+      "name": "King County Explorer Search & Rescue",
+      "url": "https://www.kcesar.org/",
+      "note": "Public education, events, and how to get involved",
+      "cat": "local"
+    },
+    {
+      "name": "King County Search & Rescue Association",
+      "url": "https://kingcountysar.org/",
+      "note": "Umbrella association for King County’s specialized SAR units",
+      "cat": "local"
+    },
+    {
+      "name": "KCSAR — Wilderness Safety",
+      "url": "https://kingcountysar.org/wilderness-safety/",
+      "note": "The core guidance this app draws from",
+      "cat": "local"
+    },
+    {
+      "name": "KCSAR — When & How to Call for Help",
+      "url": "https://kingcountysar.org/when-how-to-call-for-help/",
+      "note": "",
+      "cat": "local"
+    },
+    {
+      "name": "King County 911",
+      "url": "https://kingcounty.gov/en/dept/kcit/data-information-services/911-program-office/911-the-basics",
+      "note": "Calling and texting 911, explained",
+      "cat": "local"
+    },
+    {
+      "name": "Washington Trails Association",
+      "url": "https://www.wta.org/",
+      "note": "Trip reports and current trail conditions",
+      "cat": "conditions"
+    },
+    {
+      "name": "National Weather Service — Seattle",
+      "url": "https://www.weather.gov/sew",
+      "note": "Point forecasts and weather alerts",
+      "cat": "conditions"
+    },
+    {
+      "name": "Northwest Avalanche Center",
+      "url": "https://nwac.us/",
+      "note": "Avalanche forecasts and winter education",
+      "cat": "conditions"
+    },
+    {
+      "name": "WSDOT Mountain Passes",
+      "url": "https://wsdot.com/travel/real-time/mountainpasses/",
+      "note": "Pass conditions and closures",
+      "cat": "conditions"
+    },
+    {
+      "name": "Washington Dept. of Fish & Wildlife",
+      "url": "https://wdfw.wa.gov/",
+      "note": "Current bear, cougar, and wildlife guidance",
+      "cat": "wildlife"
+    },
+    {
+      "name": "AdventureSmart — The Three Ts",
+      "url": "https://www.adventuresmart.ca/the-three-ts/",
+      "note": "Trip planning, training, taking the essentials",
+      "cat": "education"
+    },
+    {
+      "name": "National Park Service — Hike Smart",
+      "url": "https://www.nps.gov/articles/hiking-safety.htm",
+      "note": "General trip-planning and hiking safety",
+      "cat": "education"
+    }
+  ],
+  "GUIDE_TOPICS": [
+    {
+      "title": "Getting lost",
+      "sub": "Stop, think, observe, plan",
+      "kind": "screen",
+      "target": "g-lost",
+      "keywords": "lost off route navigation"
+    },
+    {
+      "title": "Calling for help",
+      "sub": "When it’s time to call 911",
+      "kind": "article",
+      "target": "calling-help",
+      "keywords": "911 call dispatch emergency"
+    },
+    {
+      "title": "Ten Essentials",
+      "sub": "What to carry, and why",
+      "kind": "article",
+      "target": "ten-essentials",
+      "keywords": "gear pack hydration insulation illumination fire repair sun shelter first aid"
+    },
+    {
+      "title": "Phone smart",
+      "sub": "Getting the most from what you already carry",
+      "kind": "article",
+      "target": "phone-smart",
+      "keywords": "phone battery service maps"
+    },
+    {
+      "title": "Can’t continue / stranded",
+      "sub": "When you can’t safely go on",
+      "kind": "screen",
+      "target": "g-stranded",
+      "keywords": "stranded exhausted terrain"
+    },
+    {
+      "title": "Party separation & overdue",
+      "sub": "A missing companion, or someone who didn’t come home",
+      "kind": "screen",
+      "target": "g-missing-split",
+      "keywords": "missing overdue separated party"
+    },
+    {
+      "title": "Waiting for rescue",
+      "sub": "What actually helps once you’ve called",
+      "kind": "screen",
+      "target": "g-waiting",
+      "keywords": "waiting rescue battery helicopter"
+    },
+    {
+      "title": "Helping rescuers find you",
+      "sub": "Signals that actually work",
+      "kind": "article",
+      "target": "signaling",
+      "keywords": "signal signaling whistle mirror ground-to-air helicopter aircraft"
+    },
+    {
+      "title": "Unexpected overnight",
+      "sub": "Turning a day trip into a safe night out",
+      "kind": "article",
+      "target": "unexpected-overnight",
+      "keywords": "overnight bivouac shelter dark stuck night"
+    },
+    {
+      "title": "Cold & hypothermia",
+      "sub": "Recognizing and responding to cold injury",
+      "kind": "article",
+      "target": "cold-hypothermia",
+      "keywords": "cold hypothermia shivering wet windchill"
+    },
+    {
+      "title": "Heat",
+      "sub": "Heat exhaustion and heat stroke on trail",
+      "kind": "article",
+      "target": "heat",
+      "keywords": "heat exhaustion stroke sun hot dehydration"
+    },
+    {
+      "title": "Winter travel",
+      "sub": "Snow travel, avalanche awareness, and short days",
+      "kind": "article",
+      "target": "winter-safety",
+      "keywords": "winter snow avalanche traction daylight"
+    },
+    {
+      "title": "Satellite messengers & PLBs",
+      "sub": "Devices that work with no cell service",
+      "kind": "article",
+      "target": "satellite-plb",
+      "keywords": "satellite plb beacon device"
+    },
+    {
+      "title": "Backcountry radio",
+      "sub": "What FRS, GMRS, and ham radio can and can’t do",
+      "kind": "article",
+      "target": "backcountry-radio",
+      "keywords": "radio frs gmrs ham repeater channel"
+    },
+    {
+      "title": "Hiking with kids",
+      "sub": "Preventing separation and preparing kids to wait",
+      "kind": "article",
+      "target": "children-family",
+      "keywords": "children kids family child"
+    },
+    {
+      "title": "Wildlife encounters",
+      "sub": "Bears, cougars, and staying safe around wildlife",
+      "kind": "article",
+      "target": "wildlife",
+      "keywords": "wildlife bear cougar snake encounter"
+    },
+    {
+      "title": "Lessons from real rescues",
+      "sub": "Patterns KCESAR volunteers see again and again",
+      "kind": "article",
+      "target": "lessons-learned",
+      "keywords": "lessons stories mistakes examples"
+    }
+  ],
+  "ARTICLES": {
+    "calling-help": {
+      "title": "Calling for Help",
+      "subtitle": "When it’s time",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Across every kind of trouble, these are the moments KCSAR and King County 911 say it’s time to call."
+        },
+        {
+          "type": "list",
+          "items": [
+            "You’re genuinely lost, unsafe, or don’t know how to get back safely.",
+            "Someone can’t walk, can’t safely self-rescue, or has a serious medical problem.",
+            "Your party can’t make reasonable progress toward the trailhead.",
+            "A party member is missing and can’t quickly be located or contacted — especially a child, an at-risk adult, or someone injured or under-equipped.",
+            "Someone you expected home is overdue and you can’t reach them."
+          ]
+        },
+        {
+          "type": "callout",
+          "title": "Don’t wait",
+          "text": "Don’t wait for darkness or worsening weather to make the call. Calling early is the single biggest thing that changes outcomes.",
+          "critical": true
+        },
+        {
+          "type": "heading",
+          "text": "Call vs. text"
+        },
+        {
+          "type": "paragraph",
+          "text": "Call if you can, text if you can’t. A text should give your location and the type of help you need first, stay short, and skip photos or emoji. Stay available to answer follow-up questions either way."
+        }
+      ],
+      "id": "calling-help",
+      "contentVersion": "2026.09.06",
+      "reviewStatus": "Draft — organizational review pending",
+      "sources": [
+        "https://kingcountysar.org/wilderness-safety/",
+        "https://kingcountysar.org/when-how-to-call-for-help/",
+        "https://kingcounty.gov/en/dept/kcit/data-information-services/911-program-office/911-the-basics"
+      ]
+    },
+    "ten-essentials": {
+      "title": "Ten Essentials",
+      "subtitle": "What to carry, and why",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "The ten systems in the TrailSafe preparation checklist."
+        },
+        {
+          "type": "list",
+          "items": [
+            "Hydration. Dehydration causes fatigue and poor decisions before you even feel thirsty.",
+            "Navigation. A map, compass, or downloaded offline maps still work when your phone has no signal or battery.",
+            "Insulation. Cascade weather can shift fast — an extra layer keeps a cold snap from becoming hypothermia.",
+            "Illumination. A dedicated headlamp means fading daylight doesn’t force you to burn your phone battery.",
+            "Combustion. A reliable way to start a fire or heat water matters if you end up out longer than planned.",
+            "Communication. A charged phone and a backup way to reach help matter more than almost anything else you carry.",
+            "Repair kit. Basic tools and tape fix the small gear failures that turn into big delays.",
+            "Sun protection. Sunburn and glare add up fast at elevation and on snow.",
+            "Shelter. An emergency bivy or space blanket can get you through a night you didn’t plan for.",
+            "First aid. Basic supplies let you manage a minor injury before it becomes a reason to call for help."
+          ]
+        }
+      ],
+      "id": "ten-essentials",
+      "contentVersion": "2026.09.06",
+      "reviewStatus": "Draft — organizational review pending",
+      "sources": [
+        "https://kingcountysar.org/wilderness-safety/",
+        "https://kingcountysar.org/when-how-to-call-for-help/"
+      ]
+    },
+    "phone-smart": {
+      "title": "Phone Smart",
+      "subtitle": "Getting the most from what you carry",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "A phone is valuable, but it is not enough preparation by itself."
+        },
+        {
+          "type": "list",
+          "items": [
+            "Phone fully charged before I leave",
+            "Portable battery pack carried",
+            "Dedicated headlamp or flashlight carried — not just my phone",
+            "Offline maps downloaded in my normal navigation app",
+            "A trusted person knows my plan",
+            "I know how my satellite messenger or PLB works, if I’m carrying one",
+            "My phone’s emergency features (Medical ID, Emergency SOS) are set up",
+            "I understand that little or no cellular service is normal in the backcountry"
+          ]
+        }
+      ],
+      "id": "phone-smart",
+      "contentVersion": "2026.09.06",
+      "reviewStatus": "Draft — organizational review pending",
+      "sources": [
+        "https://kingcountysar.org/wilderness-safety/",
+        "https://kingcountysar.org/when-how-to-call-for-help/"
+      ]
+    },
+    "signaling": {
+      "title": "Helping Rescuers Find You",
+      "subtitle": "Signals that actually work",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Being found faster often comes down to a few simple, deliberate signals."
+        },
+        {
+          "type": "heading",
+          "text": "Sound and light"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Use repeated whistle blasts or a light to attract attention. Never start a signal fire where it could create a wildfire or another hazard.",
+            "A whistle carries much farther than your voice and costs no energy.",
+            "A signal mirror — or any reflective surface — can be seen for miles in good light."
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Stomp shapes into snow, lay them out in bright clothing or gear, or build them from rocks or branches.",
+            "Make them as large and high-contrast against the ground as you can — bigger is more visible from the air than neat."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "If you see or hear a search aircraft"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Move to open ground if you can do so safely.",
+            "Signal in a controlled way — wave both arms overhead, use a mirror, show bright colors.",
+            "Never approach an aircraft. Wait for a crew member to approach you or direct you."
+          ]
+        },
+        {
+          "type": "callout",
+          "title": "",
+          "text": "A working phone sharing your exact coordinates is usually faster and more precise than any visual signal — use Emergency → Your Location first if you can.",
+          "critical": false
+        }
+      ],
+      "id": "signaling",
+      "contentVersion": "2026.09.06",
+      "reviewStatus": "Draft — organizational review pending",
+      "sources": [
+        "https://kingcountysar.org/wilderness-safety/",
+        "https://kingcountysar.org/when-how-to-call-for-help/"
+      ]
+    },
+    "unexpected-overnight": {
+      "title": "Unexpected Overnight",
+      "subtitle": "Turning a day trip into a safe night out",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Being stuck out overnight isn’t a failure — it’s a normal outcome of a trip that ran long, and it’s manageable if you stop and prepare deliberately."
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Decide early. The moment it’s clear you won’t make it out before dark, stop pushing and start preparing while you still have light.",
+            "Pick a site with some wind and water protection, away from cliff edges, loose rock, or dead standing trees.",
+            "Get warm and dry before you’re cold, not after — put on every layer you have.",
+            "Build or use whatever shelter you’re carrying: an emergency bivy, a space blanket, or a natural windbreak.",
+            "Eat and drink what you have — your body needs fuel to stay warm.",
+            "Stay together and stay put once you’re settled, unless staying is unsafe."
+          ]
+        },
+        {
+          "type": "callout",
+          "title": "",
+          "text": "If you have any signal at all, a short “we’re safe, staying the night, moving at first light” message can prevent a search that didn’t need to happen.",
+          "critical": false
+        },
+        {
+          "type": "heading",
+          "text": "In the morning"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reassess before moving. Daylight often makes a route obvious that felt hopeless in the dark."
+        },
+        {
+          "type": "callout",
+          "title": "If you cannot safely self-rescue",
+          "text": "Call 911 early. An overnight message does not cancel an active rescue. Follow dispatcher instructions and stay where rescuers expect you.",
+          "critical": true
+        }
+      ],
+      "id": "unexpected-overnight",
+      "contentVersion": "2026.09.06",
+      "reviewStatus": "Draft — organizational review pending",
+      "sources": [
+        "https://kingcountysar.org/wilderness-safety/",
+        "https://kingcountysar.org/when-how-to-call-for-help/"
+      ]
+    },
+    "cold-hypothermia": {
+      "title": "Cold & Hypothermia",
+      "subtitle": "Recognizing and responding to cold injury",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Hypothermia can develop in mild, wet weather — you don’t need freezing temperatures for it to be dangerous."
+        },
+        {
+          "type": "heading",
+          "text": "Recognize it early"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Shivering that won’t stop",
+            "Fumbling hands, stumbling",
+            "Slurred speech or confusion",
+            "Unusual tiredness or wanting to lie down"
+          ]
+        },
+        {
+          "type": "callout",
+          "title": "A warning sign, not a good one",
+          "text": "Someone who stops shivering while still cold and wet may be getting worse, not better.",
+          "critical": true
+        },
+        {
+          "type": "heading",
+          "text": "Respond"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Get the person out of wind and wet.",
+            "Replace wet clothing with dry insulating layers if you have them.",
+            "Insulate them from the cold ground, not just from the air.",
+            "If they’re alert and can swallow, give warm, sugary fluids — never if confused or unconscious.",
+            "Handle the person gently. Do not make a confused or severely cold person walk.",
+            "Call 911 for anything beyond mild shivering."
+          ]
+        },
+        {
+          "type": "note",
+          "text": "This app can’t diagnose hypothermia. When in doubt, treat it as serious and call."
+        }
+      ],
+      "id": "cold-hypothermia",
+      "contentVersion": "2026.09.06",
+      "reviewStatus": "Draft — organizational review pending",
+      "sources": [
+        "https://kingcountysar.org/wilderness-safety/",
+        "https://kingcountysar.org/when-how-to-call-for-help/",
+        "https://www.cdc.gov/winter-weather/prevention/index.html"
+      ]
+    },
+    "heat": {
+      "title": "Heat",
+      "subtitle": "Heat exhaustion and heat stroke on trail",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Heat problems can become serious quickly, especially on exposed trail. Stop exertion and get out of the heat."
+        },
+        {
+          "type": "heading",
+          "text": "Heat exhaustion"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Heavy sweating, dizziness, headache, nausea, and weakness can be warning signs.",
+            "Move to shade, loosen excess clothing, and cool the skin with water and wet cloths.",
+            "Sip water only if fully alert and able to swallow. Seek medical help if vomiting, worsening, or symptoms persist."
+          ]
+        },
+        {
+          "type": "callout",
+          "title": "Possible heat stroke — call 911",
+          "text": "Confusion, slurred speech, collapse, or a very high body temperature is an emergency. The person may still be sweating. Call 911 and begin cooling immediately; follow dispatcher instructions. Do not give fluids to someone who is confused or unconscious.",
+          "critical": true
+        }
+      ],
+      "id": "heat",
+      "contentVersion": "2026.09.06",
+      "reviewStatus": "Draft — organizational review pending",
+      "sources": [
+        "https://kingcountysar.org/wilderness-safety/",
+        "https://kingcountysar.org/when-how-to-call-for-help/",
+        "https://www.cdc.gov/niosh/heat-stress/about/illnesses.html"
+      ]
+    },
+    "winter-safety": {
+      "title": "Winter Travel",
+      "subtitle": "Snow travel, avalanche awareness, and short days",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Winter adds three compounding risks: cold, short daylight, and terrain that can behave very differently under snow."
+        },
+        {
+          "type": "heading",
+          "text": "Before you go"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Check the avalanche forecast for your specific zone at nwac.us if you’ll be in or under steep, snow-loaded terrain.",
+            "Know your route’s daylight window — winter days can end by mid-afternoon.",
+            "Carry traction and know how to use it before you need it."
+          ]
+        },
+        {
+          "type": "callout",
+          "title": "Avalanche terrain needs specific training",
+          "text": "Companion rescue and terrain assessment aren’t taught in this app. Without that training, stay out of steep, open avalanche terrain and the runout below it.",
+          "critical": true
+        },
+        {
+          "type": "heading",
+          "text": "On the trail"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Trail markers, cairns, and the trail itself can disappear under snow — navigation skills matter more, not less.",
+            "Cold drains phone batteries fast; keep it warm against your body.",
+            "Wet snow soaks insulation quickly; waterproof outer layers matter."
+          ]
+        },
+        {
+          "type": "note",
+          "text": "See also: Cold & Hypothermia, and Satellite Messengers & PLBs for winter communications."
+        }
+      ],
+      "id": "winter-safety",
+      "contentVersion": "2026.09.06",
+      "reviewStatus": "Draft — organizational review pending",
+      "sources": [
+        "https://kingcountysar.org/wilderness-safety/",
+        "https://kingcountysar.org/when-how-to-call-for-help/"
+      ]
+    },
+    "satellite-plb": {
+      "title": "Satellite Messengers & PLBs",
+      "subtitle": "Devices that work with no cell service",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "These devices send for help from places your phone can’t — but they work differently, and it’s worth knowing which is which before you’re relying on one."
+        },
+        {
+          "type": "heading",
+          "text": "Satellite messengers"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Send two-way text messages and an SOS via satellite.",
+            "Usually require a paid subscription plan.",
+            "Battery and satellite view matter — test yours before you rely on it."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Personal Locator Beacons (PLBs)"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Send a one-way distress signal with your GPS location to a national search-and-rescue system.",
+            "No subscription required — but no two-way messaging either.",
+            "Must be registered (in the US, with NOAA) to your name and emergency contacts."
+          ]
+        },
+        {
+          "type": "callout",
+          "title": "",
+          "text": "Either device needs a clear sky view to work — dense tree cover, canyons, and being inside a tent can all weaken the signal. Learn your device’s SOS trigger before you need it.",
+          "critical": true
+        },
+        {
+          "type": "note",
+          "text": "Carrying a satellite device doesn’t replace a trip plan or the Ten Essentials — it’s one more layer, not a substitute for the others."
+        }
+      ],
+      "id": "satellite-plb",
+      "contentVersion": "2026.09.06",
+      "reviewStatus": "Draft — organizational review pending",
+      "sources": [
+        "https://kingcountysar.org/wilderness-safety/",
+        "https://kingcountysar.org/when-how-to-call-for-help/"
+      ]
+    },
+    "backcountry-radio": {
+      "title": "Backcountry Radio",
+      "subtitle": "What FRS, GMRS, and ham radio can and can’t do",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "A handheld radio can help keep your own party in contact — but it isn’t a reliable way to call for rescue."
+        },
+        {
+          "type": "heading",
+          "text": "What FRS / GMRS radios do well"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Keep a spread-out party in contact over short, line-of-sight distances.",
+            "Work with no cell service and, for FRS, no license or subscription.",
+            "GMRS offers more power and repeater access, and requires an FCC license."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "What they don’t do"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Generally won’t reach 911 or a specific rescue team directly.",
+            "Range drops sharply in canyons, dense forest, and around ridgelines.",
+            "Battery life is limited, like any other electronic device."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Ham radio"
+        },
+        {
+          "type": "paragraph",
+          "text": "For licensed operators, ham radio and repeaters can sometimes extend range — but this requires training and licensing this app doesn’t provide. Do not assume any channel or repeater is monitored by SAR."
+        },
+        {
+          "type": "note",
+          "text": "Treat radio as a way to stay together as a party, not your primary way to summon rescue — a phone, satellite messenger, or PLB does that job better."
+        }
+      ],
+      "id": "backcountry-radio",
+      "contentVersion": "2026.09.06",
+      "reviewStatus": "Draft — organizational review pending",
+      "sources": [
+        "https://kingcountysar.org/wilderness-safety/",
+        "https://kingcountysar.org/when-how-to-call-for-help/"
+      ]
+    },
+    "children-family": {
+      "title": "Hiking with Kids",
+      "subtitle": "Preventing separation and preparing kids to wait",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Most of preventing a lost child comes down to a few minutes of preparation before you start walking."
+        },
+        {
+          "type": "heading",
+          "text": "Before you go"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Dress kids in bright, easy-to-spot colors.",
+            "Give each child a whistle and teach them: three blasts means “I need help.”",
+            "Take a phone photo of what each child is wearing that morning.",
+            "Agree on a simple rule before you start: if separated, stop and stay put."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Teaching kids to wait to be found"
+        },
+        {
+          "type": "paragraph",
+          "text": "A well-known wilderness-safety lesson for children is simple: if you’re lost, stay in one place, make yourself big and visible, and make noise — rather than wandering to try to find the trail yourself. A child who stays put is dramatically easier to find than one who keeps moving."
+        },
+        {
+          "type": "heading",
+          "text": "If a child goes missing"
+        },
+        {
+          "type": "paragraph",
+          "text": "Follow the Party Separation guide, and tell 911 the child’s age, clothing, and whether they’ve been taught to stay put — it changes how a search is run."
+        }
+      ],
+      "id": "children-family",
+      "contentVersion": "2026.09.06",
+      "reviewStatus": "Draft — organizational review pending",
+      "sources": [
+        "https://kingcountysar.org/wilderness-safety/",
+        "https://kingcountysar.org/when-how-to-call-for-help/"
+      ]
+    },
+    "wildlife": {
+      "title": "Wildlife Encounters",
+      "subtitle": "Bears, cougars, and staying safe around wildlife",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Most wildlife encounters end with the animal leaving — your job is mostly to avoid surprising it, and to respond calmly if you don’t."
+        },
+        {
+          "type": "heading",
+          "text": "General principles"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Make noise on trail, especially near streams, thick brush, or blind corners, so animals have time to move off.",
+            "Keep food secured and away from your sleeping area overnight.",
+            "Keep dogs leashed — an off-leash dog can provoke an encounter, then run back to you with an animal behind it."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Black bears"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Stay calm, back away slowly, don’t run. Make yourself look bigger and speak in a firm, calm voice."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Cougars"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Do not run. Maintain eye contact, make yourself look big, and pick up small children. Back away slowly; fight back if attacked."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Snakes"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Give any snake a wide path and let it move away on its own. Watch where you place hands and feet on rocky terrain."
+          ]
+        },
+        {
+          "type": "note",
+          "text": "For current, location-specific wildlife guidance, see Washington Dept. of Fish & Wildlife under Resources."
+        }
+      ],
+      "id": "wildlife",
+      "contentVersion": "2026.09.06",
+      "reviewStatus": "Draft — organizational review pending",
+      "sources": [
+        "https://kingcountysar.org/wilderness-safety/",
+        "https://kingcountysar.org/when-how-to-call-for-help/"
+      ]
+    },
+    "lessons-learned": {
+      "title": "Lessons from Real Rescues",
+      "subtitle": "Patterns KCESAR volunteers see again and again",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "These are common patterns, told as composites rather than specific case files — the small decisions that come up again and again."
+        },
+        {
+          "type": "heading",
+          "text": "The trail that used to be obvious"
+        },
+        {
+          "type": "paragraph",
+          "text": "Fresh snow, fallen leaves, or fog erased a route the hiker had done many times before, and familiarity stood in for navigation. Lesson: carry and use a map even on trails you know well."
+        },
+        {
+          "type": "heading",
+          "text": "Just a little further"
+        },
+        {
+          "type": "paragraph",
+          "text": "A short planned hike stretched to an hour, then two, chasing a viewpoint that always looked just ahead. Lesson: set a turnaround time before you leave, and honor it even when the summit feels close."
+        },
+        {
+          "type": "heading",
+          "text": "Nobody knew the route"
+        },
+        {
+          "type": "paragraph",
+          "text": "A solo hiker said “going for a hike” with no route, no time, and no trailhead written down. When they didn’t return, searchers had almost nothing to go on. Lesson: a trip plan only helps if someone actually has it."
+        },
+        {
+          "type": "heading",
+          "text": "The phone that couldn’t reach anyone"
+        },
+        {
+          "type": "paragraph",
+          "text": "A hiker could see a signal indicator but could not complete a call. Lesson: try texting if a call cannot connect. Do not roam or enter hazardous terrain for reception. If in contact with 911, stay where responders expect you unless staying is immediately unsafe."
+        }
+      ],
+      "id": "lessons-learned",
+      "contentVersion": "2026.09.06",
+      "reviewStatus": "Draft — organizational review pending",
+      "sources": [
+        "https://kingcountysar.org/wilderness-safety/",
+        "https://kingcountysar.org/when-how-to-call-for-help/"
+      ]
+    },
+    "g-lost": {
+      "title": "Lost / Off Route",
+      "subtitle": "Stop. Think. Observe. Plan.",
+      "blocks": [
+        {
+          "type": "callout",
+          "title": "STOP",
+          "text": "Stop moving. Stay calm. You will think more clearly standing still than while wandering.",
+          "critical": true
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Stop moving and stay calm.",
+            "Think: when did you last know exactly where you were?",
+            "Observe your surroundings, resources, weather, daylight, and hazards.",
+            "Plan — don't make the situation worse."
+          ]
+        },
+        {
+          "type": "callout",
+          "title": "If you are genuinely lost, unsafe, or don't know how to get back safely",
+          "text": "Call 911. Do not wait for darkness or worsening weather.",
+          "critical": true
+        },
+        {
+          "type": "heading",
+          "text": "If you're already in contact with 911 or SAR"
+        },
+        {
+          "type": "paragraph",
+          "text": "Stay where you are unless a dispatcher or rescuer tells you to move, or you must move a short distance to reach immediate safety."
+        },
+        {
+          "type": "heading",
+          "text": "Additional actions"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Get out of any immediate hazard.",
+            "Don't assume a creek or drainage leads safely downhill to a road or town. In Cascade terrain, drainages can lead into waterfalls, cliffs, canyons, and dense brush. If you're genuinely lost, stop and call rather than following this common myth.",
+            "Keep your party together.",
+            "Put on insulation before you get cold, not after.",
+            "Prepare shelter if conditions warrant it.",
+            "Make yourself visible.",
+            "Preserve your phone battery.",
+            "Answer calls or texts from unknown numbers while a rescue is active.",
+            "Follow dispatcher or rescuer instructions over anything in this app."
+          ]
+        }
+      ],
+      "id": "g-lost",
+      "contentVersion": "2026.09.06",
+      "reviewStatus": "Draft — organizational review pending",
+      "sources": [
+        "https://kingcountysar.org/wilderness-safety/",
+        "https://kingcountysar.org/when-how-to-call-for-help/"
+      ]
+    },
+    "g-injured": {
+      "title": "Injured or Sick",
+      "subtitle": "",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "Make the scene safe so there aren't more victims.",
+            "Address immediate life threats using the first-aid skills you actually have.",
+            "If the person can't safely self-rescue, has a serious injury or illness, or you're unsure — call 911 early.",
+            "Give an exact location and describe the patient's condition.",
+            "Protect the person from cold, wet ground, wind, rain, or heat.",
+            "Stay available to 911 and follow their instructions."
+          ]
+        },
+        {
+          "type": "callout",
+          "title": "",
+          "text": "Inability to walk, inability to safely self-rescue, a serious medical problem, or being unable to make reasonable progress toward the trailhead are all good reasons to call 911.",
+          "critical": false
+        },
+        {
+          "type": "note",
+          "text": "This app doesn't try to diagnose or treat medical conditions. For anything beyond basic first aid, defer to your training and to 911."
+        }
+      ],
+      "id": "g-injured",
+      "contentVersion": "2026.09.06",
+      "reviewStatus": "Draft — organizational review pending",
+      "sources": [
+        "https://kingcountysar.org/wilderness-safety/",
+        "https://kingcountysar.org/when-how-to-call-for-help/"
+      ]
+    },
+    "g-stranded": {
+      "title": "Can’t Continue",
+      "subtitle": "",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Exhaustion, terrain beyond your ability, gear failure, darkness, or impassable snow or water can all leave you unable to safely continue."
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Stop before exhaustion or darkness turns this into an injury.",
+            "Move only as much as necessary to reach a safe location.",
+            "Evaluate daylight, weather, clothing, shelter, food, water, and communications.",
+            "If you can't safely self-rescue, or you're unsure — call 911.",
+            "Prepare to stay warm, stay dry, and wait."
+          ]
+        },
+        {
+          "type": "callout",
+          "title": "Call before it becomes catastrophic",
+          "text": "It's normal — and expected — to call for help before a manageable problem turns into an emergency.",
+          "critical": false
+        }
+      ],
+      "id": "g-stranded",
+      "contentVersion": "2026.09.06",
+      "reviewStatus": "Draft — organizational review pending",
+      "sources": [
+        "https://kingcountysar.org/wilderness-safety/",
+        "https://kingcountysar.org/when-how-to-call-for-help/"
+      ]
+    },
+    "g-party-missing": {
+      "title": "Party Member Missing",
+      "subtitle": "",
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "If separation just occurred"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Stop the rest of the group from scattering.",
+            "Identify the last place and time everyone was together.",
+            "Try normal contact methods.",
+            "Don't send multiple uncoordinated people off searching in different directions."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Call 911 when"
+        },
+        {
+          "type": "list",
+          "items": [
+            "The missing person can't quickly be located or contacted.",
+            "They're a child, an at-risk adult, injured, or inadequately equipped.",
+            "Darkness, weather, or terrain raise the urgency."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Have this ready for 911"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Name and age",
+            "Clothing and pack description",
+            "Medical considerations",
+            "Phone or device number",
+            "Last known point and intended route",
+            "Experience level and footwear, if useful"
+          ]
+        }
+      ],
+      "id": "g-party-missing",
+      "contentVersion": "2026.09.06",
+      "reviewStatus": "Draft — organizational review pending",
+      "sources": [
+        "https://kingcountysar.org/wilderness-safety/",
+        "https://kingcountysar.org/when-how-to-call-for-help/"
+      ]
+    },
+    "g-overdue": {
+      "title": "Overdue Person",
+      "subtitle": "",
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Is the person overdue and you can't reach them?"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Try the phone or contact method on their trip plan.",
+            "Review the intended return time and the \"if you have not heard from me by\" time.",
+            "Gather their complete trip plan.",
+            "If they remain overdue and can't be contacted — call 911.",
+            "Tell 911 they're overdue from an outdoor trip and provide names, party size, planned route, trailhead, timing, vehicle, clothing, communications devices, and any medical or experience information you know."
+          ]
+        },
+        {
+          "type": "callout",
+          "title": "",
+          "text": "An overdue outdoor traveler who can't be contacted is a legitimate reason to call 911 — you don't need to wait longer to be sure.",
+          "critical": false
+        }
+      ],
+      "id": "g-overdue",
+      "contentVersion": "2026.09.06",
+      "reviewStatus": "Draft — organizational review pending",
+      "sources": [
+        "https://kingcountysar.org/wilderness-safety/",
+        "https://kingcountysar.org/when-how-to-call-for-help/",
+        "https://kingcounty.gov/en/dept/kcit/data-information-services/911-program-office/911-the-basics"
+      ]
+    },
+    "g-other": {
+      "title": "Other Emergency",
+      "subtitle": "",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "If contacting 911, give your location and the type of help needed first.",
+            "Stay available to answer follow-up questions.",
+            "Follow dispatcher or responder instructions over anything in this app.",
+            "Move only as needed for immediate safety."
+          ]
+        }
+      ],
+      "id": "g-other",
+      "contentVersion": "2026.09.06",
+      "reviewStatus": "Draft — organizational review pending",
+      "sources": [
+        "https://kingcountysar.org/wilderness-safety/",
+        "https://kingcountysar.org/when-how-to-call-for-help/",
+        "https://kingcounty.gov/en/dept/kcit/data-information-services/911-program-office/911-the-basics"
+      ]
+    },
+    "g-waiting": {
+      "title": "Waiting for Rescue",
+      "subtitle": "",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Once you've called for help, this is what actually helps."
+        },
+        {
+          "type": "list",
+          "items": [
+            "Follow the 911 call taker's or rescuer's instructions over anything in this app.",
+            "Stay where rescuers expect you unless staying is immediately unsafe.",
+            "Keep your party together.",
+            "Prevent further injury.",
+            "Get warm and dry early — don't wait until you feel cold.",
+            "Make yourself visible.",
+            "Keep communication devices accessible."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Preserve your battery"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Turn on Low Power Mode — it preserves calls and messages while reducing other power use.",
+            "Reduce screen brightness and let the screen sleep when you're not using it.",
+            "Stop optional high-power activities like recording video.",
+            "Don't force-close apps as a generic battery-saving step.",
+            "Don't blindly disable cellular, Wi-Fi, or Bluetooth — those may be needed for a 911 callback, messaging, or a paired satellite device. Only turn off what you know is unnecessary."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Help rescuers find you"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Don't repeatedly call 911 for status updates unless instructed or the situation changes.",
+            "Be ready to describe nearby landmarks, sounds, terrain, trail signs, water, roads, or other features.",
+            "If you hear or see searchers or aircraft, signal in a controlled, obvious way.",
+            "Never approach an aircraft unless a crew member directs you to."
+          ]
+        }
+      ],
+      "id": "g-waiting",
+      "contentVersion": "2026.09.06",
+      "reviewStatus": "Draft — organizational review pending",
+      "sources": [
+        "https://kingcountysar.org/wilderness-safety/",
+        "https://kingcountysar.org/when-how-to-call-for-help/"
+      ]
+    }
+  }
+}

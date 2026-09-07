@@ -1,0 +1,1955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KCESAR TrailSafe — Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* ---- design tokens ---- */
+    --forest-900:#132720;
+    --forest-800:#1B3A2E;
+    --forest-700:#25503F;
+    --forest-600:#2F5D46;
+    --stone-100:#EAEDE7;
+    --stone-200:#DEE2D9;
+    --stone-300:#C7CDC0;
+    --ink-900:#171B18;
+    --ink-700:#3A413B;
+    --ink-500:#5C645D;
+    --paper:#F6F7F3;
+    --safety-orange:#E4572E;
+    --safety-orange-dark:#C6421D;
+    --amber:#C98A2C;
+    --amber-bg:#FBF1DD;
+    --line:#CBD1C4;
+    --white:#FFFFFF;
+
+    --font-display:'Barlow Condensed',sans-serif;
+    --font-body:'Public Sans',sans-serif;
+
+    --radius-s:6px;
+    --radius-m:10px;
+    --radius-l:16px;
+
+    --shadow-frame: 0 30px 80px rgba(10,20,15,.35), 0 4px 18px rgba(10,20,15,.25);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:var(--font-body);
+    background:
+      radial-gradient(circle at 20% 15%, #24392f 0%, #16241d 45%, #0d1712 100%);
+    color:var(--ink-900);
+    -webkit-font-smoothing:antialiased;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    padding:28px 12px;
+  }
+
+  /* faint topo contour watermark across the whole backdrop */
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.035' stroke-width='1.4'%3E%3Cpath d='M-20 80 Q150 20 300 90 T620 60'/%3E%3Cpath d='M-20 150 Q150 90 300 160 T620 130'/%3E%3Cpath d='M-20 220 Q150 160 300 230 T620 200'/%3E%3Cpath d='M-20 300 Q150 380 300 310 T620 340'/%3E%3Cpath d='M-20 370 Q150 450 300 380 T620 410'/%3E%3Cpath d='M-20 440 Q150 520 300 450 T620 480'/%3E%3Cpath d='M-20 500 Q150 560 300 510 T620 540'/%3E%3C/g%3E%3C/svg%3E");
+    background-size:600px 600px;
+    pointer-events:none;
+  }
+
+  /* ---------- device frame ---------- */
+  .device{
+    position:relative;
+    width:402px;
+    max-width:100%;
+    height:874px;
+    max-height:calc(100vh - 40px);
+    background:var(--paper);
+    border-radius:44px;
+    box-shadow:var(--shadow-frame);
+    border:10px solid #0c0f0d;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  .device::after{ /* notch */
+    content:"";
+    position:absolute; top:0; left:50%; transform:translateX(-50%);
+    width:150px; height:26px;
+    background:#0c0f0d;
+    border-radius:0 0 16px 16px;
+    z-index:50;
+  }
+
+  @media (max-width:480px){
+    body{padding:0;}
+    .device{
+      width:100vw; height:100vh; max-height:100vh;
+      border-radius:0; border:none; box-shadow:none;
+    }
+    .device::after{ display:none; }
+  }
+
+  /* ---------- app chrome ---------- */
+  .app-header{
+    flex:0 0 auto;
+    padding:20px 18px 12px;
+    background:var(--forest-800);
+    color:var(--white);
+    position:relative;
+    z-index:5;
+  }
+  .app-header .eyebrow-row{
+    display:flex; align-items:center; justify-content:space-between;
+    min-height:24px;
+  }
+  .back-btn{
+    background:none;border:none;color:var(--white);
+    font-family:var(--font-body); font-size:15px; font-weight:600;
+    display:none; align-items:center; gap:4px; padding:2px 0 2px 0; cursor:pointer;
+  }
+  .back-btn.show{display:inline-flex;}
+  .back-btn svg{width:18px;height:18px;}
+  .header-title{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:26px;
+    letter-spacing:.2px;
+    margin:2px 0 0;
+  }
+  .header-sub{
+    font-size:13.5px;
+    color:#CFE0D6;
+    margin:2px 0 0;
+    max-width:34ch;
+  }
+
+  .practice-banner{
+    display:none;
+    background:var(--amber);
+    color:#241a04;
+    font-family:var(--font-display);
+    font-weight:600;
+    letter-spacing:.4px;
+    font-size:14.5px;
+    text-align:center;
+    padding:8px 10px;
+    position:relative; z-index:6;
+  }
+  .practice-banner.active{display:block;}
+  .practice-banner button{
+    margin-left:10px;
+    background:rgba(0,0,0,.12);
+    border:none; border-radius:20px;
+    padding:2px 10px;
+    font-size:12.5px; font-weight:700;
+    color:#241a04; cursor:pointer;
+  }
+
+  .app-main{
+    flex:1 1 auto;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    background:var(--paper);
+    position:relative;
+  }
+  .screen{ display:none; padding:18px 18px 28px; animation:fadein .18s ease; }
+  .screen.active{ display:block; }
+  @keyframes fadein{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
+  @media (prefers-reduced-motion: reduce){
+    .screen{animation:none;}
+  }
+
+  /* ---------- bottom tab bar ---------- */
+  .tabbar{
+    flex:0 0 auto;
+    display:flex;
+    background:var(--white);
+    border-top:1px solid var(--line);
+    padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+    z-index:10;
+  }
+  .tab{
+    flex:1;
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    background:none; border:none; cursor:pointer;
+    font-family:var(--font-body); font-size:11px; font-weight:600;
+    color:var(--ink-500);
+    padding:4px 2px;
+    border-radius:10px;
+  }
+  .tab svg{width:22px;height:22px;}
+  .tab.active{ color:var(--forest-700); }
+  .tab.emergency-tab.active{ color:var(--safety-orange-dark); }
+  .tab.emergency-tab svg{ color:var(--safety-orange); }
+
+  /* ---------- typography helpers ---------- */
+  h2.section-title{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:22px;
+    margin:0 0 4px;
+    color:var(--forest-800);
+  }
+  p.section-lead{
+    margin:0 0 18px;
+    color:var(--ink-700);
+    font-size:14.5px;
+    line-height:1.5;
+    max-width:40ch;
+  }
+  .kicker{
+    font-family:var(--font-display);
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--forest-700);
+    margin:22px 0 8px;
+  }
+  .kicker:first-child{margin-top:0;}
+
+  /* ---------- buttons ---------- */
+  .btn{
+    display:flex; align-items:center; justify-content:center; gap:9px;
+    width:100%;
+    font-family:var(--font-body);
+    font-weight:700;
+    font-size:16px;
+    padding:15px 16px;
+    border-radius:var(--radius-m);
+    border:1px solid transparent;
+    cursor:pointer;
+    text-decoration:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .btn svg{width:20px;height:20px;flex:0 0 auto;}
+  .btn-emergency{
+    background:var(--safety-orange);
+    color:var(--white);
+    box-shadow:0 6px 16px rgba(228,87,46,.35);
+    font-size:18px;
+    padding:18px 16px;
+  }
+  .btn-emergency:active{ background:var(--safety-orange-dark); }
+  .btn-primary{ background:var(--forest-800); color:var(--white); }
+  .btn-primary:active{ background:var(--forest-900); }
+  .btn-secondary{ background:var(--white); color:var(--forest-800); border-color:var(--forest-800); }
+  .btn-ghost{ background:transparent; color:var(--forest-800); border-color:var(--line); }
+  .btn-outline-orange{ background:var(--white); color:var(--safety-orange-dark); border-color:var(--safety-orange); }
+  .btn-danger-text{ background:none; border:none; color:var(--safety-orange-dark); font-weight:700; font-size:14px; cursor:pointer; padding:8px 0; }
+  .btn-row{ display:flex; gap:10px; }
+  .btn-row .btn{ font-size:14.5px; padding:12px 10px; }
+  .btn[disabled]{ opacity:.5; cursor:not-allowed; }
+
+  /* ---------- cards ---------- */
+  .card{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:var(--radius-m);
+    padding:16px;
+    margin-bottom:14px;
+  }
+  .card-title{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:17px;
+    margin:0 0 6px;
+    color:var(--forest-800);
+  }
+  .home-hero{
+    background:var(--forest-800);
+    margin:-18px -18px 18px;
+    padding:26px 18px 22px;
+    position:relative;
+    overflow:hidden;
+  }
+  .home-hero::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.08' stroke-width='1.5'%3E%3Cpath d='M-10 40 Q100 0 200 45 T410 30'/%3E%3Cpath d='M-10 90 Q100 55 200 95 T410 80'/%3E%3Cpath d='M-10 140 Q100 110 200 145 T410 130'/%3E%3Cpath d='M-10 260 Q100 300 200 265 T410 285'/%3E%3C/g%3E%3C/svg%3E");
+    background-size:cover;
+  }
+  .home-hero-inner{ position:relative; z-index:2; }
+  .wordmark{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:15px;
+    letter-spacing:1.5px;
+    color:#9FCBAF;
+    text-transform:uppercase;
+    margin:0 0 2px;
+  }
+  .wordmark strong{ color:var(--white); }
+  .home-tag{
+    font-size:13.5px;
+    color:#D7E6DC;
+    margin:6px 0 18px;
+    max-width:32ch;
+    line-height:1.45;
+  }
+
+  .list-row{
+    display:flex; align-items:flex-start; gap:12px;
+    padding:13px 0;
+    border-bottom:1px solid var(--line);
+    background:none; border-left:none; border-right:none; border-top:none;
+    width:100%; text-align:left; cursor:pointer;
+    font-family:var(--font-body); color:var(--ink-900);
+  }
+  .list-row:last-child{ border-bottom:none; }
+  .list-row .icon-wrap{
+    flex:0 0 auto; width:34px; height:34px; border-radius:9px;
+    background:var(--stone-100); display:flex; align-items:center; justify-content:center;
+    color:var(--forest-700);
+  }
+  .list-row .icon-wrap svg{ width:18px; height:18px; }
+  .list-row .row-title{ font-weight:700; font-size:15px; margin:0 0 2px; }
+  .list-row .row-sub{ font-size:13px; color:var(--ink-500); margin:0; line-height:1.4; }
+  .list-row .chev{ margin-left:auto; align-self:center; color:var(--stone-300); flex:0 0 auto; }
+  .list-row .chev svg{ width:16px; height:16px; }
+  .list-row.disabled{ cursor:default; opacity:.55; }
+  .list-row.disabled .row-title{ color:var(--ink-500); }
+
+  .badge{
+    display:inline-block;
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:.3px;
+    padding:2px 7px;
+    border-radius:20px;
+    margin-left:8px;
+    vertical-align:middle;
+  }
+  .badge-soon{ background:var(--stone-200); color:var(--ink-700); }
+  .badge-new{ background:#DCEFE2; color:var(--forest-700); }
+
+  .footer-note{
+    text-align:center;
+    font-size:12px;
+    color:var(--ink-500);
+    line-height:1.6;
+    margin-top:22px;
+    padding-top:14px;
+    border-top:1px solid var(--line);
+  }
+
+  /* ---------- location card ---------- */
+  .loc-card{
+    background:var(--forest-800);
+    color:var(--white);
+    border-radius:var(--radius-m);
+    padding:16px;
+    margin-bottom:14px;
+  }
+  .loc-card .loc-label{
+    font-family:var(--font-display); font-size:13px; font-weight:600;
+    letter-spacing:.5px; color:#AFCDBB; margin:0 0 6px;
+  }
+  .loc-card .coords{
+    font-family:'Public Sans',monospace;
+    font-variant-numeric:tabular-nums;
+    font-size:21px; font-weight:700; letter-spacing:.2px; margin:0 0 6px;
+  }
+  .loc-card .coords.pending{ color:#CFE0D6; font-size:15px; font-weight:600; }
+  .loc-meta{ display:flex; gap:14px; font-size:12.5px; color:#BFD8CB; margin:0 0 14px; flex-wrap:wrap; }
+  .loc-meta b{ color:var(--white); }
+  .stale-warning{
+    background:rgba(228,87,46,.18); border:1px solid rgba(228,87,46,.55);
+    color:#FFD9C9; font-size:12.5px; padding:7px 10px; border-radius:8px; margin-bottom:12px;
+  }
+
+  /* ---------- what-happened grid ---------- */
+  .choice-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:6px; }
+  .choice-btn{
+    display:flex; flex-direction:column; align-items:flex-start; gap:8px;
+    background:var(--white); border:1.5px solid var(--line); border-radius:var(--radius-m);
+    padding:13px 12px; text-align:left; cursor:pointer; font-family:var(--font-body);
+    min-height:92px; justify-content:space-between;
+  }
+  .choice-btn:active{ border-color:var(--forest-700); }
+  .choice-btn svg{ width:20px; height:20px; color:var(--forest-700); }
+  .choice-btn span{ font-weight:700; font-size:13.5px; line-height:1.25; color:var(--ink-900); }
+  .choice-btn.wide{ grid-column:1 / -1; flex-direction:row; align-items:center; min-height:auto; }
+  .choice-btn.wide span{ font-size:14.5px; }
+
+  /* ---------- mini persistent emergency bar (on guide screens) ---------- */
+  .mini-e-bar{
+    display:flex; gap:8px; margin-bottom:16px;
+  }
+  .mini-e-btn{
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+    background:var(--forest-800); color:var(--white); border-radius:var(--radius-s);
+    padding:9px 4px; font-size:11px; font-weight:700; text-decoration:none;
+  }
+  .mini-e-btn.orange{ background:var(--safety-orange); }
+  .mini-e-btn svg{ width:17px; height:17px; }
+
+  /* ---------- STOP / step lists ---------- */
+  .step-list{ list-style:none; margin:0 0 16px; padding:0; counter-reset:step; }
+  .step-list li{
+    display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--line);
+    font-size:14.5px; line-height:1.5; color:var(--ink-900);
+  }
+  .step-list li:last-child{ border-bottom:none; }
+  .step-list li::before{
+    counter-increment:step; content:counter(step);
+    flex:0 0 auto; width:24px; height:24px; border-radius:50%;
+    background:var(--forest-800); color:var(--white);
+    font-family:var(--font-display); font-weight:700; font-size:13px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .bullet-list{ margin:0 0 16px; padding:0 0 0 4px; list-style:none; }
+  .bullet-list li{
+    position:relative; padding:7px 0 7px 18px; font-size:14.5px; line-height:1.5; color:var(--ink-900);
+    border-bottom:1px solid var(--line);
+  }
+  .bullet-list li:last-child{ border-bottom:none; }
+  .bullet-list li::before{
+    content:""; position:absolute; left:2px; top:16px; width:6px; height:6px; border-radius:50%;
+    background:var(--forest-700);
+  }
+
+  .callout{
+    background:var(--amber-bg); border:1px solid #EAD3A0; color:#5C3F0C;
+    border-radius:var(--radius-m); padding:13px 14px; font-size:13.5px; line-height:1.5; margin-bottom:16px;
+  }
+  .callout.critical{ background:#FBE7E0; border-color:#F0B29C; color:#7A2A11; }
+  .callout strong{ display:block; margin-bottom:3px; font-family:var(--font-display); font-size:14.5px; font-weight:700; }
+
+  /* ---------- forms ---------- */
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:12.5px; font-weight:700; color:var(--ink-700); margin-bottom:5px; }
+  .field .hint{ font-size:11.5px; color:var(--ink-500); margin-top:4px; line-height:1.4; }
+  .field input[type=text], .field input[type=date], .field input[type=time], .field textarea, .field select{
+    width:100%; font-family:var(--font-body); font-size:14.5px; padding:11px 12px;
+    border:1.5px solid var(--line); border-radius:var(--radius-s); background:var(--white); color:var(--ink-900);
+  }
+  .field textarea{ min-height:64px; resize:vertical; }
+  .field-row{ display:flex; gap:10px; }
+  .field-row .field{ flex:1; }
+  .checkbox-row{ display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); cursor:pointer; }
+  .checkbox-row:last-child{ border-bottom:none; }
+  .checkbox-row input{ margin-top:3px; width:18px; height:18px; accent-color:var(--forest-700); flex:0 0 auto; }
+  .checkbox-row .cb-title{ font-weight:700; font-size:14px; margin:0 0 2px; }
+  .checkbox-row .cb-sub{ font-size:12.5px; color:var(--ink-500); margin:0; line-height:1.4; }
+  .checkbox-row.checked .cb-title{ color:var(--forest-700); }
+  .chip-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
+  .chip{
+    padding:8px 14px; border-radius:20px; border:1.5px solid var(--line); background:var(--white);
+    font-size:13px; font-weight:700; cursor:pointer; color:var(--ink-700);
+  }
+  .chip.active{ background:var(--forest-800); border-color:var(--forest-800); color:var(--white); }
+  .disclosure{ border:1px solid var(--line); border-radius:var(--radius-m); margin-bottom:14px; overflow:hidden; }
+  .disclosure summary{
+    list-style:none; cursor:pointer; padding:13px 14px; font-weight:700; font-size:14.5px;
+    display:flex; justify-content:space-between; align-items:center; color:var(--forest-800);
+  }
+  .disclosure summary::-webkit-details-marker{ display:none; }
+  .disclosure summary::after{ content:'+'; font-size:20px; color:var(--ink-500); font-weight:400; }
+  .disclosure[open] summary::after{ content:'–'; }
+  .disclosure .disclosure-body{ padding:0 14px 14px; }
+
+  .progress-bar{ display:flex; gap:5px; margin-bottom:18px; }
+  .progress-bar span{ height:4px; flex:1; border-radius:3px; background:var(--stone-200); }
+  .progress-bar span.done{ background:var(--forest-700); }
+
+  /* ---------- plan output ---------- */
+  .plan-output{
+    background:var(--ink-900); color:#E7ECE8;
+    font-family:'Public Sans',monospace; font-size:12.5px; line-height:1.65;
+    padding:16px; border-radius:var(--radius-m); white-space:pre-wrap; margin-bottom:14px;
+  }
+  .plan-list-item{
+    border:1px solid var(--line); border-radius:var(--radius-m); padding:13px 14px; margin-bottom:10px; cursor:pointer;
+  }
+  .plan-list-item .plan-status{
+    display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:.3px;
+    padding:2px 8px; border-radius:20px; margin-bottom:6px;
+  }
+  .plan-status.draft{ background:var(--stone-200); color:var(--ink-700); }
+  .plan-status.current{ background:#DCEFE2; color:var(--forest-700); }
+  .plan-status.completed{ background:var(--stone-100); color:var(--ink-500); }
+  .empty-state{ text-align:center; padding:34px 10px; color:var(--ink-500); }
+  .empty-state svg{ width:38px; height:38px; margin-bottom:10px; color:var(--stone-300); }
+  .empty-state p{ font-size:13.5px; line-height:1.5; max-width:26ch; margin:0 auto; }
+
+  /* ---------- guide index / accordion ---------- */
+  .guide-topic{
+    display:flex; align-items:center; gap:12px; padding:13px 0; border-bottom:1px solid var(--line);
+    cursor:pointer; background:none; border-left:none; border-right:none; border-top:none; width:100%; text-align:left;
+    font-family:var(--font-body);
+  }
+  .guide-topic:last-child{ border-bottom:none; }
+  .guide-topic .icon-wrap{ flex:0 0 auto; width:32px; height:32px; border-radius:8px; background:var(--stone-100); display:flex; align-items:center; justify-content:center; color:var(--forest-700); }
+  .guide-topic .icon-wrap svg{ width:16px; height:16px; }
+  .guide-topic .gt-title{ font-weight:700; font-size:14.5px; margin:0; color:var(--ink-900); }
+
+  .resource-row{ padding:12px 0; border-bottom:1px solid var(--line); }
+  .resource-row:last-child{ border-bottom:none; }
+  .resource-row a{ font-weight:700; font-size:14px; text-decoration:none; display:flex; align-items:center; gap:6px; }
+  .resource-row a svg{ width:14px; height:14px; flex:0 0 auto; }
+  .resource-row p{ font-size:12.5px; color:var(--ink-500); margin:4px 0 0; line-height:1.4; }
+
+  /* ---------- modal ---------- */
+  .modal-overlay{
+    position:absolute; inset:0; background:rgba(10,15,12,.55); display:none;
+    align-items:center; justify-content:center; z-index:200; padding:24px;
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal-box{
+    background:var(--white); border-radius:var(--radius-l); padding:22px 20px; width:100%; max-width:320px;
+    box-shadow:0 20px 50px rgba(0,0,0,.3);
+  }
+  .modal-box h3{ font-family:var(--font-display); font-size:19px; margin:0 0 8px; color:var(--forest-800); }
+  .modal-box p{ font-size:13.5px; line-height:1.5; color:var(--ink-700); margin:0 0 16px; }
+
+  ::selection{ background:#c9e6d6; }
+
+  @media print{
+    body{ background:#fff; padding:0; }
+    body::before{ display:none; }
+    .device{ position:static; width:auto; height:auto; max-height:none; border:none; box-shadow:none; border-radius:0; overflow:visible; }
+    .device::after, .practice-banner, .app-header, .tabbar, .toast, .modal-overlay{ display:none !important; }
+    .app-main{ overflow:visible; }
+    .screen{ display:none !important; padding:0; }
+    .screen[data-screen="tripplan-form"]{ display:block !important; }
+    #tripplan-form-print-hide, .field, .disclosure, #generatePlanBtn, #shareNowBtn, #copyPlanBtn, #savePlanBtn, #printPlanBtn, .kicker, .callout, .checkbox-row, .chip-row{ display:none !important; }
+    #planPreviewBox{ display:block !important; }
+    .plan-output{ background:#fff; color:#000; border:1px solid #999; font-size:12px; }
+  }
+  a{ color:var(--forest-700); }
+
+  /* scrollbar tidy */
+  .app-main::-webkit-scrollbar{ width:0; }
+
+  /* toast */
+  .toast{
+    position:absolute; left:50%; bottom:86px; transform:translateX(-50%) translateY(10px);
+    background:var(--ink-900); color:var(--white);
+    font-size:13.5px; font-weight:600;
+    padding:10px 16px; border-radius:30px;
+    opacity:0; pointer-events:none; transition:opacity .18s ease, transform .18s ease;
+    z-index:80; white-space:nowrap;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="device" id="device">
+
+  <div class="practice-banner" id="practiceBanner">
+    PRACTICE MODE — DOES NOT CONTACT 911
+    <button type="button" id="exitPracticeBtn">Exit</button>
+  </div>
+
+  <header class="app-header">
+    <div class="eyebrow-row">
+      <button class="back-btn" id="backBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        Back
+      </button>
+    </div>
+    <h1 class="header-title" id="screenTitle">TrailSafe</h1>
+    <p class="header-sub" id="screenSub">King County Explorer Search &amp; Rescue</p>
+  </header>
+
+  <main class="app-main" id="appMain">
+
+    <!-- ================= HOME ================= -->
+    <section class="screen active" data-screen="home">
+      <div class="home-hero">
+        <div class="home-hero-inner">
+          <p class="wordmark">KCESAR <strong>TrailSafe</strong></p>
+          <p class="home-tag">Prepare for ordinary trips, know when to ask for help, and give rescuers what they need — even with no signal.</p>
+          <button class="btn btn-emergency" data-nav="emergency">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
+            NEED HELP?
+          </button>
+        </div>
+      </div>
+
+      <p class="kicker" style="margin-top:0;">Get ready</p>
+      <button class="list-row" data-nav="tripplan">
+        <span class="icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l2 4H7l2-4z"/><path d="M4 7h16l-1.5 13a2 2 0 0 1-2 1.8H7.5a2 2 0 0 1-2-1.8L4 7z"/><path d="M9 12h6M9 16h6"/></svg>
+        </span>
+        <span>
+          <p class="row-title">Leave a Trip Plan</p>
+          <p class="row-sub">Give someone the information SAR would need</p>
+        </span>
+        <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
+      </button>
+      <button class="list-row" data-nav="prepare">
+        <span class="icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="8" width="14" height="13" rx="2"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/><path d="M9 12h6"/></svg>
+        </span>
+        <span>
+          <p class="row-title">Before You Go</p>
+          <p class="row-sub">Essentials, phone readiness, and trip prep</p>
+        </span>
+        <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
+      </button>
+      <button class="list-row" data-nav="guide">
+        <span class="icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15.5A2.5 2.5 0 0 0 17.5 21H4z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H20"/></svg>
+        </span>
+        <span>
+          <p class="row-title">Safety Guide</p>
+          <p class="row-sub">What to do if you're lost, hurt, stranded, or overdue</p>
+        </span>
+        <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
+      </button>
+
+      <div class="footer-note">
+        King County Explorer Search &amp; Rescue<br>
+        This app is not monitored. Emergencies: call 911.
+      </div>
+    </section>
+
+    <!-- ================= EMERGENCY HUB ================= -->
+    <section class="screen" data-screen="emergency">
+      <button class="btn btn-ghost" style="margin-bottom:16px;" id="practiceToggleBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"/><path d="M12 8v4l3 2"/></svg>
+        Practice Emergency Mode
+      </button>
+
+      <a class="btn btn-emergency" style="margin-bottom:10px;" id="call911Btn" href="tel:911">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.7a2 2 0 0 1-.4 2.1L8.1 9.7a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.4c.9.3 1.8.5 2.7.6a2 2 0 0 1 1.9 2.2z"/></svg>
+        CALL 911
+      </a>
+      <a class="btn btn-outline-orange" style="margin-bottom:16px;" id="text911Btn" href="sms:911">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        TEXT 911
+      </a>
+      <p class="hint" style="margin:-8px 0 16px; font-size:11.5px; color:var(--ink-500); text-align:center;">TrailSafe does not contact KCESAR directly. These buttons hand off to your phone's calling and messaging apps.</p>
+
+      <div class="loc-card">
+        <p class="loc-label">YOUR LOCATION</p>
+        <p class="coords pending" id="locCoords">Tap Get Location</p>
+        <div class="loc-meta" id="locMeta"></div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.4);" id="getLocBtn" type="button">Get Location</button>
+          <button class="btn btn-secondary" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.4);" id="copyLocBtn" type="button" disabled>Copy</button>
+          <button class="btn btn-secondary" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.4);" id="shareLocBtn" type="button" disabled>Share</button>
+        </div>
+        <button class="btn btn-secondary" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.4);margin-top:8px;" id="mapsLocBtn" type="button" disabled>Open in Maps</button>
+      </div>
+
+      <p class="kicker">What happened?</p>
+      <div class="choice-grid">
+        <button class="choice-btn" data-nav="g-lost">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <span>Lost / off route</span>
+        </button>
+        <button class="choice-btn" data-nav="g-injured">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.6-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.4-9.5 9-9.5 9z"/><path d="M9 12h2l1-2 2 4 1-2h2"/></svg>
+          <span>Injured or sick</span>
+        </button>
+        <button class="choice-btn" data-nav="g-stranded">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l6-16 4 10 3-6 3 12"/></svg>
+          <span>Can't continue / stranded</span>
+        </button>
+        <button class="choice-btn" data-nav="g-missing-split">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6"/><circle cx="17" cy="8" r="3" stroke-dasharray="2 2"/><path d="M21 20c0-2-1-3.8-2.6-4.8"/></svg>
+          <span>Someone missing / overdue</span>
+        </button>
+        <button class="choice-btn wide" data-nav="g-other">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><circle cx="12" cy="12" r="9"/><path d="M12 16h.01M12 8v4"/></svg>
+          <span>Other emergency</span>
+        </button>
+      </div>
+
+      <p class="kicker">While you wait</p>
+      <button class="list-row" data-nav="g-waiting">
+        <span class="icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+        </span>
+        <span>
+          <p class="row-title">Waiting for rescue</p>
+          <p class="row-sub">What to do after you've called for help</p>
+        </span>
+        <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
+      </button>
+
+      <div class="footer-note">
+        King County SAR resources are requested through 911 and King County dispatch — not through this app.
+      </div>
+    </section>
+
+    <!-- ---- Lost / off-route ---- -->
+    <section class="screen" data-screen="g-lost">
+      <div class="mini-e-bar">
+        <a class="mini-e-btn orange" id="miniCall1" href="tel:911">Call 911</a>
+        <a class="mini-e-btn" id="miniText1" href="sms:911">Text 911</a>
+        <button class="mini-e-btn" data-nav="emergency">My Location</button>
+      </div>
+      <div class="callout critical"><strong>STOP</strong>Stop moving. Stay calm. You will think more clearly standing still than while wandering.</div>
+      <ol class="step-list">
+        <li><b>Stop</b> moving and stay calm.</li>
+        <li><b>Think:</b> when did you last know exactly where you were?</li>
+        <li><b>Observe</b> your surroundings, resources, weather, daylight, and hazards.</li>
+        <li><b>Plan</b> — don't make the situation worse.</li>
+      </ol>
+      <div class="callout critical"><strong>If you are genuinely lost, unsafe, or don't know how to get back safely</strong>Call 911. Do not wait for darkness or worsening weather.</div>
+      <p class="kicker">If you're already in contact with 911 or SAR</p>
+      <p style="font-size:14.5px;line-height:1.5;margin:0 0 16px;">Stay where you are unless a dispatcher or rescuer tells you to move, or you must move a short distance to reach immediate safety.</p>
+      <p class="kicker">Additional actions</p>
+      <ul class="bullet-list">
+        <li>Get out of any immediate hazard.</li>
+        <li><b>Don't assume a creek or drainage leads safely downhill to a road or town.</b> In Cascade terrain, drainages can lead into waterfalls, cliffs, canyons, and dense brush. If you're genuinely lost, stop and call rather than following this common myth.</li>
+        <li>Keep your party together.</li>
+        <li>Put on insulation before you get cold, not after.</li>
+        <li>Prepare shelter if conditions warrant it.</li>
+        <li>Make yourself visible.</li>
+        <li>Preserve your phone battery.</li>
+        <li>Answer calls or texts from unknown numbers while a rescue is active.</li>
+        <li>Follow dispatcher or rescuer instructions over anything in this app.</li>
+      </ul>
+    </section>
+
+    <!-- ---- Injured / sick ---- -->
+    <section class="screen" data-screen="g-injured">
+      <div class="mini-e-bar">
+        <a class="mini-e-btn orange" id="miniCall2" href="tel:911">Call 911</a>
+        <a class="mini-e-btn" id="miniText2" href="sms:911">Text 911</a>
+        <button class="mini-e-btn" data-nav="emergency">My Location</button>
+      </div>
+      <ol class="step-list">
+        <li>Make the scene safe so there aren't more victims.</li>
+        <li>Address immediate life threats using the first-aid skills you actually have.</li>
+        <li>If the person can't safely self-rescue, has a serious injury or illness, or you're unsure — call 911 early.</li>
+        <li>Give an exact location and describe the patient's condition.</li>
+        <li>Protect the person from cold, wet ground, wind, rain, or heat.</li>
+        <li>Stay available to 911 and follow their instructions.</li>
+      </ol>
+      <div class="callout">Inability to walk, inability to safely self-rescue, a serious medical problem, or being unable to make reasonable progress toward the trailhead are all good reasons to call 911.</div>
+      <p class="hint" style="font-size:12.5px;">This app doesn't try to diagnose or treat medical conditions. For anything beyond basic first aid, defer to your training and to 911.</p>
+    </section>
+
+    <!-- ---- Cannot continue / stranded ---- -->
+    <section class="screen" data-screen="g-stranded">
+      <div class="mini-e-bar">
+        <a class="mini-e-btn orange" id="miniCall3" href="tel:911">Call 911</a>
+        <a class="mini-e-btn" id="miniText3" href="sms:911">Text 911</a>
+        <button class="mini-e-btn" data-nav="emergency">My Location</button>
+      </div>
+      <p class="section-lead" style="max-width:none;">Exhaustion, terrain beyond your ability, gear failure, darkness, or impassable snow or water can all leave you unable to safely continue.</p>
+      <ol class="step-list">
+        <li>Stop before exhaustion or darkness turns this into an injury.</li>
+        <li>Move only as much as necessary to reach a safe location.</li>
+        <li>Evaluate daylight, weather, clothing, shelter, food, water, and communications.</li>
+        <li>If you can't safely self-rescue, or you're unsure — call 911.</li>
+        <li>Prepare to stay warm, stay dry, and wait.</li>
+      </ol>
+      <div class="callout"><strong>Call before it becomes catastrophic</strong>It's normal — and expected — to call for help before a manageable problem turns into an emergency.</div>
+    </section>
+
+    <!-- ---- Missing/overdue split ---- -->
+    <section class="screen" data-screen="g-missing-split">
+      <p class="section-lead" style="max-width:none;">Which describes your situation?</p>
+      <button class="list-row" data-nav="g-party-missing">
+        <span class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6"/><circle cx="17" cy="8" r="2.5" stroke-dasharray="2 2"/></svg></span>
+        <span><p class="row-title">They were with me and now are separated or missing</p></span>
+        <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
+      </button>
+      <button class="list-row" data-nav="g-overdue">
+        <span class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+        <span><p class="row-title">They were expected back and didn't return</p></span>
+        <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
+      </button>
+    </section>
+
+    <!-- ---- Party member missing ---- -->
+    <section class="screen" data-screen="g-party-missing">
+      <div class="mini-e-bar">
+        <a class="mini-e-btn orange" id="miniCall4" href="tel:911">Call 911</a>
+        <a class="mini-e-btn" id="miniText4" href="sms:911">Text 911</a>
+        <button class="mini-e-btn" data-nav="emergency">My Location</button>
+      </div>
+      <p class="kicker" style="margin-top:0;">If separation just occurred</p>
+      <ul class="bullet-list">
+        <li>Stop the rest of the group from scattering.</li>
+        <li>Identify the last place and time everyone was together.</li>
+        <li>Try normal contact methods.</li>
+        <li>Don't send multiple uncoordinated people off searching in different directions.</li>
+      </ul>
+      <p class="kicker">Call 911 when</p>
+      <ul class="bullet-list">
+        <li>The missing person can't quickly be located or contacted.</li>
+        <li>They're a child, an at-risk adult, injured, or inadequately equipped.</li>
+        <li>Darkness, weather, or terrain raise the urgency.</li>
+      </ul>
+      <p class="kicker">Have this ready for 911</p>
+      <ul class="bullet-list">
+        <li>Name and age</li>
+        <li>Clothing and pack description</li>
+        <li>Medical considerations</li>
+        <li>Phone or device number</li>
+        <li>Last known point and intended route</li>
+        <li>Experience level and footwear, if useful</li>
+      </ul>
+    </section>
+
+    <!-- ---- Overdue person ---- -->
+    <section class="screen" data-screen="g-overdue">
+      <div class="mini-e-bar">
+        <a class="mini-e-btn orange" id="miniCall5" href="tel:911">Call 911</a>
+        <a class="mini-e-btn" id="miniText5" href="sms:911">Text 911</a>
+        <button class="mini-e-btn" data-nav="emergency">My Location</button>
+      </div>
+      <p class="kicker" style="margin-top:0;">Is the person overdue and you can't reach them?</p>
+      <ol class="step-list">
+        <li>Try the phone or contact method on their trip plan.</li>
+        <li>Review the intended return time and the "if you have not heard from me by" time.</li>
+        <li>Gather their complete trip plan.</li>
+        <li>If they remain overdue and can't be contacted — call 911.</li>
+        <li>Tell 911 they're overdue from an outdoor trip and provide names, party size, planned route, trailhead, timing, vehicle, clothing, communications devices, and any medical or experience information you know.</li>
+      </ol>
+      <div class="callout">An overdue outdoor traveler who can't be contacted is a legitimate reason to call 911 — you don't need to wait longer to be sure.</div>
+    </section>
+
+    <!-- ---- Other emergency ---- -->
+    <section class="screen" data-screen="g-other">
+      <div class="mini-e-bar">
+        <a class="mini-e-btn orange" id="miniCall6" href="tel:911">Call 911</a>
+        <a class="mini-e-btn" id="miniText6" href="sms:911">Text 911</a>
+        <button class="mini-e-btn" data-nav="emergency">My Location</button>
+      </div>
+      <div class="field">
+        <label for="otherDesc">What's happening? (for your own reference or to read to 911)</label>
+        <textarea id="otherDesc" placeholder="Briefly describe the situation..."></textarea>
+      </div>
+      <ol class="step-list">
+        <li>If contacting 911, give your location and the type of help needed first.</li>
+        <li>Stay available to answer follow-up questions.</li>
+        <li>Follow dispatcher or responder instructions over anything in this app.</li>
+        <li>Move only as needed for immediate safety.</li>
+      </ol>
+    </section>
+
+    <!-- ---- Waiting for rescue ---- -->
+    <section class="screen" data-screen="g-waiting">
+      <p class="section-lead" style="max-width:none;">Once you've called for help, this is what actually helps.</p>
+      <ul class="bullet-list">
+        <li>Follow the 911 call taker's or rescuer's instructions over anything in this app.</li>
+        <li>Stay where rescuers expect you unless staying is immediately unsafe.</li>
+        <li>Keep your party together.</li>
+        <li>Prevent further injury.</li>
+        <li>Get warm and dry early — don't wait until you feel cold.</li>
+        <li>Make yourself visible.</li>
+        <li>Keep communication devices accessible.</li>
+      </ul>
+      <p class="kicker">Preserve your battery</p>
+      <ul class="bullet-list">
+        <li>Turn on Low Power Mode — it preserves calls and messages while reducing other power use.</li>
+        <li>Reduce screen brightness and let the screen sleep when you're not using it.</li>
+        <li>Stop optional high-power activities like recording video.</li>
+        <li><b>Don't</b> force-close apps as a generic battery-saving step.</li>
+        <li><b>Don't</b> blindly disable cellular, Wi-Fi, or Bluetooth — those may be needed for a 911 callback, messaging, or a paired satellite device. Only turn off what you know is unnecessary.</li>
+      </ul>
+      <p class="kicker">Help rescuers find you</p>
+      <ul class="bullet-list">
+        <li>Don't repeatedly call 911 for status updates unless instructed or the situation changes.</li>
+        <li>Be ready to describe nearby landmarks, sounds, terrain, trail signs, water, roads, or other features.</li>
+        <li>If you hear or see searchers or aircraft, signal in a controlled, obvious way.</li>
+        <li>Never approach an aircraft unless a crew member directs you to.</li>
+      </ul>
+    </section>
+
+    <!-- ================= PREPARE ================= -->
+    <section class="screen" data-screen="prepare">
+      <button class="list-row" data-nav="tripplan" style="margin-bottom:6px;">
+        <span class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l2 4H7l2-4z"/><path d="M4 7h16l-1.5 13a2 2 0 0 1-2 1.8H7.5a2 2 0 0 1-2-1.8L4 7z"/></svg></span>
+        <span><p class="row-title">Leave a Trip Plan</p><p class="row-sub">Do this before you leave coverage</p></span>
+        <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
+      </button>
+
+      <p class="kicker">Trip type</p>
+      <div class="chip-row" id="addOnChips">
+        <button class="chip active" data-addon="day" type="button">Day hike</button>
+        <button class="chip" data-addon="overnight" type="button">Overnight</button>
+        <button class="chip" data-addon="winter" type="button">Winter</button>
+      </div>
+      <p class="hint" style="margin:0 0 20px;">This isn't an exhaustive gear list — just the Ten Essentials plus a few reminders specific to your trip type.</p>
+
+      <p class="kicker" style="margin-top:0;">Ten Essentials</p>
+      <div class="card" style="padding:2px 16px;" id="essentialsList"></div>
+
+      <div class="card" id="addOnBox">
+        <p class="card-title" id="addOnTitle">Overnight add-ons</p>
+        <ul class="bullet-list" id="addOnList" style="margin-bottom:0;"></ul>
+      </div>
+
+      <p class="kicker">Phone &amp; communications readiness</p>
+      <div class="card" style="padding:2px 16px;" id="phoneList"></div>
+
+      <p class="kicker">Trusted contact instructions</p>
+      <div class="card">
+        <p class="card-title">Give this to someone at home</p>
+        <p style="font-size:13.5px;line-height:1.5;color:var(--ink-700);margin:0;">Your Trip Plan already writes this out — including exactly when to worry and when to call 911. Whoever's holding your plan shouldn't need this app at all.</p>
+      </div>
+
+      <p class="kicker">Know before you go</p>
+      <div class="card" style="padding:2px 16px;" id="resourceListPrepare"></div>
+      <p class="hint">These links open your regular browser. TrailSafe doesn't fetch or store live conditions itself.</p>
+    </section>
+
+    <!-- ================= SAFETY GUIDE INDEX ================= -->
+    <section class="screen" data-screen="guide">
+      <p class="section-lead" style="max-width:none;">Short, offline reference articles — the things KCESAR volunteers wish people knew before they needed rescuing.</p>
+      <div class="field" style="margin-bottom:14px;">
+        <input type="text" id="guideSearchInput" placeholder="Search topics (e.g. \u201cwater\u201d, \u201ccold\u201d, \u201cradio\u201d)">
+      </div>
+      <div class="card" style="padding:2px 16px;" id="guideTopicList"></div>
+      <p class="hint" id="guideNoResults" style="display:none;text-align:center;padding:6px 0 16px;">No topics match that search.</p>
+
+      <p class="kicker">Resources</p>
+      <button class="list-row" data-nav="resources-full">
+        <span class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 8l6 4-6 4V8z"/></svg></span>
+        <span><p class="row-title">Authoritative external resources</p><p class="row-sub">WTA, NWS, NWAC, WDFW, WSDOT, and more</p></span>
+        <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
+      </button>
+    </section>
+
+    <!-- ---- generic article screen ---- -->
+    <section class="screen" data-screen="article">
+      <div id="articleBody"></div>
+    </section>
+
+    <!-- ---- resources full list ---- -->
+    <section class="screen" data-screen="resources-full">
+      <p class="kicker" style="margin-top:0;">Local</p>
+      <div class="card" style="padding:2px 16px;" id="resLocal"></div>
+      <p class="kicker">Conditions</p>
+      <div class="card" style="padding:2px 16px;" id="resConditions"></div>
+      <p class="kicker">Wildlife</p>
+      <div class="card" style="padding:2px 16px;" id="resWildlife"></div>
+      <p class="kicker">Education</p>
+      <div class="card" style="padding:2px 16px;" id="resEducation"></div>
+    </section>
+
+    <!-- ================= ABOUT ================= -->
+    <section class="screen" data-screen="about">
+      <p class="kicker" style="margin-top:0;">Organization</p>
+      <div class="card">
+        <p class="card-title">About KCESAR</p>
+        <p style="font-size:13.5px;line-height:1.55;color:var(--ink-700);margin:0 0 10px;">King County Explorer Search &amp; Rescue (KCESAR) is an operational search-and-rescue unit and a separate 501(c)(3) nonprofit. It describes itself as the largest member unit of King County Search &amp; Rescue and King County's primary ground search-and-rescue team.</p>
+        <a href="https://www.kcesar.org/" target="_blank" rel="noopener" style="font-weight:700;font-size:13.5px;text-decoration:none;">kcesar.org →</a>
+      </div>
+      <div class="card">
+        <p class="card-title">About King County Search &amp; Rescue</p>
+        <p style="font-size:13.5px;line-height:1.55;color:var(--ink-700);margin:0 0 10px;">The King County Search &amp; Rescue Association (KCSARA, often shortened to KCSAR) is the non-operational umbrella association that represents and supports King County's specialized SAR member units, including KCESAR. Member units keep their own identities — an official KCESAR app isn't automatically a KCSARA or King County Sheriff's Office app.</p>
+        <a href="https://kingcountysar.org/" target="_blank" rel="noopener" style="font-weight:700;font-size:13.5px;text-decoration:none;">kingcountysar.org →</a>
+      </div>
+
+      <p class="kicker">Important</p>
+      <div class="callout critical">
+        <strong>This app is not monitored</strong>
+        Nobody at KCESAR, KCSARA, or anywhere else is watching your location or trip plans. TrailSafe doesn't alert anyone automatically. In an emergency, always call or text 911.
+      </div>
+
+      <p class="kicker">Privacy</p>
+      <div class="card">
+        <p style="font-size:13.5px;line-height:1.55;color:var(--ink-700);margin:0 0 10px;">Your trip plans and profile stay on your device. KCESAR does not receive or monitor your location or trip information. Information leaves the app only when you explicitly share it using your phone.</p>
+        <ul class="bullet-list" style="margin:0;">
+          <li>No account, ever</li>
+          <li>No analytics or advertising SDKs</li>
+          <li>No cloud database or background location</li>
+          <li>Delete any or all saved plans at any time</li>
+        </ul>
+      </div>
+
+      <p class="kicker">This prototype</p>
+      <div class="card">
+        <p style="font-size:13.5px;line-height:1.55;color:var(--ink-700);margin:0;">This is a v1.0-scope interactive prototype built to walk through the product spec. Trip plans and checklist progress live only in this browser tab's memory and reset if you reload — the real app would save them privately on your device.</p>
+      </div>
+
+      <p class="kicker">Content &amp; sources</p>
+      <div class="card" style="padding:2px 16px;">
+        <div class="resource-row"><p style="margin:0;font-size:13px;color:var(--ink-700);">Emergency and safety guidance is adapted from King County Search &amp; Rescue Association public-safety material and King County 911 guidance, reviewed for this app. Coordinate format, medical cards, and dispatch-facing language require final Operations and King County 911 sign-off before any real-world release.</p></div>
+      </div>
+
+      <p class="kicker">Connect</p>
+      <div class="card" style="padding:2px 16px;">
+        <div class="resource-row"><a href="https://linktr.ee/kingcounty_esar" target="_blank" rel="noopener">Follow KCESAR ↗</a><p>Social media and public education events</p></div>
+        <div class="resource-row"><a href="https://www.kcesar.org/" target="_blank" rel="noopener">Donate or volunteer ↗</a><p>Support King County's primary ground SAR team</p></div>
+        <div class="resource-row"><a href="https://www.kcesar.org/contact-us" target="_blank" rel="noopener">Send feedback ↗</a><p>Report a problem or suggest a change</p></div>
+      </div>
+
+      <div class="footer-note">KCESAR TrailSafe — working prototype<br>Not an official KCESAR release.</div>
+    </section>
+
+    <!-- ================= TRIP PLAN LIST ================= -->
+    <section class="screen" data-screen="tripplan">
+      <button class="btn btn-primary" style="margin-bottom:18px;" id="newPlanBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        New Trip Plan
+      </button>
+      <div id="planListBox"></div>
+    </section>
+
+    <!-- ================= TRIP PLAN FORM ================= -->
+    <section class="screen" data-screen="tripplan-form">
+      <p class="kicker" style="margin-top:0;">Trip</p>
+      <div class="field"><label for="tp-title">Trip title / destination</label><input type="text" id="tp-title" placeholder="Granite Mountain"></div>
+      <div class="field-row">
+        <div class="field"><label for="tp-date">Date</label><input type="date" id="tp-date"></div>
+        <div class="field"><label for="tp-party-size">Party size</label><input type="text" inputmode="numeric" id="tp-party-size" placeholder="2"></div>
+      </div>
+      <div class="field"><label for="tp-start-loc">Starting location / trailhead</label><input type="text" id="tp-start-loc" placeholder="Granite Mountain Trailhead"></div>
+      <div class="field"><label for="tp-route">Planned route</label><textarea id="tp-route" placeholder="Granite Mountain Trail to summit and return by same route"></textarea></div>
+      <div class="field"><label for="tp-backup">Backup / turnaround plan <span style="font-weight:400;color:var(--ink-500);">(recommended)</span></label><input type="text" id="tp-backup" placeholder="Turn around by 1:00 PM if not at summit"></div>
+
+      <p class="kicker">Timing</p>
+      <div class="field-row">
+        <div class="field"><label for="tp-start-time">Start time</label><input type="time" id="tp-start-time"></div>
+        <div class="field"><label for="tp-return-time">Expected return</label><input type="time" id="tp-return-time"></div>
+      </div>
+      <div class="callout">
+        <strong>Expected return vs. overdue time</strong>
+        These are different on purpose. <b>Expected return</b> is when you think you'll be back. <b>"If you have not heard from me by"</b> is when your contact should treat this as genuinely overdue and start the steps below.
+      </div>
+      <div class="field">
+        <label for="tp-overdue-time">If you have not heard from me by</label>
+        <input type="time" id="tp-overdue-time">
+        <p class="hint">Add enough time for an ordinary delay — slow travel, photos, traffic, a minor route change — without waiting so long that darkness, weather, cold, or a medical problem could get much worse. There's no universal rule; choose this time on purpose.</p>
+        <button class="btn btn-ghost" id="plusTwoBtn" type="button" style="margin-top:8px;width:auto;padding:8px 14px;font-size:13px;">Suggest: expected return + 2 hours</button>
+      </div>
+      <label class="checkbox-row" style="border:1px solid var(--line);border-radius:var(--radius-s);padding:12px;margin-bottom:20px;">
+        <input type="checkbox" id="tp-remind">
+        <span><p class="cb-title">Remind me to check in</p><p class="cb-sub">If this plan is still marked Current after your overdue time passes, TrailSafe will flag it next time you open the app — it can't send you a notification in the background.</p></span>
+      </label>
+
+      <p class="kicker">Vehicle <span style="font-weight:400;color:var(--ink-500);font-family:var(--font-body);font-size:12px;">(recommended)</span></p>
+      <div class="field-row">
+        <div class="field"><label for="tp-veh-color">Color</label><input type="text" id="tp-veh-color" placeholder="Blue"></div>
+        <div class="field"><label for="tp-veh-make">Make</label><input type="text" id="tp-veh-make" placeholder="Rivian"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label for="tp-veh-model">Model</label><input type="text" id="tp-veh-model" placeholder="R1S"></div>
+        <div class="field"><label for="tp-veh-plate">License plate</label><input type="text" id="tp-veh-plate" placeholder="ABC123"></div>
+      </div>
+
+      <p class="kicker">Communications carried <span style="font-weight:400;color:var(--ink-500);font-family:var(--font-body);font-size:12px;">(recommended)</span></p>
+      <div class="chip-row" id="commsChips" style="margin-bottom:20px;">
+        <button class="chip" type="button">Phone</button>
+        <button class="chip" type="button">Satellite messenger</button>
+        <button class="chip" type="button">PLB</button>
+        <button class="chip" type="button">Radio</button>
+        <button class="chip" type="button">Other</button>
+      </div>
+
+      <details class="disclosure">
+        <summary>Additional SAR details <span style="font-weight:400;font-size:12.5px;color:var(--ink-500);margin-left:6px;">(optional)</span></summary>
+        <div class="disclosure-body">
+          <div class="field"><label for="tp-members">Party member names &amp; ages</label><textarea id="tp-members" placeholder="One per line, e.g. Jamie Lee, 34"></textarea></div>
+          <div class="field"><label for="tp-allergies">Allergies &amp; medications</label><input type="text" id="tp-allergies"></div>
+          <div class="field"><label for="tp-medical">Relevant medical conditions</label><input type="text" id="tp-medical"></div>
+          <div class="field"><label for="tp-experience">Experience level</label><input type="text" id="tp-experience" placeholder="e.g. experienced day hikers, first overnight trip"></div>
+          <div class="field"><label for="tp-outerwear">Outerwear colors</label><input type="text" id="tp-outerwear" placeholder="Blue jacket / black pants"></div>
+          <div class="field"><label for="tp-tent-color">Tent / shelter color</label><input type="text" id="tp-tent-color"></div>
+          <div class="field"><label for="tp-boots">Boot / shoe description</label><input type="text" id="tp-boots"></div>
+          <div class="field"><label for="tp-extra-vehicles">Additional vehicles</label><input type="text" id="tp-extra-vehicles"></div>
+          <div class="field" style="margin-bottom:0;"><label for="tp-notes">Other notes</label><textarea id="tp-notes"></textarea></div>
+        </div>
+      </details>
+
+      <button class="btn btn-primary" id="generatePlanBtn" type="button" style="margin-top:6px;">Generate Plan</button>
+
+      <div id="planPreviewBox" style="display:none;margin-top:20px;">
+        <p class="kicker" style="margin-top:0;">Preview</p>
+        <div id="sunsetNudge" style="display:none;"></div>
+        <pre class="plan-output" id="planOutputText"></pre>
+        <button class="btn btn-emergency" id="shareNowBtn" type="button" style="margin-bottom:8px;background:var(--forest-800);box-shadow:none;">Share Trip Plan Now</button>
+        <p class="hint" style="text-align:center;margin:0 0 14px;">Share this before you leave reliable coverage. A plan that only lives on your phone can't help the person waiting for you at home.</p>
+        <div class="btn-row" style="margin-bottom:10px;">
+          <button class="btn btn-secondary" id="copyPlanBtn" type="button">Copy Text</button>
+          <button class="btn btn-secondary" id="savePlanBtn" type="button">Save Plan</button>
+        </div>
+        <button class="btn btn-ghost" id="printPlanBtn" type="button">Print / Save as PDF</button>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="tabbar">
+    <button class="tab active" data-tab="home" data-nav="home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg>
+      Home
+    </button>
+    <button class="tab" data-tab="prepare" data-nav="prepare">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="8" width="14" height="13" rx="2"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+      Prepare
+    </button>
+    <button class="tab emergency-tab" data-tab="emergency" data-nav="emergency">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
+      Emergency
+    </button>
+    <button class="tab" data-tab="guide" data-nav="guide">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15.5A2.5 2.5 0 0 0 17.5 21H4z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H20"/></svg>
+      Guide
+    </button>
+    <button class="tab" data-tab="about" data-nav="about">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.51v.01"/></svg>
+      About
+    </button>
+  </nav>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box" id="modalBox"></div>
+  </div>
+</div>
+
+<script>
+// ====================== STATE ======================
+const state = {
+  practiceMode:false,
+  screenStack:['home'],
+  location:{status:'idle', lat:null, lon:null, accuracy:null, ts:null, watchId:null},
+  essentials:new Set(),
+  addOn:'day', // day | overnight | winter
+  phoneChecklist:new Set(),
+  profile:{name:'',phone:'',vehicleMake:'',vehicleModel:'',vehicleColor:'',plate:'',comms:new Set()},
+  plans:[], // {id,status,...fields}
+  planDraft:null,
+  editingPlanId:null
+};
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  clearTimeout(t._h);
+  t._h=setTimeout(()=>t.classList.remove('show'),1800);
+}
+
+function copyText(text){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>toast('Copied')).catch(()=>fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+function fallbackCopy(text){
+  const ta=document.createElement('textarea');
+  ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try{ document.execCommand('copy'); toast('Copied'); }catch(e){ toast('Could not copy'); }
+  document.body.removeChild(ta);
+}
+function shareText(text, title){
+  if(navigator.share){
+    navigator.share({title:title||'KCESAR TrailSafe', text}).catch(()=>{});
+  } else {
+    copyText(text);
+    toast('Copied — sharing not available in this browser');
+  }
+}
+
+// ====================== NAV / ROUTER ======================
+const screenMeta = {
+  home:{title:'TrailSafe', sub:'King County Explorer Search & Rescue', tab:'home'},
+};
+
+function showScreen(name, opts){
+  opts = opts||{};
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const el = document.querySelector('.screen[data-screen="'+name+'"]');
+  if(el) el.classList.add('active');
+
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  const meta = screenMeta[name] || {};
+  const tabName = meta.tab;
+  if(tabName){
+    const tabEl = document.querySelector('.tab[data-tab="'+tabName+'"]');
+    if(tabEl) tabEl.classList.add('active');
+  }
+
+  document.getElementById('screenTitle').textContent = meta.title || '';
+  document.getElementById('screenSub').textContent = meta.sub || '';
+  document.getElementById('backBtn').classList.toggle('show', !!meta.parent);
+
+  if(!opts.fromBack){
+    if(opts.replace){ state.screenStack[state.screenStack.length-1] = name; }
+    else { state.screenStack.push(name); }
+  }
+  document.getElementById('appMain').scrollTop = 0;
+  if(typeof onScreenShow === 'function') onScreenShow(name);
+}
+
+document.addEventListener('click', function(e){
+  const navEl = e.target.closest('[data-nav]');
+  if(navEl){
+    showScreen(navEl.getAttribute('data-nav'));
+  }
+});
+
+function goBack(){
+  if(state.screenStack.length>1){
+    state.screenStack.pop();
+    const prev = state.screenStack[state.screenStack.length-1];
+    showScreen(prev, {fromBack:true});
+  } else {
+    showScreen('home');
+  }
+}
+document.getElementById('backBtn').addEventListener('click', goBack);
+
+function onScreenShow(name){ /* extended below */ }
+
+// ====================== EMERGENCY SCREEN META ======================
+Object.assign(screenMeta, {
+  emergency:{title:'Need Help?', sub:'Call, text, and share your location', tab:'emergency'},
+  'g-lost':{title:'Lost / Off Route', sub:'Stop. Think. Observe. Plan.', tab:'emergency', parent:'emergency'},
+  'g-injured':{title:'Injured or Sick', sub:'', tab:'emergency', parent:'emergency'},
+  'g-stranded':{title:"Can't Continue", sub:'', tab:'emergency', parent:'emergency'},
+  'g-missing-split':{title:'Missing or Overdue', sub:'', tab:'emergency', parent:'emergency'},
+  'g-party-missing':{title:'Party Member Missing', sub:'', tab:'emergency', parent:'g-missing-split'},
+  'g-overdue':{title:'Overdue Person', sub:'', tab:'emergency', parent:'g-missing-split'},
+  'g-other':{title:'Other Emergency', sub:'', tab:'emergency', parent:'emergency'},
+  'g-waiting':{title:'Waiting for Rescue', sub:'', tab:'emergency', parent:'emergency'},
+});
+
+// ====================== MODAL ======================
+function showModal(html){
+  document.getElementById('modalBox').innerHTML = html;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+function hideModal(){ document.getElementById('modalOverlay').classList.remove('show'); }
+document.getElementById('modalOverlay').addEventListener('click', function(e){
+  if(e.target.id==='modalOverlay' || e.target.closest('#modalOkBtn')) hideModal();
+});
+
+// ====================== PRACTICE MODE ======================
+document.getElementById('practiceToggleBtn').addEventListener('click', function(){
+  state.practiceMode = true;
+  document.getElementById('practiceBanner').classList.add('active');
+  toast('Practice mode on — 911 actions are simulated');
+});
+document.getElementById('exitPracticeBtn').addEventListener('click', function(){
+  state.practiceMode = false;
+  document.getElementById('practiceBanner').classList.remove('active');
+  toast('Practice mode off');
+});
+function wireEmergencyLinks(){
+  document.querySelectorAll('a[href^="tel:"], a[href^="sms:"]').forEach(function(a){
+    a.addEventListener('click', function(e){
+      if(state.practiceMode){
+        e.preventDefault();
+        const isCall = a.getAttribute('href').indexOf('tel:')===0;
+        showModal('<h3>Practice Mode</h3><p>In a real emergency this would '+(isCall?'call 911.':'open a text message to 911.')+' Nothing was contacted.</p><button class="btn btn-primary" id="modalOkBtn" type="button">Got it</button>');
+      }
+    });
+  });
+}
+wireEmergencyLinks();
+
+// ====================== LOCATION ======================
+function formatCoords(lat,lon){
+  const latDir = lat>=0 ? 'N' : 'S', lonDir = lon>=0 ? 'E' : 'W';
+  return Math.abs(lat).toFixed(5)+'° '+latDir+',  '+Math.abs(lon).toFixed(5)+'° '+lonDir;
+}
+function rawCoords(lat,lon){ return lat.toFixed(5)+', '+lon.toFixed(5); }
+
+const situationLabels = {
+  emergency:'Not yet specified', 'g-lost':'Lost / off route', 'g-injured':'Injured or sick',
+  'g-stranded':"Can't continue / stranded", 'g-party-missing':'Party member missing',
+  'g-overdue':'Overdue person', 'g-other':'Other emergency', 'g-waiting':'Waiting for rescue'
+};
+function buildDraft(label){
+  let loc;
+  if(state.location.status==='located'){
+    loc = 'Location: '+rawCoords(state.location.lat,state.location.lon)+' (±'+Math.round(state.location.accuracy)+'m)';
+  } else {
+    loc = 'Location: unknown — open TrailSafe > Emergency > Get Location';
+  }
+  return 'WILDERNESS EMERGENCY - KING COUNTY WA\nNeed: Search/rescue assistance\n'+loc+'\nSituation: '+label;
+}
+function refreshTextLinks(){
+  const map = {
+    text911Btn:'emergency', miniText1:'g-lost', miniText2:'g-injured', miniText3:'g-stranded',
+    miniText4:'g-party-missing', miniText5:'g-overdue', miniText6:'g-other'
+  };
+  Object.keys(map).forEach(function(id){
+    const el = document.getElementById(id);
+    if(el) el.setAttribute('href', 'sms:911?&body='+encodeURIComponent(buildDraft(situationLabels[map[id]])));
+  });
+}
+refreshTextLinks();
+
+let ageTimer=null;
+function tickAge(){
+  const el = document.getElementById('locAge');
+  if(!el || !state.location.ts) return;
+  const secs = Math.round((Date.now()-state.location.ts)/1000);
+  const txt = secs<60 ? secs+'s ago' : Math.round(secs/60)+'m ago';
+  el.innerHTML = 'Updated: <b>'+txt+'</b>';
+  const card = document.querySelector('.loc-card');
+  let staleEl = document.getElementById('staleWarn');
+  if(secs>120 && card && !staleEl){
+    staleEl = document.createElement('div');
+    staleEl.className='stale-warning'; staleEl.id='staleWarn';
+    staleEl.textContent='This location is getting old. Tap Get Location again if you can.';
+    card.insertBefore(staleEl, card.querySelector('.btn-row'));
+  }
+}
+
+const getLocBtn = document.getElementById('getLocBtn');
+if(getLocBtn) getLocBtn.addEventListener('click', function(){
+  const coordsEl = document.getElementById('locCoords');
+  const staleEl = document.getElementById('staleWarn');
+  if(staleEl) staleEl.remove();
+  if(!navigator.geolocation){
+    coordsEl.textContent='Not supported on this device';
+    return;
+  }
+  coordsEl.textContent='Locating…';
+  coordsEl.classList.add('pending');
+  document.getElementById('locMeta').innerHTML='';
+  navigator.geolocation.getCurrentPosition(function(pos){
+    state.location.status='located';
+    state.location.lat=pos.coords.latitude;
+    state.location.lon=pos.coords.longitude;
+    state.location.accuracy=pos.coords.accuracy;
+    state.location.ts=Date.now();
+    coordsEl.textContent = formatCoords(state.location.lat, state.location.lon);
+    coordsEl.classList.remove('pending');
+    document.getElementById('locMeta').innerHTML =
+      '<span>Accuracy: <b>±'+Math.round(state.location.accuracy)+' m</b></span><span id="locAge">Updated: <b>just now</b></span>';
+    document.getElementById('copyLocBtn').disabled=false;
+    document.getElementById('shareLocBtn').disabled=false;
+    document.getElementById('mapsLocBtn').disabled=false;
+    clearInterval(ageTimer);
+    ageTimer=setInterval(tickAge,5000);
+    refreshTextLinks();
+  }, function(err){
+    coordsEl.classList.add('pending');
+    if(err.code===1){ coordsEl.textContent='Location permission denied'; state.location.status='denied'; }
+    else if(err.code===3){ coordsEl.textContent="Couldn't get a fix — try open sky"; state.location.status='error'; }
+    else { coordsEl.textContent='Location unavailable'; state.location.status='error'; }
+    refreshTextLinks();
+  }, {enableHighAccuracy:true, timeout:12000, maximumAge:0});
+});
+const copyLocBtn = document.getElementById('copyLocBtn');
+if(copyLocBtn) copyLocBtn.addEventListener('click', function(){
+  if(state.location.status!=='located') return;
+  copyText(rawCoords(state.location.lat,state.location.lon)+'  (±'+Math.round(state.location.accuracy)+'m, WGS84)');
+});
+const shareLocBtn = document.getElementById('shareLocBtn');
+if(shareLocBtn) shareLocBtn.addEventListener('click', function(){
+  if(state.location.status!=='located') return;
+  shareText('My location: '+rawCoords(state.location.lat,state.location.lon)+' (±'+Math.round(state.location.accuracy)+'m). Sent from KCESAR TrailSafe.', 'My location');
+});
+const mapsLocBtn = document.getElementById('mapsLocBtn');
+if(mapsLocBtn) mapsLocBtn.addEventListener('click', function(){
+  if(state.location.status!=='located') return;
+  window.open('geo:'+state.location.lat+','+state.location.lon+'?q='+state.location.lat+','+state.location.lon, '_blank');
+});
+
+// ====================== PREPARE / GUIDE SCREEN META ======================
+Object.assign(screenMeta, {
+  prepare:{title:'Before You Go', sub:'Essentials, phone readiness, and trip prep', tab:'prepare'},
+  guide:{title:'Safety Guide', sub:'Short, offline reference articles', tab:'guide'},
+  'resources-full':{title:'Resources', sub:'Authoritative external sources', tab:'guide', parent:'guide'},
+  about:{title:'About', sub:'KCESAR, KCSARA, and this app', tab:'about'}
+});
+
+// ====================== DATA ======================
+const ESSENTIALS = [
+  ['Hydration','Dehydration causes fatigue and poor decisions before you even feel thirsty.'],
+  ['Navigation','A map, compass, or downloaded offline maps still work when your phone has no signal or battery.'],
+  ['Insulation','Cascade weather can shift fast — an extra layer keeps a cold snap from becoming hypothermia.'],
+  ['Illumination','A dedicated headlamp means fading daylight doesn\u2019t force you to burn your phone battery.'],
+  ['Combustion','A reliable way to start a fire or heat water matters if you end up out longer than planned.'],
+  ['Communication','A charged phone and a backup way to reach help matter more than almost anything else you carry.'],
+  ['Repair kit','Basic tools and tape fix the small gear failures that turn into big delays.'],
+  ['Sun protection','Sunburn and glare add up fast at elevation and on snow.'],
+  ['Shelter','An emergency bivy or space blanket can get you through a night you didn\u2019t plan for.'],
+  ['First aid','Basic supplies let you manage a minor injury before it becomes a reason to call for help.']
+];
+const PHONE_CHECKLIST = [
+  'Phone fully charged before I leave',
+  'Portable battery pack carried',
+  'Dedicated headlamp or flashlight carried — not just my phone',
+  'Offline maps downloaded in my normal navigation app',
+  'A trusted person knows my plan',
+  'I know how my satellite messenger or PLB works, if I\u2019m carrying one',
+  'My phone\u2019s emergency features (Medical ID, Emergency SOS) are set up',
+  'I understand that little or no cellular service is normal in the backcountry'
+];
+const ADD_ONS = {
+  day:{title:'Day hike add-ons', items:['Headlamp — yes, even for a short hike','Emergency shelter (bivy or space blanket)']},
+  overnight:{title:'Overnight add-ons', items:['Sleep system for expected conditions','Extra food','Water treatment','Any overnight medications']},
+  winter:{title:'Winter add-ons', items:['Traction — microspikes or crampons','Insulating layers','Waterproof outer layers','Emergency shelter','Winter-capable communication','Avalanche gear — only in avalanche terrain, and only with training']}
+};
+const RESOURCES = [
+  {name:'King County Explorer Search & Rescue', url:'https://www.kcesar.org/', note:'Public education, events, and how to get involved', cat:'local'},
+  {name:'King County Search & Rescue Association', url:'https://kingcountysar.org/', note:'Umbrella association for King County\u2019s specialized SAR units', cat:'local'},
+  {name:'KCSAR — Wilderness Safety', url:'https://kingcountysar.org/wilderness-safety/', note:'The core guidance this app draws from', cat:'local'},
+  {name:'KCSAR — When & How to Call for Help', url:'https://kingcountysar.org/when-how-to-call-for-help/', note:'', cat:'local'},
+  {name:'King County 911', url:'https://kingcounty.gov/en/dept/kcit/data-information-services/911-program-office/911-the-basics', note:'Calling and texting 911, explained', cat:'local'},
+  {name:'Washington Trails Association', url:'https://www.wta.org/', note:'Trip reports and current trail conditions', cat:'conditions'},
+  {name:'National Weather Service — Seattle', url:'https://www.weather.gov/sew', note:'Point forecasts and weather alerts', cat:'conditions'},
+  {name:'Northwest Avalanche Center', url:'https://nwac.us/', note:'Avalanche forecasts and winter education', cat:'conditions'},
+  {name:'WSDOT Mountain Passes', url:'https://wsdot.com/travel/real-time/mountainpasses/', note:'Pass conditions and closures', cat:'conditions'},
+  {name:'Washington Dept. of Fish & Wildlife', url:'https://wdfw.wa.gov/', note:'Current bear, cougar, and wildlife guidance', cat:'wildlife'},
+  {name:'AdventureSmart — The Three Ts', url:'https://www.adventuresmart.ca/the-three-ts/', note:'Trip planning, training, taking the essentials', cat:'education'},
+  {name:'National Park Service — Hike Smart', url:'https://www.nps.gov/articles/hiking-safety.htm', note:'General trip-planning and hiking safety', cat:'education'}
+];
+const GUIDE_TOPICS = [
+  {title:'Getting lost', sub:'Stop, think, observe, plan', kind:'screen', target:'g-lost', keywords:'lost off route navigation'},
+  {title:'Calling for help', sub:'When it\u2019s time to call 911', kind:'article', target:'calling-help', keywords:'911 call dispatch emergency'},
+  {title:'Ten Essentials', sub:'What to carry, and why', kind:'article', target:'ten-essentials', keywords:'gear pack hydration insulation illumination fire repair sun shelter first aid'},
+  {title:'Phone smart', sub:'Getting the most from what you already carry', kind:'article', target:'phone-smart', keywords:'phone battery service maps'},
+  {title:'Can\u2019t continue / stranded', sub:'When you can\u2019t safely go on', kind:'screen', target:'g-stranded', keywords:'stranded exhausted terrain'},
+  {title:'Party separation & overdue', sub:'A missing companion, or someone who didn\u2019t come home', kind:'screen', target:'g-missing-split', keywords:'missing overdue separated party'},
+  {title:'Waiting for rescue', sub:'What actually helps once you\u2019ve called', kind:'screen', target:'g-waiting', keywords:'waiting rescue battery helicopter'},
+  {title:'Helping rescuers find you', sub:'Signals that actually work', kind:'article', target:'signaling', keywords:'signal signaling whistle mirror ground-to-air helicopter aircraft'},
+  {title:'Unexpected overnight', sub:'Turning a day trip into a safe night out', kind:'article', target:'unexpected-overnight', keywords:'overnight bivouac shelter dark stuck night'},
+  {title:'Cold & hypothermia', sub:'Recognizing and responding to cold injury', kind:'article', target:'cold-hypothermia', keywords:'cold hypothermia shivering wet windchill'},
+  {title:'Heat', sub:'Heat exhaustion and heat stroke on trail', kind:'article', target:'heat', keywords:'heat exhaustion stroke sun hot dehydration'},
+  {title:'Winter travel', sub:'Snow travel, avalanche awareness, and short days', kind:'article', target:'winter-safety', keywords:'winter snow avalanche traction daylight'},
+  {title:'Satellite messengers & PLBs', sub:'Devices that work with no cell service', kind:'article', target:'satellite-plb', keywords:'satellite plb beacon device'},
+  {title:'Backcountry radio', sub:'What FRS, GMRS, and ham radio can and can\u2019t do', kind:'article', target:'backcountry-radio', keywords:'radio frs gmrs ham repeater channel'},
+  {title:'Hiking with kids', sub:'Preventing separation and preparing kids to wait', kind:'article', target:'children-family', keywords:'children kids family child'},
+  {title:'Wildlife encounters', sub:'Bears, cougars, and staying safe around wildlife', kind:'article', target:'wildlife', keywords:'wildlife bear cougar snake encounter'},
+  {title:'What happens after you call SAR', kind:'soon'},
+  {title:'Lessons from real rescues', sub:'Patterns KCESAR volunteers see again and again', kind:'article', target:'lessons-learned', keywords:'lessons stories mistakes examples'}
+];
+let guideFilter = '';
+const ARTICLES = {
+  'calling-help':{
+    title:'Calling for Help', sub:'When it\u2019s time',
+    body:'<p class="section-lead" style="max-width:none;">Across every kind of trouble, these are the moments KCSAR and King County 911 say it\u2019s time to call.</p>'+
+      '<ul class="bullet-list">'+
+      '<li>You\u2019re genuinely lost, unsafe, or don\u2019t know how to get back safely.</li>'+
+      '<li>Someone can\u2019t walk, can\u2019t safely self-rescue, or has a serious medical problem.</li>'+
+      '<li>Your party can\u2019t make reasonable progress toward the trailhead.</li>'+
+      '<li>A party member is missing and can\u2019t quickly be located or contacted — especially a child, an at-risk adult, or someone injured or under-equipped.</li>'+
+      '<li>Someone you expected home is overdue and you can\u2019t reach them.</li>'+
+      '</ul>'+
+      '<div class="callout critical"><strong>Don\u2019t wait</strong>Don\u2019t wait for darkness or worsening weather to make the call. Calling early is the single biggest thing that changes outcomes.</div>'+
+      '<p class="kicker" style="margin-top:0;">Call vs. text</p>'+
+      '<p style="font-size:14.5px;line-height:1.5;">Call if you can, text if you can\u2019t. A text should give your location and the type of help you need first, stay short, and skip photos or emoji. Stay available to answer follow-up questions either way.</p>'
+  },
+  'ten-essentials':{
+    title:'Ten Essentials', sub:'What to carry, and why',
+    body:'<p class="section-lead" style="max-width:none;">The ten systems KCSAR recommends carrying on every trip — yes, even short ones.</p>'+
+      '<ul class="bullet-list">'+ESSENTIALS.map(function(e){return '<li><b>'+e[0]+'.</b> '+e[1]+'</li>';}).join('')+'</ul>'+
+      '<p class="hint">Check these off for your specific trip under Prepare → Ten Essentials.</p>'
+  },
+  'phone-smart':{
+    title:'Phone Smart', sub:'Getting the most from what you carry',
+    body:'<p class="section-lead" style="max-width:none;">A phone is valuable — but it\u2019s not enough preparation by itself.</p>'+
+      '<ul class="bullet-list">'+PHONE_CHECKLIST.map(function(i){return '<li>'+i+'</li>';}).join('')+'</ul>'+
+      '<p class="hint">Check these off for your specific trip under Prepare → Phone &amp; communications readiness.</p>'
+  },
+  'signaling':{
+    title:'Helping Rescuers Find You', sub:'Signals that actually work',
+    body:'<p class="section-lead" style="max-width:none;">Being found faster often comes down to a few simple, deliberate signals.</p>'+
+      '<p class="kicker" style="margin-top:0;">Sound and light</p>'+
+      '<ul class="bullet-list">'+
+      '<li>Three of anything is a recognized distress signal — three whistle blasts, three fires, three flashes.</li>'+
+      '<li>A whistle carries much farther than your voice and costs no energy.</li>'+
+      '<li>A signal mirror — or any reflective surface — can be seen for miles in good light.</li>'+
+      '</ul>'+
+      '<p class="kicker">Ground-to-air signals</p>'+
+      '<svg viewBox="0 0 300 140" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;margin:4px 0 14px;" role="img" aria-label="Ground to air signal shapes. A V shape means need assistance. An X shape means unable to continue.">'+
+      '<rect x="4" y="4" width="140" height="122" rx="12" fill="#EAEDE7"/>'+
+      '<rect x="156" y="4" width="140" height="122" rx="12" fill="#EAEDE7"/>'+
+      '<path d="M40 25 L74 85 L108 25" fill="none" stroke="#1B3A2E" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>'+
+      '<path d="M192 25 L260 85 M260 25 L192 85" fill="none" stroke="#1B3A2E" stroke-width="9" stroke-linecap="round"/>'+
+      '<text x="74" y="112" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="12" font-weight="700" fill="#1B3A2E">V \u2014 need help</text>'+
+      '<text x="226" y="112" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="12" font-weight="700" fill="#1B3A2E">X \u2014 can\u2019t continue</text>'+
+      '</svg>'+
+      '<ul class="bullet-list">'+
+      '<li>Stomp shapes into snow, lay them out in bright clothing or gear, or build them from rocks or branches.</li>'+
+      '<li>Make them as large and high-contrast against the ground as you can — bigger is more visible from the air than neat.</li>'+
+      '</ul>'+
+      '<p class="kicker">If you see or hear a search aircraft</p>'+
+      '<ul class="bullet-list">'+
+      '<li>Move to open ground if you can do so safely.</li>'+
+      '<li>Signal in a controlled way — wave both arms overhead, use a mirror, show bright colors.</li>'+
+      '<li>Never approach an aircraft. Wait for a crew member to approach you or direct you.</li>'+
+      '</ul>'+
+      '<div class="callout">A working phone sharing your exact coordinates is usually faster and more precise than any visual signal — use Emergency → Get Location first if you can.</div>'
+  },
+  'unexpected-overnight':{
+    title:'Unexpected Overnight', sub:'Turning a day trip into a safe night out',
+    body:'<p class="section-lead" style="max-width:none;">Being stuck out overnight isn\u2019t a failure — it\u2019s a normal outcome of a trip that ran long, and it\u2019s manageable if you stop and prepare deliberately.</p>'+
+      '<ol class="step-list">'+
+      '<li><b>Decide early.</b> The moment it\u2019s clear you won\u2019t make it out before dark, stop pushing and start preparing while you still have light.</li>'+
+      '<li>Pick a site with some wind and water protection, away from cliff edges, loose rock, or dead standing trees.</li>'+
+      '<li>Get warm and dry before you\u2019re cold, not after — put on every layer you have.</li>'+
+      '<li>Build or use whatever shelter you\u2019re carrying: an emergency bivy, a space blanket, or a natural windbreak.</li>'+
+      '<li>Eat and drink what you have — your body needs fuel to stay warm.</li>'+
+      '<li>Stay together and stay put once you\u2019re settled, unless staying is unsafe.</li>'+
+      '</ol>'+
+      '<div class="callout">If you have any signal at all, a short \u201cwe\u2019re safe, staying the night, moving at first light\u201d message can prevent a search that didn\u2019t need to happen.</div>'+
+      '<p class="kicker" style="margin-top:0;">In the morning</p>'+
+      '<p style="font-size:14.5px;line-height:1.5;">Reassess before moving. Daylight often makes a route obvious that felt hopeless in the dark.</p>'
+  },
+  'cold-hypothermia':{
+    title:'Cold & Hypothermia', sub:'Recognizing and responding to cold injury',
+    body:'<p class="section-lead" style="max-width:none;">Hypothermia can develop in mild, wet weather — you don\u2019t need freezing temperatures for it to be dangerous.</p>'+
+      '<p class="kicker" style="margin-top:0;">Recognize it early</p>'+
+      '<ul class="bullet-list">'+
+      '<li>Shivering that won\u2019t stop</li>'+
+      '<li>Fumbling hands, stumbling</li>'+
+      '<li>Slurred speech or confusion</li>'+
+      '<li>Unusual tiredness or wanting to lie down</li>'+
+      '</ul>'+
+      '<div class="callout critical"><strong>A warning sign, not a good one</strong>Someone who stops shivering while still cold and wet may be getting worse, not better.</div>'+
+      '<p class="kicker">Respond</p>'+
+      '<ol class="step-list">'+
+      '<li>Get the person out of wind and wet.</li>'+
+      '<li>Replace wet clothing with dry insulating layers if you have them.</li>'+
+      '<li>Insulate them from the cold ground, not just from the air.</li>'+
+      '<li>If they\u2019re alert and can swallow, give warm, sugary fluids — never if confused or unconscious.</li>'+
+      '<li>Keep them awake and gently moving if they safely can be.</li>'+
+      '<li>Call 911 for anything beyond mild shivering.</li>'+
+      '</ol>'+
+      '<p class="hint">This app can\u2019t diagnose hypothermia. When in doubt, treat it as serious and call.</p>'
+  },
+  'heat':{
+    title:'Heat', sub:'Heat exhaustion and heat stroke on trail',
+    body:'<p class="section-lead" style="max-width:none;">Heat problems build gradually, then turn serious fast — especially on exposed, sun-baked trail with little water.</p>'+
+      '<p class="kicker" style="margin-top:0;">Heat exhaustion</p>'+
+      '<ul class="bullet-list"><li>Heavy sweating, cool clammy skin, dizziness, nausea, headache, weakness.</li></ul>'+
+      '<div class="callout critical"><strong>Heat stroke — call 911</strong>Hot, dry or flushed skin, confusion, a very high body temperature, or collapse is a medical emergency.</div>'+
+      '<p class="kicker">Respond to heat exhaustion</p>'+
+      '<ol class="step-list">'+
+      '<li>Get to shade immediately.</li>'+
+      '<li>Remove excess clothing and cool the skin — wet cloths, fanning, water on the neck and wrists.</li>'+
+      '<li>Sip water or an electrolyte drink slowly.</li>'+
+      '<li>Rest until symptoms clear before continuing.</li>'+
+      '</ol>'+
+      '<p style="font-size:14.5px;line-height:1.5;">If confusion, very hot skin, or collapse develop, call 911 immediately and keep cooling the person while you wait.</p>'
+  },
+  'winter-safety':{
+    title:'Winter Travel', sub:'Snow travel, avalanche awareness, and short days',
+    body:'<p class="section-lead" style="max-width:none;">Winter adds three compounding risks: cold, short daylight, and terrain that can behave very differently under snow.</p>'+
+      '<p class="kicker" style="margin-top:0;">Before you go</p>'+
+      '<ul class="bullet-list">'+
+      '<li>Check the avalanche forecast for your specific zone at nwac.us if you\u2019ll be in or under steep, snow-loaded terrain.</li>'+
+      '<li>Know your route\u2019s daylight window — winter days can end by mid-afternoon.</li>'+
+      '<li>Carry traction and know how to use it before you need it.</li>'+
+      '</ul>'+
+      '<div class="callout critical"><strong>Avalanche terrain needs specific training</strong>Companion rescue and terrain assessment aren\u2019t taught in this app. Without that training, stay out of steep, open avalanche terrain and the runout below it.</div>'+
+      '<p class="kicker">On the trail</p>'+
+      '<ul class="bullet-list">'+
+      '<li>Trail markers, cairns, and the trail itself can disappear under snow — navigation skills matter more, not less.</li>'+
+      '<li>Cold drains phone batteries fast; keep it warm against your body.</li>'+
+      '<li>Wet snow soaks insulation quickly; waterproof outer layers matter.</li>'+
+      '</ul>'+
+      '<p class="hint">See also: Cold &amp; Hypothermia, and Satellite Messengers &amp; PLBs for winter communications.</p>'
+  },
+  'satellite-plb':{
+    title:'Satellite Messengers & PLBs', sub:'Devices that work with no cell service',
+    body:'<p class="section-lead" style="max-width:none;">These devices send for help from places your phone can\u2019t — but they work differently, and it\u2019s worth knowing which is which before you\u2019re relying on one.</p>'+
+      '<p class="kicker" style="margin-top:0;">Satellite messengers</p>'+
+      '<ul class="bullet-list">'+
+      '<li>Send two-way text messages and an SOS via satellite.</li>'+
+      '<li>Usually require a paid subscription plan.</li>'+
+      '<li>Battery and satellite view matter — test yours before you rely on it.</li>'+
+      '</ul>'+
+      '<p class="kicker">Personal Locator Beacons (PLBs)</p>'+
+      '<ul class="bullet-list">'+
+      '<li>Send a one-way distress signal with your GPS location to a national search-and-rescue system.</li>'+
+      '<li>No subscription required — but no two-way messaging either.</li>'+
+      '<li>Must be registered (in the US, with NOAA) to your name and emergency contacts.</li>'+
+      '</ul>'+
+      '<div class="callout critical">Either device needs a clear sky view to work — dense tree cover, canyons, and being inside a tent can all weaken the signal. Learn your device\u2019s SOS trigger before you need it.</div>'+
+      '<p class="hint">Carrying a satellite device doesn\u2019t replace a trip plan or the Ten Essentials — it\u2019s one more layer, not a substitute for the others.</p>'
+  },
+  'backcountry-radio':{
+    title:'Backcountry Radio', sub:'What FRS, GMRS, and ham radio can and can\u2019t do',
+    body:'<p class="section-lead" style="max-width:none;">A handheld radio can help keep your own party in contact — but it isn\u2019t a reliable way to call for rescue.</p>'+
+      '<p class="kicker" style="margin-top:0;">What FRS / GMRS radios do well</p>'+
+      '<ul class="bullet-list">'+
+      '<li>Keep a spread-out party in contact over short, line-of-sight distances.</li>'+
+      '<li>Work with no cell service and, for FRS, no license or subscription.</li>'+
+      '<li>GMRS offers more power and repeater access, and requires an FCC license.</li>'+
+      '</ul>'+
+      '<p class="kicker">What they don\u2019t do</p>'+
+      '<ul class="bullet-list">'+
+      '<li>Generally won\u2019t reach 911 or a specific rescue team directly.</li>'+
+      '<li>Range drops sharply in canyons, dense forest, and around ridgelines.</li>'+
+      '<li>Battery life is limited, like any other electronic device.</li>'+
+      '</ul>'+
+      '<p class="kicker">Ham radio</p>'+
+      '<p style="font-size:14.5px;line-height:1.5;">For licensed operators, ham radio and some SAR-monitored repeaters can extend range significantly — but this requires training and licensing this app doesn\u2019t provide.</p>'+
+      '<p class="hint">Treat radio as a way to stay together as a party, not your primary way to summon rescue — a phone, satellite messenger, or PLB does that job better.</p>'
+  },
+  'children-family':{
+    title:'Hiking with Kids', sub:'Preventing separation and preparing kids to wait',
+    body:'<p class="section-lead" style="max-width:none;">Most of preventing a lost child comes down to a few minutes of preparation before you start walking.</p>'+
+      '<p class="kicker" style="margin-top:0;">Before you go</p>'+
+      '<ul class="bullet-list">'+
+      '<li>Dress kids in bright, easy-to-spot colors.</li>'+
+      '<li>Give each child a whistle and teach them: three blasts means \u201cI need help.\u201d</li>'+
+      '<li>Take a phone photo of what each child is wearing that morning.</li>'+
+      '<li>Agree on a simple rule before you start: if separated, stop and stay put.</li>'+
+      '</ul>'+
+      '<p class="kicker">Teaching kids to wait to be found</p>'+
+      '<p style="font-size:14.5px;line-height:1.5;">A well-known wilderness-safety lesson for children is simple: if you\u2019re lost, stay in one place, make yourself big and visible, and make noise — rather than wandering to try to find the trail yourself. A child who stays put is dramatically easier to find than one who keeps moving.</p>'+
+      '<p class="kicker">If a child goes missing</p>'+
+      '<p style="font-size:14.5px;line-height:1.5;">Follow the Party Separation guide, and tell 911 the child\u2019s age, clothing, and whether they\u2019ve been taught to stay put — it changes how a search is run.</p>'
+  },
+  'wildlife':{
+    title:'Wildlife Encounters', sub:'Bears, cougars, and staying safe around wildlife',
+    body:'<p class="section-lead" style="max-width:none;">Most wildlife encounters end with the animal leaving — your job is mostly to avoid surprising it, and to respond calmly if you don\u2019t.</p>'+
+      '<p class="kicker" style="margin-top:0;">General principles</p>'+
+      '<ul class="bullet-list">'+
+      '<li>Make noise on trail, especially near streams, thick brush, or blind corners, so animals have time to move off.</li>'+
+      '<li>Keep food secured and away from your sleeping area overnight.</li>'+
+      '<li>Keep dogs leashed — an off-leash dog can provoke an encounter, then run back to you with an animal behind it.</li>'+
+      '</ul>'+
+      '<p class="kicker">Black bears</p>'+
+      '<ul class="bullet-list"><li>Stay calm, back away slowly, don\u2019t run. Make yourself look bigger and speak in a firm, calm voice.</li></ul>'+
+      '<p class="kicker">Cougars</p>'+
+      '<ul class="bullet-list"><li>Do not run. Maintain eye contact, make yourself look big, and pick up small children. Back away slowly; fight back if attacked.</li></ul>'+
+      '<p class="kicker">Snakes</p>'+
+      '<ul class="bullet-list"><li>Give any snake a wide path and let it move away on its own. Watch where you place hands and feet on rocky terrain.</li></ul>'+
+      '<p class="hint">For current, location-specific wildlife guidance, see Washington Dept. of Fish &amp; Wildlife under Resources.</p>'
+  },
+  'lessons-learned':{
+    title:'Lessons from Real Rescues', sub:'Patterns KCESAR volunteers see again and again',
+    body:'<p class="section-lead" style="max-width:none;">These are common patterns, told as composites rather than specific case files — the small decisions that come up again and again.</p>'+
+      '<div class="card"><p class="card-title">The trail that used to be obvious</p><p style="font-size:13.5px;line-height:1.5;color:var(--ink-700);margin:0;">Fresh snow, fallen leaves, or fog erased a route the hiker had done many times before, and familiarity stood in for navigation. <b>Lesson:</b> carry and use a map even on trails you know well.</p></div>'+
+      '<div class="card"><p class="card-title">Just a little further</p><p style="font-size:13.5px;line-height:1.5;color:var(--ink-700);margin:0;">A short planned hike stretched to an hour, then two, chasing a viewpoint that always looked just ahead. <b>Lesson:</b> set a turnaround time before you leave, and honor it even when the summit feels close.</p></div>'+
+      '<div class="card"><p class="card-title">Nobody knew the route</p><p style="font-size:13.5px;line-height:1.5;color:var(--ink-700);margin:0;">A solo hiker said \u201cgoing for a hike\u201d with no route, no time, and no trailhead written down. When they didn\u2019t return, searchers had almost nothing to go on. <b>Lesson:</b> a trip plan only helps if someone actually has it.</p></div>'+
+      '<div class="card" style="margin-bottom:0;"><p class="card-title">The phone that couldn\u2019t reach anyone</p><p style="font-size:13.5px;line-height:1.5;color:var(--ink-700);margin:0;">One bar of signal was enough to see, but not enough to place a call — and the hiker kept retrying instead of moving. <b>Lesson:</b> if a call won\u2019t go through, try texting, and try moving — a short walk to a ridge or clearing can make the difference.</p></div>'
+  }
+};
+
+// ====================== RENDER HELPERS ======================
+function resourceRowHTML(r){
+  return '<div class="resource-row"><a href="'+r.url+'" target="_blank" rel="noopener">'+r.name+
+    ' <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></a>'+
+    (r.note?'<p>'+r.note+'</p>':'')+'</div>';
+}
+function renderEssentials(){
+  const box=document.getElementById('essentialsList');
+  if(!box) return;
+  box.innerHTML = ESSENTIALS.map(function(e,i){
+    const checked = state.essentials.has(i);
+    return '<label class="checkbox-row'+(checked?' checked':'')+'">'+
+      '<input type="checkbox" data-ess-cb="'+i+'" '+(checked?'checked':'')+'>'+
+      '<span><p class="cb-title">'+e[0]+'</p><p class="cb-sub">'+e[1]+'</p></span></label>';
+  }).join('');
+}
+function renderPhoneList(){
+  const box=document.getElementById('phoneList');
+  if(!box) return;
+  box.innerHTML = PHONE_CHECKLIST.map(function(item,i){
+    const checked = state.phoneChecklist.has(i);
+    return '<label class="checkbox-row'+(checked?' checked':'')+'">'+
+      '<input type="checkbox" data-ph-cb="'+i+'" '+(checked?'checked':'')+'>'+
+      '<span><p class="cb-title" style="font-weight:600;">'+item+'</p></span></label>';
+  }).join('');
+}
+function renderAddOn(){
+  const data = ADD_ONS[state.addOn];
+  document.getElementById('addOnTitle').textContent = data.title;
+  document.getElementById('addOnList').innerHTML = data.items.map(function(i){return '<li>'+i+'</li>';}).join('');
+}
+function renderGuideTopics(){
+  const box=document.getElementById('guideTopicList');
+  const q = guideFilter.trim().toLowerCase();
+  const filtered = GUIDE_TOPICS.map(function(t,i){ return {t:t, i:i}; }).filter(function(x){
+    if(!q) return true;
+    const hay = (x.t.title+' '+(x.t.sub||'')+' '+(x.t.keywords||'')).toLowerCase();
+    return hay.indexOf(q)!==-1;
+  });
+  document.getElementById('guideNoResults').style.display = filtered.length ? 'none' : 'block';
+  box.innerHTML = filtered.map(function(x){
+    const t=x.t, i=x.i;
+    if(t.kind==='soon'){
+      return '<button class="guide-topic" data-soon="'+i+'" type="button" style="opacity:.55;">'+
+        '<span class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>'+
+        '<span class="gt-title">'+t.title+'<span class="badge badge-soon">Coming soon</span></span></button>';
+    }
+    return '<button class="guide-topic" data-guide="'+i+'" type="button">'+
+      '<span class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg></span>'+
+      '<span class="gt-title">'+t.title+'</span></button>';
+  }).join('');
+}
+document.getElementById('guideSearchInput').addEventListener('input', function(e){
+  guideFilter = e.target.value;
+  renderGuideTopics();
+});
+function showArticle(id){
+  const a = ARTICLES[id];
+  if(!a) return;
+  screenMeta.article = {title:a.title, sub:a.sub||'', tab:'guide', parent:'guide'};
+  document.getElementById('articleBody').innerHTML = a.body;
+  showScreen('article');
+}
+
+// ====================== WIRE UP ======================
+renderEssentials();
+renderPhoneList();
+renderAddOn();
+renderGuideTopics();
+document.getElementById('resourceListPrepare').innerHTML = RESOURCES.filter(function(r){return r.cat==='conditions'||r.cat==='wildlife';}).map(resourceRowHTML).join('');
+document.getElementById('resLocal').innerHTML = RESOURCES.filter(function(r){return r.cat==='local';}).map(resourceRowHTML).join('');
+document.getElementById('resConditions').innerHTML = RESOURCES.filter(function(r){return r.cat==='conditions';}).map(resourceRowHTML).join('');
+document.getElementById('resWildlife').innerHTML = RESOURCES.filter(function(r){return r.cat==='wildlife';}).map(resourceRowHTML).join('');
+document.getElementById('resEducation').innerHTML = RESOURCES.filter(function(r){return r.cat==='education';}).map(resourceRowHTML).join('');
+
+document.getElementById('essentialsList').addEventListener('change', function(e){
+  if(!e.target.matches('[data-ess-cb]')) return;
+  const i=+e.target.getAttribute('data-ess-cb');
+  if(e.target.checked) state.essentials.add(i); else state.essentials.delete(i);
+  e.target.closest('.checkbox-row').classList.toggle('checked', e.target.checked);
+});
+document.getElementById('phoneList').addEventListener('change', function(e){
+  if(!e.target.matches('[data-ph-cb]')) return;
+  const i=+e.target.getAttribute('data-ph-cb');
+  if(e.target.checked) state.phoneChecklist.add(i); else state.phoneChecklist.delete(i);
+  e.target.closest('.checkbox-row').classList.toggle('checked', e.target.checked);
+});
+document.getElementById('addOnChips').addEventListener('click', function(e){
+  const chip = e.target.closest('.chip'); if(!chip) return;
+  document.querySelectorAll('#addOnChips .chip').forEach(function(c){c.classList.remove('active');});
+  chip.classList.add('active');
+  state.addOn = chip.getAttribute('data-addon');
+  renderAddOn();
+});
+document.getElementById('guideTopicList').addEventListener('click', function(e){
+  const soonBtn = e.target.closest('[data-soon]');
+  if(soonBtn){
+    showModal('<h3>Coming soon</h3><p>This topic is planned for a later release, once its content has been reviewed by KCESAR/KCSAR subject-matter experts. The guides available today cover the situations reviewed so far.</p><button class="btn btn-primary" id="modalOkBtn" type="button">Got it</button>');
+    return;
+  }
+  const btn = e.target.closest('[data-guide]');
+  if(btn){
+    const t = GUIDE_TOPICS[+btn.getAttribute('data-guide')];
+    if(t.kind==='screen') showScreen(t.target); else showArticle(t.target);
+  }
+});
+
+// ====================== TRIP PLAN SCREEN META ======================
+Object.assign(screenMeta, {
+  tripplan:{title:'Trip Plans', sub:'Give someone the information SAR would need', parent:'home'},
+  'tripplan-form':{title:'New Trip Plan', sub:'', parent:'tripplan'}
+});
+function onScreenShow(name){
+  if(name==='tripplan'){ renderPlanList(); }
+  if(name==='tripplan-form'){
+    document.getElementById('screenTitle').textContent = state.editingPlanId ? 'Edit Trip Plan' : 'New Trip Plan';
+  }
+}
+
+// ====================== TRIP PLAN HELPERS ======================
+function val(id){ const el=document.getElementById(id); return el ? el.value.trim() : ''; }
+function setVal(id,v){ const el=document.getElementById(id); if(el) el.value = v || ''; }
+function formatDateStr(d){
+  if(!d) return '';
+  const parts=d.split('-'); const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return months[parseInt(parts[1],10)-1]+' '+parseInt(parts[2],10)+', '+parts[0];
+}
+function formatTimeStr(t){
+  if(!t) return '';
+  const parts=t.split(':'); let h=parseInt(parts[0],10); const m=parts[1];
+  const ap = h>=12 ? 'PM':'AM'; h = h%12; if(h===0) h=12;
+  return h+':'+m+' '+ap;
+}
+function addHours(t,hrs){
+  const parts=t.split(':'); let h=(parseInt(parts[0],10)+hrs)%24; const m=parts[1];
+  return String(h).padStart(2,'0')+':'+m;
+}
+const TP_FIELDS = ['tp-title','tp-date','tp-start-loc','tp-route','tp-backup','tp-start-time','tp-return-time',
+  'tp-overdue-time','tp-party-size','tp-veh-make','tp-veh-model','tp-veh-color','tp-veh-plate','tp-members',
+  'tp-allergies','tp-medical','tp-experience','tp-outerwear','tp-tent-color','tp-boots','tp-extra-vehicles','tp-notes'];
+
+// Rough King County (Seattle-area) sunset estimates, minutes after midnight, 1st of each month.
+// This is a coarse local approximation for a trip-planning nudge, not an authoritative almanac.
+const SUNSET_TABLE = [16*60+29, 17*60+2, 17*60+46, 19*60+23, 20*60+3, 20*60+48, 21*60+9, 20*60+44, 19*60+49, 18*60+47, 17*60+49, 16*60+19];
+function estimateSunset(dateStr){
+  if(!dateStr) return null;
+  const parts = dateStr.split('-').map(Number);
+  const year=parts[0], month=parts[1], day=parts[2];
+  if(!year||!month||!day) return null;
+  const idx = month-1, nextIdx = month%12;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const frac = (day-1)/daysInMonth;
+  const mins = Math.round(SUNSET_TABLE[idx] + (SUNSET_TABLE[nextIdx]-SUNSET_TABLE[idx])*frac);
+  return {h:Math.floor(mins/60)%24, m:mins%60};
+}
+function formatSunset(s){
+  if(!s) return '';
+  const ap = s.h>=12?'PM':'AM'; let h=s.h%12; if(h===0) h=12;
+  return h+':'+String(s.m).padStart(2,'0')+' '+ap;
+}
+function timeToMinutes(t){ if(!t) return null; const parts=t.split(':'); return parseInt(parts[0],10)*60+parseInt(parts[1],10); }
+function planDateTimeMs(dateStr, timeStr){
+  if(!dateStr || !timeStr) return null;
+  const d = new Date(dateStr+'T'+timeStr+':00');
+  return isNaN(d.getTime()) ? null : d.getTime();
+}
+
+function resetForm(){
+  TP_FIELDS.forEach(function(id){ setVal(id,''); });
+  document.getElementById('tp-remind').checked = false;
+  document.querySelectorAll('#commsChips .chip').forEach(function(c){ c.classList.remove('active'); });
+  document.getElementById('planPreviewBox').style.display='none';
+}
+function populateForm(p){
+  setVal('tp-title',p.title); setVal('tp-date',p.date); setVal('tp-start-loc',p.startLoc); setVal('tp-route',p.route);
+  setVal('tp-backup',p.backup); setVal('tp-start-time',p.startTime); setVal('tp-return-time',p.returnTime);
+  setVal('tp-overdue-time',p.overdueTime); setVal('tp-party-size',p.partySize);
+  setVal('tp-veh-make',p.vehMake); setVal('tp-veh-model',p.vehModel); setVal('tp-veh-color',p.vehColor); setVal('tp-veh-plate',p.plate);
+  setVal('tp-members',p.members); setVal('tp-allergies',p.allergies); setVal('tp-medical',p.medical);
+  setVal('tp-experience',p.experience); setVal('tp-outerwear',p.outerwear); setVal('tp-tent-color',p.tentColor);
+  setVal('tp-boots',p.boots); setVal('tp-extra-vehicles',p.extraVehicles); setVal('tp-notes',p.notes);
+  document.getElementById('tp-remind').checked = !!p.remind;
+  document.querySelectorAll('#commsChips .chip').forEach(function(c){
+    c.classList.toggle('active', (p.comms||[]).indexOf(c.textContent.trim())!==-1);
+  });
+  document.getElementById('planPreviewBox').style.display='none';
+}
+function readFormToPlan(existingId){
+  const prior = existingId ? state.plans.find(function(p){return p.id===existingId;}) : null;
+  return {
+    id: existingId || ('p'+Date.now()),
+    status: prior ? prior.status : 'current',
+    title: val('tp-title'), date: val('tp-date'), startLoc: val('tp-start-loc'), route: val('tp-route'),
+    backup: val('tp-backup'), startTime: val('tp-start-time'), returnTime: val('tp-return-time'),
+    overdueTime: val('tp-overdue-time'), partySize: val('tp-party-size'),
+    vehMake: val('tp-veh-make'), vehModel: val('tp-veh-model'), vehColor: val('tp-veh-color'), plate: val('tp-veh-plate'),
+    comms: Array.from(document.querySelectorAll('#commsChips .chip.active')).map(function(c){return c.textContent.trim();}),
+    members: val('tp-members'), allergies: val('tp-allergies'), medical: val('tp-medical'),
+    experience: val('tp-experience'), outerwear: val('tp-outerwear'), tentColor: val('tp-tent-color'),
+    boots: val('tp-boots'), extraVehicles: val('tp-extra-vehicles'), notes: val('tp-notes'),
+    remind: document.getElementById('tp-remind').checked,
+    createdAt: prior ? prior.createdAt : Date.now()
+  };
+}
+function buildPlanText(p){
+  const lines = [];
+  lines.push('KCESAR TRIP PLAN','');
+  lines.push('Trip: '+(p.title||'Untitled trip'));
+  if(p.date) lines.push('Date: '+formatDateStr(p.date));
+  if(p.partySize) lines.push('Party: '+p.partySize+' people');
+  lines.push('', 'Start:');
+  lines.push(p.startLoc || '(starting location not set)');
+  if(p.startTime) lines.push(formatTimeStr(p.startTime));
+  lines.push('', 'Planned route:');
+  lines.push(p.route || '(not set)');
+  if(p.backup){ lines.push('', 'Backup / turnaround plan:'); lines.push(p.backup); }
+  lines.push('', 'Expected return:');
+  lines.push(p.returnTime ? formatTimeStr(p.returnTime) : '(not set)');
+  lines.push('', 'IF YOU HAVE NOT HEARD FROM ME BY:');
+  lines.push(p.overdueTime ? formatTimeStr(p.overdueTime) : '(not set)');
+  if(p.vehMake || p.vehModel || p.vehColor || p.plate){
+    lines.push('', 'Vehicle:');
+    lines.push([p.vehColor,p.vehMake,p.vehModel].filter(Boolean).join(' ') || '(not set)');
+    if(p.plate) lines.push('WA '+p.plate);
+  }
+  if(p.comms && p.comms.length){ lines.push('', 'Communications carried:'); p.comms.forEach(function(c){lines.push(c);}); }
+  if(p.outerwear){ lines.push('', 'Outerwear:'); lines.push(p.outerwear); }
+  const extra = [];
+  if(p.members) extra.push('Party members: '+p.members.replace(/\n/g,'; '));
+  if(p.allergies) extra.push('Allergies & medications: '+p.allergies);
+  if(p.medical) extra.push('Relevant medical conditions: '+p.medical);
+  if(p.experience) extra.push('Experience level: '+p.experience);
+  if(p.tentColor) extra.push('Tent/shelter color: '+p.tentColor);
+  if(p.boots) extra.push('Boots/footwear: '+p.boots);
+  if(p.extraVehicles) extra.push('Additional vehicles: '+p.extraVehicles);
+  if(p.notes) extra.push('Notes: '+p.notes);
+  if(extra.length){ lines.push('', 'Additional SAR details:'); extra.forEach(function(e){lines.push(e);}); }
+  lines.push('', 'If I remain overdue and you cannot contact me:');
+  lines.push('Call 911 and report an overdue backcountry party.');
+  lines.push('Provide this entire trip plan.');
+  lines.push('', 'Created with KCESAR TrailSafe.');
+  lines.push('This plan is not monitored by KCESAR.');
+  return lines.join('\n');
+}
+function renderPlanList(){
+  const box=document.getElementById('planListBox');
+  if(!state.plans.length){
+    box.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l2 4H7l2-4z"/><path d="M4 7h16l-1.5 13a2 2 0 0 1-2 1.8H7.5a2 2 0 0 1-2-1.8L4 7z"/></svg><p>No trip plans yet. Create one before you head out — it only takes a minute.</p></div>';
+    return;
+  }
+  box.innerHTML = state.plans.slice().sort(function(a,b){return b.createdAt-a.createdAt;}).map(function(p){
+    const overdueMs = planDateTimeMs(p.date, p.overdueTime);
+    const isOverdue = p.remind && p.status==='current' && overdueMs && Date.now()>overdueMs;
+    return '<div class="plan-list-item">'+
+      (isOverdue ? '<div class="callout critical" style="margin-bottom:12px;"><strong>This plan is now overdue</strong>Check in with whoever is holding this plan, mark it Complete, or head to Emergency if something\u2019s wrong.</div>' : '')+
+      '<span class="plan-status '+p.status+'">'+p.status.toUpperCase()+'</span>'+
+      '<p class="card-title" style="margin:2px 0 4px;">'+(p.title||'Untitled trip')+'</p>'+
+      '<p style="font-size:12.5px;color:var(--ink-500);margin:0 0 10px;">'+(p.date?formatDateStr(p.date):'No date set')+(p.returnTime?' · back by '+formatTimeStr(p.returnTime):'')+(p.remind?' · reminder on':'')+'</p>'+
+      '<div class="btn-row">'+
+        '<button class="btn btn-ghost" data-act="edit" data-id="'+p.id+'" type="button" style="font-size:12.5px;padding:8px 4px;">Edit</button>'+
+        '<button class="btn btn-ghost" data-act="dup" data-id="'+p.id+'" type="button" style="font-size:12.5px;padding:8px 4px;">Duplicate</button>'+
+        (p.status!=='completed' ? '<button class="btn btn-ghost" data-act="complete" data-id="'+p.id+'" type="button" style="font-size:12.5px;padding:8px 4px;">Complete</button>' : '')+
+        '<button class="btn btn-ghost" data-act="delete" data-id="'+p.id+'" type="button" style="font-size:12.5px;padding:8px 4px;color:var(--safety-orange-dark);">Delete</button>'+
+      '</div></div>';
+  }).join('');
+}
+document.getElementById('planListBox').addEventListener('click', function(e){
+  const btn = e.target.closest('[data-act]'); if(!btn) return;
+  const id = btn.getAttribute('data-id'), act = btn.getAttribute('data-act');
+  const plan = state.plans.find(function(p){return p.id===id;}); if(!plan) return;
+  if(act==='edit'){ state.editingPlanId=id; populateForm(plan); showScreen('tripplan-form'); }
+  else if(act==='dup'){
+    const copy = Object.assign({}, plan, {id:'p'+Date.now(), status:'draft', createdAt:Date.now(), title:(plan.title||'Untitled trip')+' (copy)'});
+    state.plans.push(copy); renderPlanList(); toast('Duplicated');
+  }
+  else if(act==='complete'){ plan.status='completed'; renderPlanList(); toast('Marked completed'); }
+  else if(act==='delete'){ state.plans = state.plans.filter(function(p){return p.id!==id;}); renderPlanList(); toast('Deleted'); }
+});
+document.getElementById('newPlanBtn').addEventListener('click', function(){
+  state.editingPlanId=null; resetForm(); showScreen('tripplan-form');
+});
+document.getElementById('plusTwoBtn').addEventListener('click', function(){
+  const rt = val('tp-return-time');
+  if(!rt){ toast('Set an expected return time first'); return; }
+  setVal('tp-overdue-time', addHours(rt,2));
+});
+document.getElementById('commsChips').addEventListener('click', function(e){
+  const chip = e.target.closest('.chip'); if(!chip) return;
+  chip.classList.toggle('active');
+});
+document.getElementById('generatePlanBtn').addEventListener('click', function(){
+  const p = readFormToPlan(state.editingPlanId);
+  window._draftPlan = p;
+  document.getElementById('planOutputText').textContent = buildPlanText(p);
+  const box = document.getElementById('planPreviewBox');
+  box.style.display='block';
+  box.scrollIntoView({behavior:'smooth', block:'start'});
+});
+document.getElementById('copyPlanBtn').addEventListener('click', function(){
+  copyText(document.getElementById('planOutputText').textContent);
+});
+function persistDraftPlan(){
+  const p = window._draftPlan || readFormToPlan(state.editingPlanId);
+  const idx = state.plans.findIndex(function(pl){return pl.id===p.id;});
+  if(idx>=0) state.plans[idx]=p; else state.plans.push(p);
+  state.editingPlanId = p.id;
+  return p;
+}
+document.getElementById('savePlanBtn').addEventListener('click', function(){
+  persistDraftPlan();
+  toast('Plan saved');
+  goBack();
+});
+document.getElementById('shareNowBtn').addEventListener('click', function(){
+  const p = persistDraftPlan();
+  shareText(buildPlanText(p), p.title||'Trip Plan');
+  toast('Plan saved');
+});
+
+</script>
+</body>
+</html>
