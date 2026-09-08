@@ -75,7 +75,7 @@ export default function Emergency() {
               borderWidth: 1.5,
               borderColor: C.line,
               borderRadius: 10,
-              backgroundColor: "white",
+              backgroundColor: C.cardBg,
               gap: 10,
               flexDirection: i === 4 ? "row" : "column",
               alignItems: i === 4 ? "center" : "flex-start",

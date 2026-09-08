@@ -43,6 +43,7 @@ export const LightColors = {
   calloutBorder: "#EAD3A0",
   criticalBg: "#FBE7E0",
   criticalBorder: "#F0B29C",
+  criticalText: "#7A2A11",
   calloutTitle: "#5C3F0C",
   checkBorder: "#84907E",
   headerText: "#FFFFFF",
@@ -72,6 +73,7 @@ export const DarkColors = {
   calloutBorder: "#4F432A",
   criticalBg: "#471708",
   criticalBorder: "#7A2A11",
+  criticalText: "#FFDED1",
   calloutTitle: "#EAD3A0",
   checkBorder: "#5C645D",
   headerText: "#E6EBE8",
@@ -145,13 +147,13 @@ export function Callout({
   return (
     <View style={[s.callout, critical && s.critical]}>
       {title && (
-        <T style={[s.calloutTitle, critical && { color: C.criticalBorder }]}>
+        <T style={[s.calloutTitle, critical && { color: C.criticalText }]}>
           {title}
         </T>
       )}
       <T
         style={{
-          color: critical ? C.criticalBorder : C.calloutTitle,
+          color: critical ? C.criticalText : C.calloutTitle,
           fontSize: 14,
           lineHeight: 22,
         }}

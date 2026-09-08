@@ -116,6 +116,18 @@ export function LocationCard() {
           >
             {coords}
           </T>
+          {fix.altitude != null && (
+            <T
+              style={{
+                fontFamily: fonts.bold,
+                fontSize: 18,
+                color: "white",
+                marginTop: 2,
+              }}
+            >
+              Elevation: {Math.round(fix.altitude * 3.28084)} ft
+            </T>
+          )}
           <T
             style={{
               color: "#BFD8CB",
@@ -125,9 +137,9 @@ export function LocationCard() {
               marginBottom: 10,
             }}
           >
-            WGS84 · Accuracy:{" "}
+            WGS84 · Acc:{" "}
             {fix.accuracy != null && fix.accuracy >= 0
-              ? `±${Math.round(fix.accuracy)} m`
+              ? `±${Math.round(fix.accuracy * 3.28084)} ft`
               : "unknown"}
             {"\n"}Updated{" "}
             {age < 60 ? `${age}s` : `${Math.floor(age / 60)}m ${age % 60}s`} ago
