@@ -22,7 +22,9 @@ import {
 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export const C = {
+import { useColorScheme } from "react-native";
+
+export const LightColors = {
   forest: "#1B3A2E",
   deep: "#132720",
   green: "#25503F",
@@ -35,7 +37,61 @@ export const C = {
   orangeDark: "#B83B1A",
   amber: "#FBF1DD",
   white: "#FFFFFF",
+  cardBg: "#FFFFFF",
+  chipBg: "#FFFFFF",
+  inputBg: "#FFFFFF",
+  calloutBorder: "#EAD3A0",
+  criticalBg: "#FBE7E0",
+  criticalBorder: "#F0B29C",
+  calloutTitle: "#5C3F0C",
+  checkBorder: "#84907E",
+  headerText: "#FFFFFF",
+  headerSub: "#CFE0D6",
+  checkBg: "#F0F5EE",
+  fieldLabel: "#3A413B",
+  inputPlaceholder: "#758073",
+  chevron: "#7E8B7D",
 };
+
+export const DarkColors = {
+  forest: "#4A6B58",
+  deep: "#0B120E",
+  green: "#6C8A79",
+  stone: "#1E2621",
+  line: "#2D3A32",
+  ink: "#E6EBE8",
+  muted: "#8C9B92",
+  paper: "#151A17",
+  orange: "#E4572E",
+  orangeDark: "#F0734F",
+  amber: "#2E2512",
+  white: "#1E2621",
+  cardBg: "#1E2621",
+  chipBg: "#1E2621",
+  inputBg: "#1E2621",
+  calloutBorder: "#4F432A",
+  criticalBg: "#471708",
+  criticalBorder: "#7A2A11",
+  calloutTitle: "#EAD3A0",
+  checkBorder: "#5C645D",
+  headerText: "#E6EBE8",
+  headerSub: "#8C9B92",
+  checkBg: "#1E2621",
+  fieldLabel: "#B4C2BB",
+  inputPlaceholder: "#6B7B71",
+  chevron: "#8C9B92",
+};
+
+export type ThemeColors = typeof LightColors;
+
+export function useThemeStyles() {
+  const scheme = useColorScheme();
+  const isDark = scheme === "dark";
+  const C = isDark ? DarkColors : LightColors;
+  const s = React.useMemo(() => getStyles(C), [C]);
+  return { C, s, isDark };
+}
+
 export const fonts = {
   body: "PublicSans_400Regular",
   medium: "PublicSans_500Medium",
@@ -43,9 +99,11 @@ export const fonts = {
   display: "BarlowCondensed_600SemiBold",
 };
 export function T({ style, ...props }: TextProps) {
+  const { C, s } = useThemeStyles();
   return <Text {...props} style={[s.text, style]} />;
 }
 export function Heading({ children }: { children: React.ReactNode }) {
+  const { C, s } = useThemeStyles();
   return (
     <T accessibilityRole="header" style={s.heading}>
       {children}
@@ -53,6 +111,7 @@ export function Heading({ children }: { children: React.ReactNode }) {
   );
 }
 export function Kicker({ children }: { children: React.ReactNode }) {
+  const { C, s } = useThemeStyles();
   return (
     <T accessibilityRole="header" style={s.kicker}>
       {children}
@@ -60,6 +119,7 @@ export function Kicker({ children }: { children: React.ReactNode }) {
   );
 }
 export function Note({ children }: { children: React.ReactNode }) {
+  const { C, s } = useThemeStyles();
   return <T style={s.note}>{children}</T>;
 }
 export function Card({
@@ -69,6 +129,7 @@ export function Card({
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 }) {
+  const { C, s } = useThemeStyles();
   return <View style={[s.card, style]}>{children}</View>;
 }
 export function Callout({
@@ -80,16 +141,17 @@ export function Callout({
   title?: string;
   critical?: boolean;
 }) {
+  const { C, s } = useThemeStyles();
   return (
     <View style={[s.callout, critical && s.critical]}>
       {title && (
-        <T style={[s.calloutTitle, critical && { color: "#7A2A11" }]}>
+        <T style={[s.calloutTitle, critical && { color: C.criticalBorder }]}>
           {title}
         </T>
       )}
       <T
         style={{
-          color: critical ? "#7A2A11" : "#5C3F0C",
+          color: critical ? C.criticalBorder : C.calloutTitle,
           fontSize: 14,
           lineHeight: 22,
         }}
@@ -116,6 +178,7 @@ export function Button({
   small?: boolean;
   testID?: string;
 }) {
+  const { C, s } = useThemeStyles();
   const color =
     variant === "light"
       ? C.white
@@ -171,6 +234,7 @@ export function Row({
   icon: LucideIcon;
   onPress: () => void;
 }) {
+  const { C, s } = useThemeStyles();
   return (
     <Pressable
       accessibilityRole="button"
@@ -184,7 +248,7 @@ export function Row({
         <T style={{ fontFamily: fonts.bold, fontSize: 15 }}>{title}</T>
         {subtitle && <T style={s.note}>{subtitle}</T>}
       </View>
-      <ChevronRight size={18} color="#7E8B7D" />
+      <ChevronRight size={18} color={C.chevron} />
     </Pressable>
   );
 }
@@ -199,6 +263,7 @@ export function Checkbox({
   checked: boolean;
   onPress: () => void;
 }) {
+  const { C, s } = useThemeStyles();
   return (
     <Pressable
       accessibilityRole="checkbox"
@@ -206,7 +271,7 @@ export function Checkbox({
       accessibilityState={{ checked }}
       aria-checked={checked}
       onPress={onPress}
-      style={[s.checkRow, checked && { backgroundColor: "#F0F5EE" }]}
+      style={[s.checkRow, checked && { backgroundColor: C.checkBg }]}
     >
       <View
         style={[
@@ -214,7 +279,7 @@ export function Checkbox({
           checked && { backgroundColor: C.forest, borderColor: C.forest },
         ]}
       >
-        {checked && <Check size={16} color="white" />}
+        {checked && <Check size={16} color={C.headerText} />}
       </View>
       <View style={{ flex: 1, gap: 4 }}>
         <T style={{ fontFamily: fonts.bold, fontSize: 14 }}>{label}</T>
@@ -232,6 +297,7 @@ export function Chip({
   selected: boolean;
   onPress: () => void;
 }) {
+  const { C, s } = useThemeStyles();
   return (
     <Pressable
       accessibilityRole="button"
@@ -260,14 +326,15 @@ export function Field({
   hint,
   ...props
 }: TextInputProps & { label: string; hint?: string }) {
+  const { C, s } = useThemeStyles();
   return (
     <View style={{ gap: 6, marginBottom: 15 }}>
-      <T style={{ fontFamily: fonts.bold, fontSize: 13, color: "#3A413B" }}>
+      <T style={{ fontFamily: fonts.bold, fontSize: 13, color: C.fieldLabel }}>
         {label}
       </T>
       <TextInput
         accessibilityLabel={label}
-        placeholderTextColor="#758073"
+        placeholderTextColor={C.inputPlaceholder}
         {...props}
         style={[
           s.input,
@@ -290,6 +357,7 @@ export function Screen({
   back?: boolean;
   children: React.ReactNode;
 }) {
+  const { C, s } = useThemeStyles();
   const insets = useSafeAreaInsets();
   return (
     <KeyboardAvoidingView
@@ -312,8 +380,8 @@ export function Screen({
               alignSelf: "flex-start",
             }}
           >
-            <ArrowLeft size={18} color="white" />
-            <T style={{ color: "white", fontFamily: fonts.bold, fontSize: 14 }}>
+            <ArrowLeft size={18} color={C.headerText} />
+            <T style={{ color: C.headerText, fontFamily: fonts.bold, fontSize: 14 }}>
               Back
             </T>
           </Pressable>
@@ -334,6 +402,7 @@ export function Screen({
   );
 }
 export function FooterNote() {
+  const { C, s } = useThemeStyles();
   return (
     <T style={s.footer}>
       King County Explorer Search & Rescue{"\n"}This app is not monitored.
@@ -341,7 +410,7 @@ export function FooterNote() {
     </T>
   );
 }
-export const s = StyleSheet.create({
+export const getStyles = (C: ThemeColors) => StyleSheet.create({
   text: { fontFamily: fonts.body, fontSize: 15, lineHeight: 23, color: C.ink },
   heading: {
     fontFamily: fonts.display,
@@ -360,7 +429,7 @@ export const s = StyleSheet.create({
   },
   note: { fontSize: 12.5, lineHeight: 19, color: C.muted },
   card: {
-    backgroundColor: "white",
+    backgroundColor: C.cardBg,
     borderWidth: 1,
     borderColor: C.line,
     borderRadius: 10,
@@ -370,17 +439,17 @@ export const s = StyleSheet.create({
   callout: {
     backgroundColor: C.amber,
     borderWidth: 1,
-    borderColor: "#EAD3A0",
+    borderColor: C.calloutBorder,
     borderRadius: 10,
     padding: 14,
     marginBottom: 16,
   },
-  critical: { backgroundColor: "#FBE7E0", borderColor: "#F0B29C" },
+  critical: { backgroundColor: C.criticalBg, borderColor: C.criticalBorder },
   calloutTitle: {
     fontFamily: fonts.display,
     fontSize: 20,
     lineHeight: 26,
-    color: "#5C3F0C",
+    color: C.calloutTitle,
     marginBottom: 4,
   },
   button: {
@@ -426,7 +495,7 @@ export const s = StyleSheet.create({
     width: 23,
     height: 23,
     borderWidth: 1.5,
-    borderColor: "#84907E",
+    borderColor: C.checkBorder,
     borderRadius: 5,
     justifyContent: "center",
     alignItems: "center",
@@ -439,7 +508,7 @@ export const s = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1,
     borderColor: C.line,
-    backgroundColor: "white",
+    backgroundColor: C.cardBg,
     justifyContent: "center",
   },
   input: {
@@ -451,7 +520,7 @@ export const s = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: C.line,
     borderRadius: 6,
-    backgroundColor: "white",
+    backgroundColor: C.cardBg,
   },
   header: {
     backgroundColor: C.forest,
@@ -462,9 +531,9 @@ export const s = StyleSheet.create({
     fontFamily: fonts.display,
     fontSize: 29,
     lineHeight: 35,
-    color: "white",
+    color: C.headerText,
   },
-  headerSub: { fontSize: 13, lineHeight: 20, color: "#CFE0D6", marginTop: 2 },
+  headerSub: { fontSize: 13, lineHeight: 20, color: C.headerSub, marginTop: 2 },
   content: { padding: 20, paddingBottom: 32 },
   footer: {
     textAlign: "center",

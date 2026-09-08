@@ -18,8 +18,9 @@ import {
   formatCoordinates,
   locationText,
 } from "@/lib/coordinates";
-import { Button, C, fonts, T, s } from "./ui";
+import { Button, useThemeStyles, fonts, T } from "./ui";
 export function LocationCard() {
+  const { C, s, isDark } = useThemeStyles();
   const { location, run, copy, share } = useApp(),
     { data, update } = useStore();
   const [open, setOpen] = useState(false),

@@ -7,7 +7,7 @@ import { useApp } from "@/state/app";
 import { isOverdue, newPlan } from "@/lib/plans";
 import {
   Button,
-  C,
+  useThemeStyles,
   Callout,
   Card,
   fonts,
@@ -16,9 +16,9 @@ import {
   Row,
   Screen,
   T,
-  s,
 } from "@/components/trailsafe/ui";
 export default function Plans() {
+  const { C, s } = useThemeStyles();
   const { data, update, ready, error } = useStore(),
     { run, notify, setDialog } = useApp();
   const [now, setNow] = useState(new Date());

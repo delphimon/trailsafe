@@ -10,7 +10,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path } from "react-native-svg";
 import {
   Button,
-  C,
+  useThemeStyles,
   Card,
   fonts,
   FooterNote,
@@ -21,6 +21,7 @@ import {
 } from "@/components/trailsafe/ui";
 import { useStore } from "@/state/store";
 export default function Home() {
+  const { C } = useThemeStyles();
   const { data } = useStore();
   const plan = data.plans.find((p) => p.status === "current");
   return (

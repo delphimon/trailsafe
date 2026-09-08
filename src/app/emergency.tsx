@@ -12,7 +12,7 @@ import {
 import { useApp } from "@/state/app";
 import {
   Button,
-  C,
+  useThemeStyles,
   Callout,
   fonts,
   Kicker,
@@ -31,6 +31,7 @@ const choices = [
   { id: "g-other", title: "Other emergency", icon: Info },
 ];
 export default function Emergency() {
+  const { C } = useThemeStyles();
   const { practice, setPractice } = useApp();
   return (
     <Screen title="Need Help?" subtitle="Call, text, and share your location">

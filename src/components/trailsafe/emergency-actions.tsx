@@ -2,7 +2,7 @@ import { View } from "react-native";
 import { router } from "expo-router";
 import { LocateFixed, MessageSquare, Phone } from "lucide-react-native";
 import { useApp } from "@/state/app";
-import { Button, s } from "./ui";
+import { Button, useThemeStyles } from "./ui";
 export function EmergencyActions({
   situation,
   compact = false,
@@ -10,6 +10,7 @@ export function EmergencyActions({
   situation?: string;
   compact?: boolean;
 }) {
+  const { C, s } = useThemeStyles();
   const { emergency } = useApp();
   return (
     <View style={compact ? s.flexRow : { gap: 10 }}>

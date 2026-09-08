@@ -3,8 +3,9 @@ import { router, usePathname } from "expo-router";
 import { Backpack, BookOpen, House, Info, Siren } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useApp } from "@/state/app";
-import { Button, C, fonts, T } from "./ui";
+import { Button, useThemeStyles, fonts, T } from "./ui";
 export function BottomBar() {
+  const { C, s } = useThemeStyles();
   const path = usePathname(),
     insets = useSafeAreaInsets();
   const tabs = [
@@ -25,7 +26,7 @@ export function BottomBar() {
       accessibilityRole="tablist"
       style={{
         flexDirection: "row",
-        backgroundColor: "white",
+        backgroundColor: C.cardBg,
         borderTopWidth: 1,
         borderTopColor: C.line,
         paddingTop: 8,
@@ -57,7 +58,7 @@ export function BottomBar() {
               gap: 4,
               opacity: pressed ? 0.6 : 1,
               borderRadius: 8,
-              backgroundColor: selected ? "#F0F4ED" : "transparent",
+              backgroundColor: selected ? C.checkBg : "transparent",
             })}
           >
             <tab.icon
@@ -81,14 +82,15 @@ export function BottomBar() {
   );
 }
 export function AppOverlays() {
+  const { C } = useThemeStyles();
   const { dialog, setDialog, run, toast } = useApp();
   return (
     <>
       {!!toast && (
-        <View pointerEvents="none" style={styles.toast}>
+        <View pointerEvents="none" style={[styles.toast, { backgroundColor: C.ink }]}>
           <T
             accessibilityLiveRegion="polite"
-            style={{ color: "white", fontSize: 13, textAlign: "center" }}
+            style={{ color: C.headerText, fontSize: 13, textAlign: "center" }}
           >
             {toast}
           </T>
@@ -101,7 +103,7 @@ export function AppOverlays() {
         onRequestClose={() => setDialog(null)}
       >
         <View style={styles.scrim}>
-          <View accessibilityViewIsModal style={styles.dialog}>
+          <View accessibilityViewIsModal style={[styles.dialog, { backgroundColor: C.paper }]}>
             <T
               accessibilityRole="header"
               style={{
@@ -185,7 +187,6 @@ const styles = StyleSheet.create({
     bottom: 100,
     left: 24,
     right: 24,
-    backgroundColor: C.ink,
     borderRadius: 20,
     padding: 13,
     zIndex: 20,
@@ -200,7 +201,6 @@ const styles = StyleSheet.create({
   dialog: {
     width: "100%",
     maxWidth: 460,
-    backgroundColor: C.paper,
     padding: 24,
     borderRadius: 16,
     maxHeight: "90%",

@@ -20,11 +20,12 @@ import {
   BottomBar,
   PracticeBanner,
 } from "@/components/trailsafe/shell";
-import { C } from "@/components/trailsafe/ui";
+import { useThemeStyles } from "@/components/trailsafe/ui";
 
 void SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
+  const { C } = useThemeStyles();
   const [fontsLoaded, fontError] = useFonts({
     BarlowCondensed_600SemiBold,
     PublicSans_400Regular,

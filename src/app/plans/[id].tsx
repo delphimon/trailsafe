@@ -27,12 +27,14 @@ import {
   Field,
   Kicker,
   Note,
+  Row,
   Screen,
   T,
-  s,
+  useThemeStyles,
 } from "@/components/trailsafe/ui";
 
 export default function PlanScreen() {
+  const { C, s } = useThemeStyles();
   const { id, edit } = useLocalSearchParams<{ id: string; edit?: string }>();
   const { data, ready, error } = useStore();
   if (!ready)
@@ -81,6 +83,7 @@ function PlanEditor({
   isNew: boolean;
   editInitially: boolean;
 }) {
+  const { C, s } = useThemeStyles();
   const { update } = useStore();
   const { run, copy, share, notify } = useApp();
   const [plan, setPlan] = useState(initial),

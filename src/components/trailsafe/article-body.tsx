@@ -2,8 +2,9 @@ import { Linking, View } from "react-native";
 import { ExternalLink } from "lucide-react-native";
 import { Block } from "@/content";
 import { useApp } from "@/state/app";
-import { Callout, C, fonts, Kicker, Note, Row, T } from "./ui";
+import { Callout, useThemeStyles, fonts, Kicker, Note, Row, T } from "./ui";
 export function ArticleBody({ blocks }: { blocks: Block[] }) {
+  const { C, s, isDark } = useThemeStyles();
   const { run } = useApp();
   return (
     <>

@@ -10,7 +10,7 @@ import {
   Kicker,
   Note,
   Screen,
-  s,
+  useThemeStyles,
 } from "@/components/trailsafe/ui";
 export default function Profile() {
   const { data, ready, error } = useStore();
@@ -23,6 +23,7 @@ export default function Profile() {
   return <ProfileEditor initial={data.profile} />;
 }
 function ProfileEditor({ initial }: { initial: ProfileData }) {
+  const { s } = useThemeStyles();
   const { update, ready, error } = useStore();
   const { run, notify, setDialog } = useApp();
   const [profile, setProfile] = useState(initial);

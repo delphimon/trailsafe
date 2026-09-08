@@ -15,9 +15,10 @@ import {
   Row,
   Screen,
   T,
-  s,
+  useThemeStyles,
 } from "@/components/trailsafe/ui";
 export default function Prepare() {
+  const { C, s } = useThemeStyles();
   const { data, update, ready, error } = useStore(),
     { run, setDialog } = useApp();
   const toggle = (key: string) =>
