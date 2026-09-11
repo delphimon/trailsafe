@@ -1,0 +1,15 @@
+{
+  "name": "TrailSafe",
+  "short_name": "TrailSafe",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1B3A2E",
+  "theme_color": "#1B3A2E",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    }
+  ]
+}
