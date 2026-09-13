@@ -31,6 +31,19 @@ DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
 
 This uses automatic Apple development signing and installs directly on the selected phone. Xcode may request account authentication or keychain access. The signed app is under `builds/iphone/Build/Products/Release-iphoneos/TrailSafe.app`. Installation is limited by the embedded provisioning profile's allowed devices and expiry; rebuild before that profile expires. This is a personal device install, with no App Store submission.
 
+### Over-the-Air Updates (EAS Update)
+
+Because TrailSafe uses `expo-updates`, you can publish changes to the JavaScript code and assets (such as `src/content/library.json`) directly to users' devices without requiring a new native App Store build.
+
+1. Configure EAS (if not already done): `eas update:configure`
+2. Build your native app (e.g., via `eas build` or your local scripts) so it includes the update URL.
+3. To push a new update to all devices instantly, run:
+   ```sh
+   eas update --branch main --message "Your update message"
+   ```
+
+Updates are downloaded in the background when a user opens the app while connected to the internet. Because TrailSafe is offline-first, if there is no connection, the app will smoothly ignore the update check and continue running the cached version. Note: changes to native code, Expo SDK versions, or app icons still require a new native build.
+
 The local `plugins/with-ios-scenes.cjs` plugin adds the scene lifecycle required on iOS 27 when building with Xcode 27. It preserves Expo startup, lifecycle callbacks, and incoming links and is reapplied by Expo prebuild.
 
 For a browser preview:
