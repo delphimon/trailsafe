@@ -100,13 +100,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             notify(
               "Check Messages for replies. TrailSafe cannot verify delivery.",
             );
-          } else
+          } else if (Platform.OS === "web") {
+            try {
+              const isIOSWeb = /iPad|iPhone|iPod/.test(globalThis.navigator?.userAgent || "");
+              const sep = isIOSWeb ? "&" : "?";
+              await Linking.openURL(`sms:911${sep}body=${encodeURIComponent(draft)}`);
+              notify("Check Messages for replies. TrailSafe cannot verify delivery.");
+            } catch {
+              setDialog({
+                title: "Messaging unavailable here",
+                message:
+                  "Use a phone to call 911, or text 911 if you cannot call. Include your location and type of emergency first. A bounce-back means your text was not delivered.\n\n" +
+                  draft,
+              });
+            }
+          } else {
             setDialog({
               title: "Messaging unavailable here",
               message:
                 "Use a phone to call 911, or text 911 if you cannot call. Include your location and type of emergency first. A bounce-back means your text was not delivered.\n\n" +
                 draft,
             });
+          }
         },
       });
     });
