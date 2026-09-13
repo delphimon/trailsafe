@@ -6,6 +6,7 @@ import { useStore } from "@/state/store";
 import { useApp } from "@/state/app";
 import {
   Button,
+  Callout,
   Card,
   Checkbox,
   Chip,
@@ -57,9 +58,14 @@ export default function Prepare() {
       </View>
       <View style={{ marginTop: 12 }}>
         <Note>
-          This isn’t an exhaustive gear list — just the Ten Essentials plus a
+          This isn't an exhaustive gear list — just the Ten Essentials plus a
           few reminders specific to your trip type.
         </Note>
+        <Callout title="Why this matters">
+          In 2025, ankle injuries caused nearly a third of King County
+          search-and-rescue missions. The second most common reason?
+          Insufficient gear — no headlamp, not enough water, or missing layers.
+        </Callout>
       </View>
       {(!ready || error) && <Note>{error || "Loading saved checklist…"}</Note>}
       <Kicker>

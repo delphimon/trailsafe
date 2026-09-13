@@ -254,6 +254,20 @@
       "keywords": "radio frs gmrs ham repeater channel"
     },
     {
+      "title": "River & stream crossings",
+      "sub": "Getting across water safely",
+      "kind": "article",
+      "target": "river-crossings",
+      "keywords": "river stream crossing water ford"
+    },
+    {
+      "title": "Clothing & layering",
+      "sub": "Why cotton kills and what to wear instead",
+      "kind": "article",
+      "target": "clothing-layering",
+      "keywords": "clothing layers cotton wool synthetic rain"
+    },
+    {
       "title": "Hiking with kids",
       "sub": "Preventing separation and preparing kids to wait",
       "kind": "article",
@@ -262,10 +276,10 @@
     },
     {
       "title": "Wildlife encounters",
-      "sub": "Bears, cougars, and staying safe around wildlife",
+      "sub": "Bears, cougars, goats, ticks, and staying safe",
       "kind": "article",
       "target": "wildlife",
-      "keywords": "wildlife bear cougar snake encounter"
+      "keywords": "wildlife bear cougar snake goat tick encounter"
     },
     {
       "title": "Lessons from real rescues",
@@ -307,6 +321,11 @@
         {
           "type": "paragraph",
           "text": "Call if you can, text if you can’t. A text should give your location and the type of help you need first, stay short, and skip photos or emoji. Stay available to answer follow-up questions either way."
+        },
+        {
+          "type": "callout",
+          "title": "SAR is free",
+          "text": "Search and rescue in Washington is 100% volunteer-driven and provided free of charge. Fear of cost must never prevent or delay calling 911."
         }
       ],
       "id": "calling-help",
@@ -826,6 +845,30 @@
           ]
         },
         {
+          "type": "heading",
+          "text": "Mountain goats"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Stay at least 50 yards away. Goats aggressively seek salt from human sweat — never let them lick gear or clothing.",
+            "Urinate on rocks or gravel well away from trails, not on trailside vegetation, which attracts goats to the path.",
+            "They can be dangerously aggressive. Give them space and do not approach for photos."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Ticks"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Wear light-colored clothing so ticks are easier to spot. Tuck pants into socks in brushy areas.",
+            "Use permethrin on clothing and DEET or picaridin on exposed skin.",
+            "Perform a full-body tick check after every hike. Remove attached ticks with fine-tipped tweezers, pulling straight out."
+          ]
+        },
+        {
           "type": "note",
           "text": "For current, location-specific wildlife guidance, see Washington Dept. of Fish & Wildlife under Resources."
         }
@@ -877,6 +920,30 @@
         {
           "type": "paragraph",
           "text": "A hiker could see a signal indicator but could not complete a call. Lesson: try texting if a call cannot connect. Do not roam or enter hazardous terrain for reception. If in contact with 911, stay where responders expect you unless staying is immediately unsafe."
+        },
+        {
+          "type": "heading",
+          "text": "Decide at home, not on the mountain"
+        },
+        {
+          "type": "paragraph",
+          "text": "Physical fatigue reduces cognitive function, time pressure creates poor choices, and emotional investment in your goal can override safety concerns. Make critical decisions — turnaround time, weather go/no-go, bailout routes — at home when your judgment is clear. Plan for 50% longer than your most optimistic estimate."
+        },
+        {
+          "type": "heading",
+          "text": "Following strangers off-route"
+        },
+        {
+          "type": "paragraph",
+          "text": "Two hikers missed a junction, met another group who casually suggested a different route, followed them, lost the other party, and ended up off-trail. A well-meaning family member then tried to remotely guide them by phone and got them even further lost. Lesson: stick to your researched plan, don't follow strangers' route suggestions, and if you're lost, call 911 rather than having someone at home try to guide you."
+        },
+        {
+          "type": "heading",
+          "text": "The group that scattered"
+        },
+        {
+          "type": "paragraph",
+          "text": "A group of friends let faster hikers pull ahead on a descent. One person missed a junction and kept going. Hours later, nobody could account for everyone. Lesson: hike at the pace of the slowest member, assign a sweep at the rear, and regroup at every trail junction. Never let anyone separate from the group."
         }
       ],
       "id": "lessons-learned",
@@ -885,6 +952,85 @@
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://kingcountysar.org/when-how-to-call-for-help/"
+      ]
+    },
+    "river-crossings": {
+      "title": "River & Stream Crossings",
+      "subtitle": "Getting across water safely",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Water crossings are one of the most dangerous moments on a backcountry trip. Snowmelt-fed streams can change from ankle-deep in the morning to thigh-deep by afternoon."
+        },
+        {
+          "type": "list",
+          "items": [
+            "Unbuckle your hip belt and chest strap before crossing so you can jettison your pack if you're swept off your feet.",
+            "Cross at wide, braided, shallow sections — never at narrow gorges where the water runs deep and fast.",
+            "Face upstream, lean slightly forward into the current, and shuffle your feet rather than lifting them high.",
+            "Use trekking poles for a third point of contact.",
+            "Never cross water above thigh depth, or fast-moving water above knee depth.",
+            "Keep your footwear on — bare feet lead to foot entrapment between rocks and puncture injuries.",
+            "Time of day matters: snowmelt crossings are lowest in early morning and highest in late afternoon."
+          ]
+        },
+        {
+          "type": "callout",
+          "title": "When in doubt",
+          "text": "If the crossing looks dangerous, turn around. No destination is worth drowning."
+        }
+      ],
+      "id": "river-crossings",
+      "contentVersion": "2026.09.13",
+      "reviewStatus": "Draft — organizational review pending",
+      "sources": [
+        "https://www.wta.org/"
+      ]
+    },
+    "clothing-layering": {
+      "title": "Clothing & Layering",
+      "subtitle": "Why cotton kills and what to wear instead",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Wet clothing in cool, windy weather is a direct path to hypothermia. What you wear matters as much as what you carry."
+        },
+        {
+          "type": "heading",
+          "text": "The layering system"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Base layer: synthetic or merino wool to wick sweat away from your skin.",
+            "Mid layer: insulating fleece, wool, or synthetic puff jacket.",
+            "Outer shell: waterproof, windproof, breathable jacket with taped seams. In the Pacific Northwest, always have a rain layer."
+          ]
+        },
+        {
+          "type": "callout",
+          "title": "Cotton kills",
+          "text": "Cotton retains moisture, loses all insulation when wet, and dramatically accelerates hypothermia. No cotton socks, jeans, or t-shirts on the trail.",
+          "critical": true
+        },
+        {
+          "type": "heading",
+          "text": "Winter additions"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Pack dry socks, insulated gloves, a warm hat, and a dry base layer in your pack — even if you're already wearing layers.",
+            "Keep your phone in an inner pocket against body heat. Cold temperatures rapidly drain lithium-ion batteries."
+          ]
+        }
+      ],
+      "id": "clothing-layering",
+      "contentVersion": "2026.09.13",
+      "reviewStatus": "Draft — organizational review pending",
+      "sources": [
+        "https://kingcountysar.org/wilderness-safety/",
+        "https://www.wta.org/"
       ]
     },
     "g-lost": {
@@ -1169,6 +1315,19 @@
             "Be ready to describe nearby landmarks, sounds, terrain, trail signs, water, roads, or other features.",
             "If you hear or see searchers or aircraft, signal in a controlled, obvious way.",
             "Never approach an aircraft unless a crew member directs you to."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "If a helicopter arrives"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Secure all loose gear — sleeping pads, pack covers, and jackets become dangerous projectiles in rotor wash.",
+            "Stay low and crouched when the helicopter is nearby.",
+            "Never walk toward the tail rotor — it is invisible when spinning and instantly lethal.",
+            "Wait for crew to approach you and give explicit instructions before moving."
           ]
         }
       ],

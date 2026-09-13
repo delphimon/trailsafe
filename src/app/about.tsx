@@ -58,6 +58,10 @@ export default function About() {
         trip plans. TrailSafe doesn’t alert anyone automatically. In an
         emergency, call or text 911.
       </Callout>
+      <Callout title="Search and rescue is free">
+        SAR in Washington is 100% volunteer-driven and provided free of charge.
+        Fear of cost must never prevent or delay calling 911.
+      </Callout>
       <Kicker>Privacy</Kicker>
       <Card>
         <T>

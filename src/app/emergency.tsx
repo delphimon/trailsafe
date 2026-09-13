@@ -46,10 +46,14 @@ export default function Emergency() {
           marginBottom: 6,
         }}
       >
-        Call if you can, text if you can’t.
+        Call if you can, text if you can't.
       </T>
       <Note>
-        These buttons open your phone’s calling and messaging apps. TrailSafe
+        Search and rescue in Washington is free — 100% volunteer-driven and
+        available to everyone. Never let fear of cost delay calling 911.
+      </Note>
+      <Note>
+        These buttons open your phone's calling and messaging apps. TrailSafe
         does not contact KCESAR directly.
       </Note>
       <LocationCard />
