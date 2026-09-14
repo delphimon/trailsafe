@@ -101,11 +101,11 @@ export const fonts = {
   display: "BarlowCondensed_600SemiBold",
 };
 export function T({ style, ...props }: TextProps) {
-  const { C, s } = useThemeStyles();
+  const { s } = useThemeStyles();
   return <Text {...props} style={[s.text, style]} />;
 }
 export function Heading({ children }: { children: React.ReactNode }) {
-  const { C, s } = useThemeStyles();
+  const { s } = useThemeStyles();
   return (
     <T accessibilityRole="header" style={s.heading}>
       {children}
@@ -113,7 +113,7 @@ export function Heading({ children }: { children: React.ReactNode }) {
   );
 }
 export function Kicker({ children }: { children: React.ReactNode }) {
-  const { C, s } = useThemeStyles();
+  const { s } = useThemeStyles();
   return (
     <T accessibilityRole="header" style={s.kicker}>
       {children}
@@ -121,7 +121,7 @@ export function Kicker({ children }: { children: React.ReactNode }) {
   );
 }
 export function Note({ children }: { children: React.ReactNode }) {
-  const { C, s } = useThemeStyles();
+  const { s } = useThemeStyles();
   return <T style={s.note}>{children}</T>;
 }
 export function Card({
@@ -131,7 +131,7 @@ export function Card({
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 }) {
-  const { C, s } = useThemeStyles();
+  const { s } = useThemeStyles();
   return <View style={[s.card, style]}>{children}</View>;
 }
 export function Callout({
@@ -404,7 +404,7 @@ export function Screen({
   );
 }
 export function FooterNote() {
-  const { C, s } = useThemeStyles();
+  const { s } = useThemeStyles();
   return (
     <T style={s.footer}>
       King County Explorer Search & Rescue{"\n"}This app is not monitored.

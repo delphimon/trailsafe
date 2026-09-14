@@ -1,3 +1,4 @@
+/* global __dirname */
 const { withAppDelegate, withInfoPlist } = require('expo/config-plugins');
 const fs = require('node:fs');
 const path = require('node:path');

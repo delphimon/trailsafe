@@ -6,13 +6,19 @@ import {
   ChevronUp,
   Copy,
   FileDown,
+  MessageSquare,
   Share2,
 } from "lucide-react-native";
+import * as SMS from "expo-sms";
 import { useStore } from "@/state/store";
 import { useApp } from "@/state/app";
 import {
   TripPlan,
+  addDays,
   buildPlanText,
+  buildSafeReturnDraft,
+  currentTimeRounded,
+  localDate,
   newPlan,
   suggestOverdue,
   validatePlan,
@@ -27,14 +33,12 @@ import {
   Field,
   Kicker,
   Note,
-  Row,
   Screen,
   T,
   useThemeStyles,
 } from "@/components/trailsafe/ui";
 
 export default function PlanScreen() {
-  const { C, s } = useThemeStyles();
   const { id, edit } = useLocalSearchParams<{ id: string; edit?: string }>();
   const { data, ready, error } = useStore();
   if (!ready)
@@ -83,14 +87,24 @@ function PlanEditor({
   isNew: boolean;
   editInitially: boolean;
 }) {
-  const { C, s } = useThemeStyles();
+  const { s } = useThemeStyles();
   const { update } = useStore();
-  const { run, copy, share, notify } = useApp();
+  const { run, copy, share, notify, setDialog } = useApp();
   const [plan, setPlan] = useState(initial),
     [editing, setEditing] = useState(editInitially),
     [additional, setAdditional] = useState(false),
     [errors, setErrors] = useState<string[]>([]),
     [busy, setBusy] = useState(false);
+  const sendSafeReturn = async () => {
+    const text = buildSafeReturnDraft(plan);
+    const targetPhone = plan.phone ? [plan.phone] : [];
+    if (await SMS.isAvailableAsync()) {
+      await SMS.sendSMSAsync(targetPhone, text);
+      notify("Check Messages to send. TrailSafe cannot verify delivery.");
+    } else {
+      await share(text, "Safe return check-in");
+    }
+  };
   const change = <K extends keyof TripPlan>(key: K, value: TripPlan[K]) => {
     setPlan((p) => ({ ...p, [key]: value }));
     setErrors([]);
@@ -252,6 +266,50 @@ function PlanEditor({
               onPress={() => setEditing(true)}
             />
           </View>
+          {plan.status === "current" && (
+            <>
+              <View style={{ marginTop: 10 }}>
+                <Button
+                  label="Text Contact: I’m Safe"
+                  icon={MessageSquare}
+                  variant="orange"
+                  disabled={busy}
+                  onPress={() => action(() => sendSafeReturn())}
+                />
+              </View>
+              <View style={{ marginTop: 10 }}>
+                <Button
+                  label="Complete Trip Plan"
+                  variant="outline"
+                  disabled={busy}
+                  onPress={() =>
+                    action(async () => {
+                      await save("completed");
+                      notify("Plan completed locally.");
+                      setDialog({
+                        title: "Trip completed!",
+                        message:
+                          "Notify your trusted contact that you’ve returned safely so they don’t worry or treat you as overdue.",
+                        confirmLabel: "Text Contact: I’m Safe",
+                        onConfirm: () => void sendSafeReturn(),
+                      });
+                    })
+                  }
+                />
+              </View>
+            </>
+          )}
+          {plan.status === "completed" && (
+            <View style={{ marginTop: 10 }}>
+              <Button
+                label="Text Contact: I’m Safe"
+                icon={MessageSquare}
+                variant="primary"
+                disabled={busy}
+                onPress={() => action(() => sendSafeReturn())}
+              />
+            </View>
+          )}
           {plan.status !== "current" && plan.status !== "completed" && (
             <View style={{ marginTop: 10 }}>
               <Button
@@ -319,12 +377,150 @@ function PlanEditor({
           </Note>
           <View style={{ marginTop: 14 }}>
             {dateTime("date", "startTime", "Start date", "Start time")}
+            <View style={[s.wrap, { marginTop: -6, marginBottom: 16 }]}>
+              <Chip
+                label="Today"
+                selected={plan.date === localDate()}
+                onPress={() => {
+                  const today = localDate();
+                  change("date", today);
+                  if (!plan.returnDate || plan.returnDate < today) {
+                    change("returnDate", today);
+                  }
+                }}
+              />
+              <Chip
+                label="Tomorrow"
+                selected={plan.date === addDays(localDate(), 1)}
+                onPress={() => {
+                  const tomorrow = addDays(localDate(), 1);
+                  change("date", tomorrow);
+                  if (!plan.returnDate || plan.returnDate < tomorrow) {
+                    change("returnDate", tomorrow);
+                  }
+                }}
+              />
+              <Chip
+                label="Now"
+                selected={false}
+                onPress={() => change("startTime", currentTimeRounded())}
+              />
+              <Chip
+                label="07:00"
+                selected={plan.startTime === "07:00"}
+                onPress={() => change("startTime", "07:00")}
+              />
+              <Chip
+                label="08:00"
+                selected={plan.startTime === "08:00"}
+                onPress={() => change("startTime", "08:00")}
+              />
+              <Chip
+                label="09:00"
+                selected={plan.startTime === "09:00"}
+                onPress={() => change("startTime", "09:00")}
+              />
+            </View>
             {dateTime(
               "returnDate",
               "returnTime",
               "Return date",
               "Expected return",
             )}
+            <View style={[s.wrap, { marginTop: -6, marginBottom: 16 }]}>
+              <Chip
+                label="Same day"
+                selected={plan.returnDate === (plan.date || localDate())}
+                onPress={() => {
+                  const d = plan.date || localDate();
+                  change("returnDate", d);
+                  if (plan.returnTime && !plan.overdueTime) {
+                    const sug = suggestOverdue(d, plan.returnTime, 2);
+                    if (sug) setPlan((p) => ({ ...p, returnDate: d, ...sug }));
+                  }
+                }}
+              />
+              <Chip
+                label="Tomorrow"
+                selected={plan.returnDate === addDays(plan.date || localDate(), 1)}
+                onPress={() => {
+                  const d = addDays(plan.date || localDate(), 1);
+                  change("returnDate", d);
+                  if (plan.returnTime && !plan.overdueTime) {
+                    const sug = suggestOverdue(d, plan.returnTime, 2);
+                    if (sug) setPlan((p) => ({ ...p, returnDate: d, ...sug }));
+                  }
+                }}
+              />
+              <Chip
+                label="+2 days"
+                selected={plan.returnDate === addDays(plan.date || localDate(), 2)}
+                onPress={() => {
+                  const d = addDays(plan.date || localDate(), 2);
+                  change("returnDate", d);
+                  if (plan.returnTime && !plan.overdueTime) {
+                    const sug = suggestOverdue(d, plan.returnTime, 2);
+                    if (sug) setPlan((p) => ({ ...p, returnDate: d, ...sug }));
+                  }
+                }}
+              />
+              <Chip
+                label="16:00 (4 PM)"
+                selected={plan.returnTime === "16:00"}
+                onPress={() => {
+                  const rDate = plan.returnDate || plan.date || localDate();
+                  const sug = suggestOverdue(rDate, "16:00", 2);
+                  setPlan((p) => ({
+                    ...p,
+                    returnDate: rDate,
+                    returnTime: "16:00",
+                    ...(!p.overdueTime && sug ? sug : {}),
+                  }));
+                }}
+              />
+              <Chip
+                label="17:00 (5 PM)"
+                selected={plan.returnTime === "17:00"}
+                onPress={() => {
+                  const rDate = plan.returnDate || plan.date || localDate();
+                  const sug = suggestOverdue(rDate, "17:00", 2);
+                  setPlan((p) => ({
+                    ...p,
+                    returnDate: rDate,
+                    returnTime: "17:00",
+                    ...(!p.overdueTime && sug ? sug : {}),
+                  }));
+                }}
+              />
+              <Chip
+                label="18:00 (6 PM)"
+                selected={plan.returnTime === "18:00"}
+                onPress={() => {
+                  const rDate = plan.returnDate || plan.date || localDate();
+                  const sug = suggestOverdue(rDate, "18:00", 2);
+                  setPlan((p) => ({
+                    ...p,
+                    returnDate: rDate,
+                    returnTime: "18:00",
+                    ...(!p.overdueTime && sug ? sug : {}),
+                  }));
+                }}
+              />
+              <Chip
+                label="Dusk (19:00)"
+                selected={plan.returnTime === "19:00"}
+                onPress={() => {
+                  const rDate = plan.returnDate || plan.date || localDate();
+                  const sug = suggestOverdue(rDate, "19:00", 2);
+                  setPlan((p) => ({
+                    ...p,
+                    returnDate: rDate,
+                    returnTime: "19:00",
+                    ...(!p.overdueTime && sug ? sug : {}),
+                  }));
+                }}
+              />
+            </View>
           </View>
           <Callout title="Expected return vs. overdue time">
             Expected return is when you think you’ll be back. “If you have not
@@ -337,11 +533,50 @@ function PlanEditor({
             "Overdue date",
             "If no contact by",
           )}
-          <Note>
-            Add time for ordinary delays without waiting so long that darkness,
-            weather, cold, or a medical problem could get worse. Choose this
-            time on purpose.
-          </Note>
+          <View style={[s.wrap, { marginTop: -6, marginBottom: 12 }]}>
+            {[
+              { label: "+2 hours", hours: 2 },
+              { label: "+3 hours", hours: 3 },
+              { label: "+4 hours", hours: 4 },
+            ].map(({ label, hours }) => (
+              <Chip
+                key={label}
+                label={label}
+                selected={false}
+                onPress={() => {
+                  const rDate = plan.returnDate || plan.date;
+                  const rTime = plan.returnTime;
+                  if (!rDate || !rTime) {
+                    setErrors(["Set expected return date and time first."]);
+                    return;
+                  }
+                  const sug = suggestOverdue(rDate, rTime, hours);
+                  if (sug) {
+                    setPlan((p) => ({ ...p, ...sug }));
+                    setErrors([]);
+                  }
+                }}
+              />
+            ))}
+            <Chip
+              label="Next morning (08:00)"
+              selected={false}
+              onPress={() => {
+                const rDate = plan.returnDate || plan.date;
+                if (!rDate) {
+                  setErrors(["Set expected return date first."]);
+                  return;
+                }
+                const nextDate = addDays(rDate, 1);
+                setPlan((p) => ({
+                  ...p,
+                  overdueDate: nextDate,
+                  overdueTime: "08:00",
+                }));
+                setErrors([]);
+              }}
+            />
+          </View>
           <View style={{ marginVertical: 12 }}>
             <Button
               label="Suggest: expected return + 2 hours"

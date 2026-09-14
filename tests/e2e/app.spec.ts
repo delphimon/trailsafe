@@ -131,7 +131,7 @@ test("prototype home, automatic coordinates, dropdown persistence, and watcher c
   await page.getByRole("button", { name: "Share", exact: true }).click();
   await expect
     .poll(() => page.evaluate(() => window.sharedText))
-    .toContain("Accuracy: ±8 m");
+    .toContain("Accuracy: ±26 ft");
   await page.screenshot({ path: "docs/screenshots/emergency-utm.png" });
   await page.reload();
   await expect(page.getByTestId("coordinates")).toContainText("10T");

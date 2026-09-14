@@ -4,7 +4,7 @@ import { Block } from "@/content";
 import { useApp } from "@/state/app";
 import { Callout, useThemeStyles, fonts, Kicker, Note, Row, T } from "./ui";
 export function ArticleBody({ blocks }: { blocks: Block[] }) {
-  const { C, s, isDark } = useThemeStyles();
+  const { C } = useThemeStyles();
   const { run } = useApp();
   return (
     <>

@@ -52,6 +52,18 @@ export const emptyProfile: Profile = {
 export function localDate(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
+export function addDays(dateStr: string, days: number) {
+  if (!validDate(dateStr)) return localDate();
+  const d = new Date(`${dateStr}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+export function currentTimeRounded(now = new Date()) {
+  const mins = Math.ceil(now.getMinutes() / 5) * 5;
+  const d = new Date(now);
+  d.setMinutes(mins);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
 export function newPlan(profile: Profile = emptyProfile): TripPlan {
   return {
     id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`,
@@ -117,10 +129,10 @@ export function validatePlan(p: TripPlan) {
   }
   return errors;
 }
-export function suggestOverdue(date: string, time: string) {
+export function suggestOverdue(date: string, time: string, hours = 2) {
   if (!validDate(date) || !validTime(time)) return null;
   const d = new Date(`${date}T${time}:00Z`);
-  d.setUTCHours(d.getUTCHours() + 2);
+  d.setUTCHours(d.getUTCHours() + hours);
   return {
     overdueDate: d.toISOString().slice(0, 10),
     overdueTime: d.toISOString().slice(11, 16),
@@ -212,4 +224,8 @@ export function escapeHTML(text: string) {
 }
 export function planHTML(p: TripPlan) {
   return `<!doctype html><html><head><meta charset="utf-8"><title>TrailSafe Trip Plan</title><style>@page{margin:24mm}body{font:14px system-ui;color:#171B18}h1{color:#1B3A2E}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;line-height:1.6}</style></head><body><h1>TrailSafe · Trip Plan</h1><pre>${escapeHTML(buildPlanText(p))}</pre></body></html>`;
+}
+export function buildSafeReturnDraft(p: TripPlan) {
+  const destination = p.title.trim() || p.trailhead.trim() || "my trip";
+  return `Hi! I’m back safely from ${destination}. Trip plan is complete and all is well! (Sent via KCESAR TrailSafe)`;
 }

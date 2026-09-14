@@ -74,7 +74,7 @@ test("stale and low-accuracy warnings travel with copied coordinates", () => {
   assert.match(text, /STALE LOCATION/);
   assert.match(text, /LOW ACCURACY/);
   assert.match(text, /120 seconds old/);
-  assert.match(text, /±300 m/);
+  assert.match(text, /±984 ft/);
   assert.match(text, /2026-09-06T10:00:00.000Z/);
 });
 test("unknown accuracy is not reported as zero; mocked position is labeled", () => {

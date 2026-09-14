@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useApp } from "@/state/app";
 import { Button, useThemeStyles, fonts, T } from "./ui";
 export function BottomBar() {
-  const { C, s } = useThemeStyles();
+  const { C } = useThemeStyles();
   const path = usePathname(),
     insets = useSafeAreaInsets();
   const tabs = [

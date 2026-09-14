@@ -10,7 +10,7 @@ export function EmergencyActions({
   situation?: string;
   compact?: boolean;
 }) {
-  const { C, s } = useThemeStyles();
+  const { s } = useThemeStyles();
   const { emergency } = useApp();
   return (
     <View style={compact ? s.flexRow : { gap: 10 }}>

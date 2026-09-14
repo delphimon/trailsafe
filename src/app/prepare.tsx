@@ -19,7 +19,7 @@ import {
   useThemeStyles,
 } from "@/components/trailsafe/ui";
 export default function Prepare() {
-  const { C, s } = useThemeStyles();
+  const { s } = useThemeStyles();
   const { data, update, ready, error } = useStore(),
     { run, setDialog } = useApp();
   const toggle = (key: string) =>
@@ -58,7 +58,7 @@ export default function Prepare() {
       </View>
       <View style={{ marginTop: 12 }}>
         <Note>
-          This isn't an exhaustive gear list — just the Ten Essentials plus a
+          This isn’t an exhaustive gear list — just the Ten Essentials plus a
           few reminders specific to your trip type.
         </Note>
         <Callout title="Why this matters">

@@ -20,7 +20,7 @@ import {
 } from "@/lib/coordinates";
 import { Button, useThemeStyles, fonts, T } from "./ui";
 export function LocationCard() {
-  const { C, s, isDark } = useThemeStyles();
+  const { C, s } = useThemeStyles();
   const { location, run, copy, share } = useApp(),
     { data, update } = useStore();
   const [open, setOpen] = useState(false),
@@ -69,6 +69,51 @@ export function LocationCard() {
         >
           YOUR LOCATION
         </T>
+      </View>
+      <View
+        accessibilityRole="radiogroup"
+        accessibilityLabel="Coordinate format toggle"
+        style={{
+          flexDirection: "row",
+          backgroundColor: "#132720",
+          borderRadius: 8,
+          padding: 3,
+          marginBottom: 10,
+        }}
+      >
+        {FORMATS.map((format) => {
+          const selected = data.format === format.value;
+          return (
+            <Pressable
+              key={format.value}
+              accessibilityRole="button"
+              accessibilityLabel={format.value}
+              accessibilityState={{ selected }}
+              aria-selected={selected}
+              onPress={() =>
+                void run(() => update((d) => ({ ...d, format: format.value })))
+              }
+              style={{
+                flex: 1,
+                minHeight: 36,
+                borderRadius: 6,
+                backgroundColor: selected ? "#789987" : "transparent",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <T
+                style={{
+                  fontFamily: fonts.bold,
+                  fontSize: 13,
+                  color: selected ? "white" : "#AFCDBB",
+                }}
+              >
+                {format.value}
+              </T>
+            </Pressable>
+          );
+        })}
       </View>
       <Pressable
         accessibilityRole="button"

@@ -4,7 +4,8 @@ import { router } from "expo-router";
 import { ClipboardList, Plus, UserRound } from "lucide-react-native";
 import { useStore } from "@/state/store";
 import { useApp } from "@/state/app";
-import { isOverdue, newPlan } from "@/lib/plans";
+import { isOverdue, newPlan, buildSafeReturnDraft } from "@/lib/plans";
+import * as SMS from "expo-sms";
 import {
   Button,
   useThemeStyles,
@@ -20,7 +21,7 @@ import {
 export default function Plans() {
   const { C, s } = useThemeStyles();
   const { data, update, ready, error } = useStore(),
-    { run, notify, setDialog } = useApp();
+    { run, notify, setDialog, share } = useApp();
   const [now, setNow] = useState(new Date());
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 30000);
@@ -159,22 +160,32 @@ export default function Plans() {
                     small
                     variant="ghost"
                     onPress={() =>
-                      void run(async () => {
-                        await update((d) => ({
-                          ...d,
-                          plans: d.plans.map((x) =>
-                            x.id === p.id
-                              ? {
-                                  ...x,
-                                  status: "completed",
-                                  updatedAt: Date.now(),
-                                }
-                              : x,
-                          ),
-                        }));
-                        notify(
-                          "Completed locally. Remember to tell your contact.",
-                        );
+                      setDialog({
+                        title: "Trip completed?",
+                        message: `Mark “${p.title || "Untitled trip"}” as complete and notify your contact that you’re safe?`,
+                        confirmLabel: "Complete & Text Contact",
+                        onConfirm: async () => {
+                          await update((d) => ({
+                            ...d,
+                            plans: d.plans.map((x) =>
+                              x.id === p.id
+                                ? {
+                                    ...x,
+                                    status: "completed",
+                                    updatedAt: Date.now(),
+                                  }
+                                : x,
+                            ),
+                          }));
+                          notify("Trip completed locally.");
+                          const text = buildSafeReturnDraft(p);
+                          const targetPhone = p.phone ? [p.phone] : [];
+                          if (await SMS.isAvailableAsync()) {
+                            await SMS.sendSMSAsync(targetPhone, text);
+                          } else {
+                            await share(text, "Safe return check-in");
+                          }
+                        },
                       })
                     }
                   />

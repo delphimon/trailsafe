@@ -7,6 +7,9 @@ import {
   buildPlanText,
   planHTML,
   isOverdue,
+  addDays,
+  currentTimeRounded,
+  buildSafeReturnDraft,
 } from "../src/lib/plans";
 import { initialData, parseStoredData } from "../src/lib/persistence";
 const p = {
@@ -89,3 +92,29 @@ test("damaged or unknown storage is rejected instead of silently reset", () => {
   ])
     assert.throws(() => parseStoredData(raw));
 });
+test("safe return notification draft includes destination and safe confirmation", () => {
+  const draft = buildSafeReturnDraft(p);
+  assert.match(draft, /Granite Mountain/);
+  assert.match(draft, /back safely/);
+  assert.match(draft, /TrailSafe/);
+});
+test("addDays correctly increments dates", () => {
+  assert.equal(addDays("2026-09-13", 1), "2026-09-14");
+  assert.equal(addDays("2026-09-30", 1), "2026-10-01");
+  assert.equal(addDays("2026-12-31", 2), "2027-01-02");
+});
+test("suggestOverdue with custom hours calculates correct deadline", () => {
+  assert.deepEqual(suggestOverdue("2026-09-13", "14:00", 3), {
+    overdueDate: "2026-09-13",
+    overdueTime: "17:00",
+  });
+  assert.deepEqual(suggestOverdue("2026-09-13", "22:00", 4), {
+    overdueDate: "2026-09-14",
+    overdueTime: "02:00",
+  });
+});
+test("currentTimeRounded rounds to five minutes in 24-hour format", () => {
+  const d = new Date("2026-09-13T14:12:00");
+  assert.equal(currentTimeRounded(d), "14:15");
+});
+
