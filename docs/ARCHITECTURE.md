@@ -24,6 +24,7 @@ graph TD
         Home["Home (/)"]
         Emergency["Emergency (/emergency)"]
         Plans["Trip Plans (/plans, /plans/[id])"]
+        PlanAction["Plan Actions (/plan/current/[action])"]
         Profile["Profile (/profile)"]
         Prepare["Prepare & Checklists (/prepare)"]
         Guide["Guide & Articles (/guide, /article/[id])"]
@@ -40,6 +41,7 @@ graph TD
         EmergLogic["Emergency (emergency.ts)<br/>Draft formatting & practice guard"]
         PlanLogic["Plans (plans.ts)<br/>Validation, overdue calc, PDF/HTML"]
         PersistLogic["Persistence (persistence.ts)<br/>Schema validation & profile migration"]
+        SearchLogic["Search Indexing (search-indexing.ts)<br/>Content hashing & keywords"]
     end
 
     subgraph Hardware ["Device Hardware & Native Modules"]
@@ -48,6 +50,8 @@ graph TD
         Telephony["Native Dial & expo-sms"]
         ShareSheets["react-native Share & expo-print"]
         OTAUpdates["expo-updates (EAS Update)"]
+        VoiceIntents["Siri & Google Assistant<br/>(TrailSafeIntents.swift & shortcuts.xml)"]
+        DeviceSearch["CoreSpotlight & Shortcuts<br/>(modules/device-search)"]
     end
 
     Home --> StoreContext
@@ -56,7 +60,9 @@ graph TD
     Emergency --> GPS
     Plans --> PlanLogic
     Plans --> StoreContext
+    PlanAction --> StoreContext
     Profile --> StoreContext
+    Guide --> SearchLogic
     About --> OTAUpdates
 
     StoreContext --> Storage
@@ -64,6 +70,12 @@ graph TD
     AppContext --> EmergLogic
     AppContext --> Telephony
     AppContext --> ShareSheets
+
+    VoiceIntents -.->|Deep Link| Emergency
+    VoiceIntents -.->|Deep Link| PlanAction
+    VoiceIntents -.->|Deep Link| Guide
+    DeviceSearch -.->|SceneDelegate / Spotlight| Guide
+    SearchLogic --> DeviceSearch
 ```
 
 ---
@@ -157,6 +169,20 @@ graph TD
   - `checkBg`: Elevated slate background (#28352D) for active tabs and checked rows
 - **Automated Verification**: `tests/theme.test.ts` mathematically verifies standard W3C relative luminance and contrast ratios across all critical pairings (>= 4.5:1 for body text, >= 3.0:1 for bold/display text).
 
+### F. Voice Assistant, App Intents & Device Search Subsystem
+- **Files**: `modules/device-search/`, `plugins/with-app-intents.cjs`, `plugins/ios/TrailSafeIntents.swift`, `plugins/ios/TrailSafeSceneDelegate.swift`, `src/lib/search-indexing.ts`, `src/app/plan/current/[action].tsx`
+- **Voice Intents & Deep-Link Protocol**:
+  - `OpenEmergencyIntent`: Deep-links to `trailsafe://emergency`. Instantly initiates high-accuracy GPS fix, displays coordinates in the user's preferred format (DD, DDM, UTM), and prepares the 911 SMS draft without dispatching. Compatible with Siri phrases ("Open Emergency in TrailSafe", "I need help in TrailSafe") and physical Action Button / Lock Screen controls.
+  - `CompleteCurrentTripIntent`: Deep-links to `trailsafe://plan/current/complete`. Transitions the active trip plan to `completed` in `AsyncStorage`, presents a toast reminding the hiker to notify emergency contacts, and avoids SAR false alarms.
+  - `SearchGuideIntent`: Deep-links to `trailsafe://guide?search=<query>`. Pre-populates the search bar and immediately filters offline survival articles.
+- **CoreSpotlight & Native Device Indexing**:
+  - Local Expo module `modules/device-search` exposes `indexItems(items)` and `clearItems()` bridging to Apple's `CSSearchableIndex` on iOS and Android's `ShortcutManagerCompat`.
+  - Indexes all 20 bundled offline emergency articles with rich extracted keywords (e.g. hypothermia, cold, shivering, rewarming).
+  - `TrailSafeSceneDelegate.swift` captures Spotlight tap activities (`CSSearchableItemActionType`) on both cold launch and warm resume, routing to `trailsafe://article/<id>`.
+- **CNG & OTA Compatibility**:
+  - `plugins/with-app-intents.cjs` automatically injects `TrailSafeIntents.swift`, `Info.plist` user activity types, and Android `shortcuts.xml` during `npx expo prebuild --clean`.
+  - `getGuideContentVersion()` computes a deterministic hash of the library contents. When an OTA JavaScript update via `expo-updates` changes the offline library, the app detects the version bump and automatically re-indexes native search without requiring a new App Store binary.
+
 ---
 
 ## 4. Offline Content Engine
@@ -174,10 +200,11 @@ graph TD
 
 | Test Suite | Framework | Command | Scope |
 | :--- | :--- | :--- | :--- |
-| **Unit & Math Tests** | `node:test` + `tsx` | `npm test` | Coordinates, UTM projections, date wrapping, storage migration, practice guards. |
+| **Unit & Math Tests** | `node:test` + `tsx` | `npm test` | Coordinates, UTM projections, date wrapping, storage migration, practice guards, guide content hashing, keyword extraction, and hands-free plan completion (48 tests). |
 | **Theme Contrast Tests** | `node:test` + `tsx` | `npm test` | Mathematical W3C relative luminance and contrast ratios for WCAG AA compliance. |
-| **Type Integrity** | `tsc --noEmit` | `npm run typecheck` | Strict TypeScript compilation across all app routes and components. |
+| **Type Integrity** | `tsc --noEmit` | `npm run typecheck` | Strict TypeScript compilation across all app routes, modules, and components. |
 | **Linter** | `eslint` | `npx eslint .` | React Compiler, React Native, and Expo Router lint rules. |
-| **Web Export** | `expo export` | `npx expo export --platform web` | Validates static route generation across all 12 routes. |
+| **Web Export** | `expo export` | `npx expo export --platform web` | Validates static route generation across all 13 routes (including `/plan/current/[action]`). |
 | **End-to-End Tests** | Playwright | `npm run test:e2e` | 9 full browser flows against production web export on port 8082 with Chrome. |
 | **Native iOS Smoke** | XCTest | `tests/native/TrailSafeSmoke.swift` | Native Xcode Release simulator build verifying GPS and UI. |
+| **Physical iOS Release** | `xcrun devicectl` | `bash scripts/install-iphone.sh` | Signed Release build and direct installation on physical iPhone hardware. |

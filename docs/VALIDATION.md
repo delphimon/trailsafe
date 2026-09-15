@@ -4,13 +4,20 @@
 
 - **TypeScript Strict Typecheck**: Passed with 0 errors (`npm run typecheck`).
 - **Expo ESLint**: Passed with 0 errors (`npx eslint .`).
-- **44 Unit & Math Tests (`npm test`)**:
+- **48 Unit & Math Tests (`npm test`)**:
   - Coordinate transformations (DD, DDM, UTM WGS84 projections, Norway/Svalbard zones, antimeridian and polar boundaries).
   - Practice isolation (asserting zero native handoffs when practice is enabled).
   - Emergency message generation (asserting overdue drafts never insert caller GPS).
   - Trip plan validation (overnight date math, midnight deadline carry, time-zone overdue checks, PDF escaping, HTML generator).
   - Versioned storage round-tripping, corrupted data rejection, and dual-vehicle legacy profile migration.
   - Theme color token parity and mathematical W3C WCAG 2.1 relative luminance contrast tests (>= 4.5:1 body text, >= 3.0:1 bold text across all light/dark surfaces).
+  - Offline guide content hashing determinism (`getGuideContentVersion`) for OTA updates.
+  - Guide search item formatting and domain emergency keyword extraction.
+  - Hands-free trip plan transition logic (`plan/current/[action]`) and contact reminder prompts.
+- **Continuous Native Generation (CNG) & Prebuild**:
+  - `npx expo prebuild --clean` passes cleanly with exit code 0.
+  - Autolinks `modules/device-search` for iOS CoreSpotlight and Android shortcuts.
+  - Injects `TrailSafeIntents.swift` (App Intents for Siri and Action Button) and Android `shortcuts.xml` via `plugins/with-app-intents.cjs`.
 - **9 Chromium Browser End-to-End Tests (`npm run test:e2e`)**:
   - Automatic coordinates, dropdown persistence, and watcher cleanup.
   - Denied location permission handling.
@@ -22,7 +29,7 @@
   - Small screen 320px responsive layout without overflow.
   - About screen native build info and OTA update checking action.
 - All browser location values are injected test fixtures. Phone and share integrations are intercepted. No test calls/texts were sent to emergency services.
-- Expo iOS, Android, and web JavaScript/Hermes exports.
+- Expo iOS, Android, and web JavaScript/Hermes exports across 13 static routes (including `/plan/current/[action]`).
 - iOS native prebuild and CocoaPods dependency installation.
 - Xcode Release simulator build and native XCTest UI flow on iPhone 17 Pro / iOS 26.5.
 
@@ -34,14 +41,27 @@ The build artifact is `/private/tmp/trailsafe-derived/Build/Products/Release-iph
 
 This validates native compilation and the exercised simulator flows, not physical GPS, carrier service, satellite service, or actual 911 delivery.
 
-## Personal iPhone installation — September 6, 2026
+## Personal iPhone installation — September 15, 2026
 
-- Built a signed arm64 **Release** for the connected iPhone 17 Pro Max running iOS 27.0, using Xcode 27 beta and automatic Apple development signing.
-- `codesign --verify --deep --strict` passed. The embedded provisioning profile includes the target phone. The app contains its 4,878,457-byte `main.jsbundle` and bundled fonts; the Release native entry point loads this bundle from the app package.
-- Apple CoreDevice reported successful installation and launch of `com.appliedinteractions.trailsafe`, version 0.1.0. No emergency actions were exercised on the physical phone.
-- Installable device package saved locally at `builds/TrailSafe-0.1.0-iphone.ipa` (ignored by Git). The package is development-signed for the provisioned phone; it is not an App Store upload or public download link.
-- The embedded profile expires September 14, 2026 at 06:11:02 UTC (September 13 at 11:11 p.m. Pacific). Rebuild/reinstall to renew this personal installation. No claim of long-term distribution signing is made.
-- Repeat future builds and installations using `scripts/install-iphone.sh`; see README. Initial physical launch was performed with the phone connected to the Mac over the local network; a cold launch in airplane mode remains a separate check.
+- **AppIntents Fix**: Resolved `appintentsmetadataprocessor` error in `TrailSafeIntents.swift` by using static phrase triggers without open-ended String parameter interpolations.
+- **Signed Release Build**: Built signed arm64 Release package for connected physical iPhone (UDID `00008150-000E5D110247801C`) using `scripts/install-iphone.sh` and Apple Development signing (Team ID `65Q2FMW3ZX`).
+- **Code Signing**: Passed `codesign --verify --deep --strict`. The embedded provisioning profile includes the provisioned phone.
+- **Installation**: Successfully installed directly on the physical iPhone via `xcrun devicectl device install app`:
+  ```
+  App installed:
+  • bundleID: com.appliedinteractions.trailsafe
+  • installationURL: file:///private/var/containers/Bundle/Application/7F43C5C7-F12C-47E9-BF82-D20CB817040C/TrailSafe.app/
+  • databaseUUID: FA3A89AF-3804-4BCB-98BD-57BB1A84373B
+  Installed TrailSafe Release on the selected iPhone.
+  ```
+- **Live Capabilities on Device**:
+  - Siri voice triggers and Action Button / Lock Screen control integration (`OpenEmergencyIntent`).
+  - Hands-free trip completion (`CompleteCurrentTripIntent`).
+  - Offline Guide CoreSpotlight search indexing with direct deep links to articles.
+- Rebuild/reinstall at any time using:
+  ```bash
+  bash scripts/install-iphone.sh 00008150-000E5D110247801C 65Q2FMW3ZX
+  ```
 
 ## Remaining physical and release checks
 

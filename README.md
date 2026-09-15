@@ -1,6 +1,6 @@
 # KCESAR TrailSafe
 
-An offline-first wilderness safety companion built with React Native 0.86, TypeScript, and Expo SDK 57. It follows the supplied **TrailSafe** HTML prototype’s design and content, adapting the older TrailReady product definition to Expo for iOS and Android. Web is available for development and workflow review.
+An offline-first wilderness safety companion built with React Native 0.86, TypeScript, and Expo SDK 57. It follows the supplied **TrailSafe** HTML prototype’s design and content, adapting the older TrailReady product definition to Expo for iOS and Android. Features instant coordinate translation (DD/DDM/UTM), verifiable SAR trip plans, offline emergency guides, Siri & Google Assistant voice shortcuts, on-device CoreSpotlight search indexing, and Action Button integration. Web is available for development and workflow review.
 
 ## Run
 
@@ -72,6 +72,8 @@ The preview server supports dynamic routes for device-local trip plans and bundl
 - **Reusable profile:** local name/contact, dual vehicle management (Car 1 and Car 2), equipment, and optional medical considerations prefill new plans. Existing plans retain their original details.
 - **Prepare:** persistent Ten Essentials and phone checklists, trip-type add-ons, an explicit food reminder, reset, and external condition resources.
 - **Guide:** 20 bundled articles, missing-versus-overdue branching, full-text search, and source references.
+- **Voice assistant & system integration:** Siri App Intents (`OpenEmergencyIntent`, `CompleteCurrentTripIntent`, `SearchGuideIntent`) and Google Assistant shortcuts (`shortcuts.xml`). Action Button & Lock Screen shortcut trigger. Instant emergency screen launch (`trailsafe://emergency`), hands-free trip completion and start (`trailsafe://plan/current/complete`), and voice search (`trailsafe://guide?search=...`).
+- **On-device search indexing:** Local Expo module (`modules/device-search`) indexing all 20 offline survival guides into iOS CoreSpotlight (`CSSearchableIndex`) and Android shortcuts (`ShortcutManagerCompat`) with deterministic content hashing (`getGuideContentVersion`) that triggers automated re-indexing across OTA updates.
 - **About:** organization distinctions, privacy, content version/review status, source directory, native build metadata, OTA update status (`expo-updates`), check for updates flow, profile management, and local data deletion.
 
 There is no account, backend, analytics, automatic emergency notification, or background tracking. Plans are not monitored. Copy, share, Maps, and phone/message actions are explicit. Device backups may include saved local app data.
@@ -85,7 +87,7 @@ npm test
 npm run export
 ```
 
-Browser tests use **synthetic locations and intercepted handoffs**, never live 911:
+Runs 48 automated unit and contrast tests (`npm test`), strict TypeScript type checking, and linter. Browser tests use **synthetic locations and intercepted handoffs**, never live 911:
 
 ```sh
 npx playwright install chromium
@@ -100,10 +102,12 @@ Set `TRAILSAFE_BROWSER` to an existing Chromium executable if needed. See [valid
 - [Architecture & Technical Reference](docs/ARCHITECTURE.md): Full technical specifications, data flows, and subsystem deep dive.
 - [Agent & Developer Guide](AGENTS.md): Essential rules, conventions, and file guide for developers and AI agents.
 - [Implementation Decisions](docs/IMPLEMENTATION.md): Scope reconciliation, design, technical limits, and content corrections.
+- `modules/device-search/`: local Expo module interfacing with CoreSpotlight (`CSSearchableIndex`) and Android shortcuts (`ShortcutManagerCompat`).
+- `plugins/with-app-intents.cjs`: CNG config plugin generating Swift App Intents and Android shortcuts.
 - `src/app/`: Expo Router screens.
 - `src/components/trailsafe/`: native shared UI, coordinate card, emergency controls, and design tokens (`theme.ts`).
 - `src/content/library.json`: editable offline content blocks and metadata; no HTML/WebView runtime.
-- `src/lib/`: coordinate conversion, trip logic, safe PDF text escaping, persistence validation, dual vehicle migration, and emergency action guard.
+- `src/lib/`: coordinate conversion, trip logic, safe PDF text escaping, persistence validation, dual vehicle migration, emergency action guard, and on-device search indexing.
 - `src/state/`: local storage and shared application state.
 - `src/hooks/use-location.ts`: foreground lifecycle, native Expo Location, and browser geolocation adapter.
 - `docs/reference/`: unchanged supplied documents for provenance.

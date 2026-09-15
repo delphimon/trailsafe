@@ -44,17 +44,32 @@ This guide gives developers and AI agents the full context needed to build, test
 
 ```
 trailsafe/
+├── modules/
+│   └── device-search/            # Local Expo module for CoreSpotlight (iOS) & shortcuts (Android)
+│       ├── ios/                  # Swift CoreSpotlight indexing implementation
+│       ├── android/              # Kotlin ShortcutManagerCompat implementation
+│       ├── index.ts              # Universal TypeScript module interface
+│       └── expo-module.config.json
+├── plugins/
+│   ├── with-ios-scenes.cjs       # Scene lifecycle configuration for iOS 27
+│   ├── with-app-intents.cjs      # CNG plugin injecting App Intents & Android shortcuts.xml
+│   └── ios/
+│       ├── TrailSafeIntents.swift # Siri AppIntents, AppShortcutsProvider, Action Button hooks
+│       └── TrailSafeSceneDelegate.swift # Intercepts CoreSpotlight item selection
 ├── src/
 │   ├── app/                      # Expo Router screens (routes map 1:1 to URL paths)
-│   │   ├── _layout.tsx           # App root: font loading, splash, StoreProvider, AppProvider, Shell
+│   │   ├── _layout.tsx           # App root: font loading, splash, StoreProvider, AppProvider, Shell, Search Indexing
 │   │   ├── index.tsx             # Home screen (Emergency hero, quick links, current plan banner)
 │   │   ├── emergency.tsx         # Emergency screen (LocationCard, Call/Text 911, Practice toggle)
 │   │   ├── prepare.tsx           # Checklists (Ten Essentials, phone prep, trip presets)
-│   │   ├── guide.tsx             # Offline survival & first-aid library search
+│   │   ├── guide.tsx             # Offline survival & first-aid library search (supports ?search= query)
 │   │   ├── article/[id].tsx      # Dynamic article reader for library topics
 │   │   ├── plans/
 │   │   │   ├── index.tsx         # List of saved trip plans (Drafts, Current, Completed)
 │   │   │   └── [id].tsx          # Trip plan editor & reader (new plan, edit, share, PDF)
+│   │   ├── plan/
+│   │   │   └── current/
+│   │   │       └── [action].tsx  # Hands-free trip completion/start route (/plan/current/complete)
 │   │   ├── profile.tsx           # Hiker reusable profile (Name, Phone, Car 1, Car 2, Comms)
 │   │   ├── about.tsx             # SAR info, privacy, Native Build & OTA Update details
 │   │   └── resources.tsx         # Directory of verified PNW SAR and 911 links
@@ -72,7 +87,8 @@ trailsafe/
 │   │   ├── emergency.ts          # Emergency message drafts and practice interlock
 │   │   ├── plans.ts              # TripPlan schema, validation, overdue calculations, HTML export
 │   │   ├── persistence.ts        # Storage schema, parseStoredData validation, profile migration
-│   │   └── export-plan.ts        # PDF generation (expo-print) and share sheet (expo-sharing)
+│   │   ├── export-plan.ts        # PDF generation (expo-print) and share sheet (expo-sharing)
+│   │   └── search-indexing.ts    # Guide content hashing and CoreSpotlight/Android indexing
 │   ├── state/
 │   │   ├── store.tsx             # Queued serialized storage store (StoreProvider, useStore)
 │   │   └── app.tsx               # UI dialogs, toasts, practice mode, emergency actions (useApp)
@@ -84,6 +100,7 @@ trailsafe/
 │   ├── emergency.test.ts         # Unit tests for practice isolation and draft creation
 │   ├── plans.test.ts             # Unit tests for plan validation, storage, and dual vehicle migration
 │   ├── theme.test.ts             # Automated WCAG AA/AAA relative luminance contrast suite
+│   ├── search-indexing.test.ts   # Unit tests for content hashing, keyword extraction, and hands-free actions
 │   ├── e2e/
 │   │   └── app.spec.ts           # 9 Playwright end-to-end browser tests
 │   └── native/                   # Native iOS smoke tests (XCTest)
@@ -133,13 +150,23 @@ trailsafe/
   - Badges/Toasts: `toastBg/toastText`, `chipSelectedBg/chipSelectedText`.
 - **Automated Verification**: `tests/theme.test.ts` calculates relative luminance and asserts WCAG AA compliance (>= 4.5:1 for body/subtext, >= 3.0:1 for large bold text) across all light and dark combinations.
 
+### E. Voice Assistant, App Intents & Device Search Subsystem (`modules/device-search`, `plugins/with-app-intents.cjs`, `plugins/ios/TrailSafeIntents.swift`, `src/lib/search-indexing.ts`, `src/app/plan/current/[action].tsx`)
+- **Emergency / Panic Trigger**: Siri ("Open Emergency in TrailSafe", "I need help in TrailSafe") or Action Button / Lock Screen controls open `trailsafe://emergency` for immediate GPS acquisition and 911 SMS prep without live dispatch risk.
+- **Hands-Free Trip Management**: Assistant commands ("Mark my trip complete in TrailSafe", "Start my trip in TrailSafe") invoke `trailsafe://plan/current/complete` or `start`. It updates persistent storage and alerts hikers to confirm safe return with emergency contacts, preventing false SAR callouts.
+- **Safety Guide Voice Search**: "Search in TrailSafe" deep-links to `trailsafe://guide?search=<query>` for instant filtering across all 20 offline survival articles.
+- **On-Device Search Indexing**:
+  - `modules/device-search`: Local Expo module interfacing with CoreSpotlight (`CSSearchableIndex`) on iOS and `ShortcutManagerCompat` on Android.
+  - `TrailSafeSceneDelegate.swift`: Intercepts `CSSearchableItemActionType` to route directly to `trailsafe://article/[id]`.
+  - OTA Compatibility: `getGuideContentVersion` hashes article contents. Whenever an OTA update via `expo-updates` changes guide content, the app detects the hash change and silently re-indexes CoreSpotlight/Android shortcuts on launch.
+- **Continuous Native Generation (CNG)**: `plugins/with-app-intents.cjs` injects `TrailSafeIntents.swift`, `Info.plist` activity types, and Android `shortcuts.xml` dynamically during `npx expo prebuild --clean`.
+
 ---
 
 ## 5. Development & Testing Commands
 
 ### Standard Checks
 ```sh
-# 1. Run all 44 unit & contrast tests
+# 1. Run all 48 unit & contrast tests
 npm test
 
 # 2. Strict TypeScript type check
@@ -176,6 +203,8 @@ bash scripts/install-iphone.sh YOUR_IPHONE_UDID YOUR_APPLE_TEAM_ID
 1. **Expo Versioned Docs**: Always consult `https://docs.expo.dev/versions/v57.0.0/` for API contracts in SDK 57.
 2. **Web Export Sandbox**: `npx expo export` traverses parent directories to find workspace root (`/Users/andrew/package.json`). Inside agent sandbox environments, always execute `expo export` with `BypassSandbox: true`.
 3. **Preview Port is 8082**: `scripts/serve-preview.cjs` serves on port `8082` (to avoid standard Metro port 8081 conflicts). Playwright's `baseURL` in `playwright.config.ts` defaults to `http://localhost:8082`.
-4. **Node Test Runner Separation**: The unit test runner uses `tsx --test tests/*.test.ts`. Any file imported by tests must NOT import React Native components that rely on JSX runtime without transpilation. Keep design tokens in `theme.ts` and domain logic in `src/lib/`.
-5. **Preserve User Rules**: Always keep the user rule `# Expo HAS CHANGED` at the very top of `AGENTS.md`.
+4. **Node Test Runner Separation**: The unit test runner uses `tsx --test tests/*.test.ts`. Any file imported by tests must NOT import React Native components that rely on JSX runtime without transpilation. In `src/lib/search-indexing.ts`, keep domain functions pure and load `@react-native-async-storage/async-storage` and `device-search` lazily inside `indexGuideContent()`.
+5. **AppIntents Phrase Parameter Restrictions**: In Swift `AppShortcutsProvider.appShortcuts`, trigger phrases cannot interpolate open-ended primitive `String` parameters (e.g. `\(\.$query)`). Only `AppEntity` or `AppEnum` types are permitted. Use static phrases (e.g., `"Search in \(.applicationName)"`) so Apple's `appintentsmetadataprocessor` compiles successfully.
+6. **Preserve User Rules**: Always keep the user rule `# Expo HAS CHANGED` at the very top of `AGENTS.md`.
+
 

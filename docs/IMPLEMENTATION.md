@@ -72,6 +72,32 @@ Extended vehicle management to support multi-vehicle households and flexible car
 - **Profile UI**: Reorganized `src/app/profile.tsx` into structured cards for Personal info, Primary Vehicle (Car 1), Secondary Vehicle (Car 2), Medical, and Comms.
 - **Quick Plan Selection**: Added quick-select chips (`Car 1` / `Car 2`) under the Vehicle kicker in `src/app/plans/[id].tsx`, allowing one-tap population of trailhead vehicle details during plan creation.
 
+## Voice Assistant Integration (Siri App Intents & Google Assistant)
+
+Implemented hands-free voice controls and hardware button shortcuts to assist hikers when fine motor control is impaired (injury, extreme cold, or panic) and to prevent search and rescue false alarms:
+- **Emergency / Panic Trigger**:
+  - Voice triggers: *"Hey Siri, open Emergency in TrailSafe"*, *"Hey Google, I need help in TrailSafe"*.
+  - Hardware triggers: Mappable to the iPhone Action Button or Lock Screen Control via `OpenEmergencyIntent`.
+  - Behavior: Deep-links to `trailsafe://emergency`. The emergency view immediately engages high-accuracy GPS hardware and pre-fills the 911 SMS text draft with coordinates. In accordance with TrailSafe's core safety invariants, it **never** triggers an automatic 911 call or text.
+- **Hands-Free Trip Plan Management**:
+  - Voice triggers: *"Hey Siri, mark my trip complete in TrailSafe"*, *"Hey Google, mark my trip complete in TrailSafe"*, *"Hey Siri, start my trip in TrailSafe"*.
+  - Behavior: Routes to `trailsafe://plan/current/complete` or `start` ([action].tsx](file:///Users/andrew/development/trailsafe/src/app/plan/current/[action].tsx)). Automatically transitions the current plan to `completed` in `AsyncStorage` and renders a prominent toast instructing the user to message their emergency contact. This directly targets the primary cause of false SAR callouts: overdue deadlines triggered when hikers reach their vehicle safely but forget to notify home contacts.
+- **Safety Guide Voice Search**:
+  - Voice triggers: *"Hey Siri, search in TrailSafe"*, *"Hey Siri, search guide in TrailSafe"*.
+  - Behavior: Routes to `trailsafe://guide?search=<query>`, pre-filtering the 20 offline survival guides instantly.
+- **AppIntents Metadata Constraint & Solution**:
+  - Apple's `appintentsmetadataprocessor` strictly forbids open-ended primitive `String` property interpolations inside `AppShortcut` phrases (`\(\.$query)` causes compile failures). Trigger phrases were implemented using static patterns (`"Search in \(.applicationName)"`), allowing Siri to prompt for search terms while preserving full parameter passing to the intent.
+
+## On-Device Search Indexing (CoreSpotlight & Android Shortcuts)
+
+Integrated on-device system search to allow hikers to find critical medical and survival guides from the OS search interface (iOS Spotlight and Android App Search) without pre-opening the app:
+- **Local Native Module (`modules/device-search`)**: Built an autolinked Expo module bridging to `CSSearchableIndex` on iOS and `ShortcutManagerCompat` on Android.
+- **Domain Keyword Extraction**: Formatted all 20 bundled survival articles with comprehensive emergency keywords (e.g., hypothermia, cold, shivering, rewarming, bear, cougar, heat exhaustion, splint, compass).
+- **Deep-Link Interception**: `TrailSafeSceneDelegate.swift` captures `CSSearchableItemActionType` across both cold boot and warm background resume, routing directly to `trailsafe://article/<id>`.
+- **Continuous Native Generation (CNG)**: `plugins/with-app-intents.cjs` generates `TrailSafeIntents.swift`, `Info.plist` user activity types, and Android `shortcuts.xml` during `npx expo prebuild --clean`, guaranteeing 100% reproducible native builds.
+- **OTA Updates & Content Hashing**: Uses `getGuideContentVersion()` to compute a deterministic 32-bit FNV-1a hash over `library.json`. When an OTA update via `expo-updates` updates the offline library, `_layout.tsx` detects the hash change and silently re-indexes the native search database on boot without requiring a new App Store binary.
+
+
 ## Primary technical and safety references consulted
 
 - [Expo SDK 57 reference](https://docs.expo.dev/versions/v57.0.0/)
