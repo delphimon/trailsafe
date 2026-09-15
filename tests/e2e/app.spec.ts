@@ -318,7 +318,7 @@ test("trip creation, midnight buffer, persistence, editing, and deletion", async
   ).toHaveCount(1);
 });
 
-test("saved profile survives reload and prefills a new plan", async ({
+test("saved profile survives reload and prefills a new plan with dual vehicle selection", async ({
   page,
 }) => {
   await page.goto("/profile");
@@ -326,18 +326,70 @@ test("saved profile survives reload and prefills a new plan", async ({
   await page
     .getByRole("textbox", { name: "Your name", exact: true })
     .fill("Test Profile");
+  await page
+    .getByRole("textbox", { name: "Car 1: Color, make, model", exact: true })
+    .fill("Silver Subaru Outback");
+  await page
+    .getByRole("textbox", { name: "Car 1: License plate and state", exact: true })
+    .fill("WA SUB123");
+  await page
+    .getByRole("textbox", { name: "Car 2: Color, make, model", exact: true })
+    .fill("Blue Rivian R1S");
+  await page
+    .getByRole("textbox", { name: "Car 2: License plate and state", exact: true })
+    .fill("WA RIV789");
+
   await page.getByRole("button", { name: "Save Profile", exact: true }).click();
   await expect(
     page.getByText("Profile saved on this device", { exact: true }),
   ).toBeVisible();
+
   await page.reload();
   await expect(
     page.getByRole("textbox", { name: "Your name", exact: true }),
   ).toHaveValue("Test Profile");
+  await expect(
+    page.getByRole("textbox", { name: "Car 1: Color, make, model", exact: true }),
+  ).toHaveValue("Silver Subaru Outback");
+  await expect(
+    page.getByRole("textbox", { name: "Car 2: Color, make, model", exact: true }),
+  ).toHaveValue("Blue Rivian R1S");
+
   await page.goto("/plans/new");
+  await ready(page);
   await expect(
     page.getByRole("textbox", { name: "Your name", exact: true }),
   ).toHaveValue("Test Profile");
+  await expect(
+    page.getByRole("textbox", { name: "Vehicle color, make, model", exact: true }),
+  ).toHaveValue("Silver Subaru Outback");
+  await expect(
+    page.getByRole("textbox", { name: "License plate and state", exact: true }),
+  ).toHaveValue("WA SUB123");
+
+  // Select Car 2 and verify fields update
+  const car2Button = page.getByRole("button", { name: /Car 2:/ });
+  await expect(car2Button).toBeVisible();
+  await car2Button.click();
+
+  await expect(
+    page.getByRole("textbox", { name: "Vehicle color, make, model", exact: true }),
+  ).toHaveValue("Blue Rivian R1S");
+  await expect(
+    page.getByRole("textbox", { name: "License plate and state", exact: true }),
+  ).toHaveValue("WA RIV789");
+
+  // Switch back to Car 1
+  const car1Button = page.getByRole("button", { name: /Car 1:/ });
+  await expect(car1Button).toBeVisible();
+  await car1Button.click();
+
+  await expect(
+    page.getByRole("textbox", { name: "Vehicle color, make, model", exact: true }),
+  ).toHaveValue("Silver Subaru Outback");
+  await expect(
+    page.getByRole("textbox", { name: "License plate and state", exact: true }),
+  ).toHaveValue("WA SUB123");
 });
 
 test("small screen has no horizontal overflow and retains all tabs", async ({
@@ -355,4 +407,22 @@ test("small screen has no horizontal overflow and retains all tabs", async ({
     page.getByRole("tab", { name: "Emergency", exact: true }),
   ).toBeVisible();
   await page.screenshot({ path: "docs/screenshots/emergency-small.png" });
+});
+
+test("about screen displays native build and update info with check for updates action", async ({
+  page,
+}) => {
+  await page.goto("/about");
+  await ready(page);
+  await expect(page.getByText("Version Details")).toBeVisible();
+  await expect(page.getByTestId("build-version")).toContainText("0.1.0");
+  await expect(page.getByText("OTA Status")).toBeVisible();
+  const checkBtn = page.getByRole("button", { name: "Check for Updates" });
+  await expect(checkBtn).toBeVisible();
+  await checkBtn.click();
+  await expect(
+    page.getByText(
+      /OTA updates are only active on installed native builds|You are on the latest update/,
+    ),
+  ).toBeVisible();
 });

@@ -8,7 +8,7 @@ export default defineConfig({
   use: {
     ...devices["iPhone 13"],
     defaultBrowserType: "chromium",
-    baseURL: process.env.TRAILSAFE_TEST_URL || "http://localhost:8081",
+    baseURL: process.env.TRAILSAFE_TEST_URL || "http://localhost:8082",
     launchOptions: process.env.TRAILSAFE_BROWSER
       ? { executablePath: process.env.TRAILSAFE_BROWSER }
       : undefined,

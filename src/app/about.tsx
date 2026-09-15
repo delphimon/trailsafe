@@ -1,22 +1,105 @@
-import { Linking } from "react-native";
-import { router } from "expo-router";
-import { ExternalLink, UserRound, Trash2 } from "lucide-react-native";
-import { useStore } from "@/state/store";
-import { useApp } from "@/state/app";
 import {
   Button,
   Callout,
   Card,
+  fonts,
   Heading,
   Kicker,
   Note,
   Row,
   Screen,
   T,
+  useThemeStyles,
 } from "@/components/trailsafe/ui";
+import { useApp } from "@/state/app";
+import { useStore } from "@/state/store";
+import Constants from "expo-constants";
+import { router } from "expo-router";
+import * as Updates from "expo-updates";
+import {
+  ExternalLink,
+  RefreshCw,
+  Trash2,
+  UserRound,
+} from "lucide-react-native";
+import { useState } from "react";
+import { Linking, Platform, View } from "react-native";
+
 export default function About() {
+  const { C } = useThemeStyles();
   const { reset, error } = useStore(),
-    { run, setDialog } = useApp();
+    { run, notify, setDialog } = useApp();
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+
+  const appVersion = Constants.expoConfig?.version || "0.1.0";
+  const buildNumber =
+    Platform.OS === "ios"
+      ? Constants.expoConfig?.ios?.buildNumber || "1"
+      : Platform.OS === "android"
+        ? String(Constants.expoConfig?.android?.versionCode || 1)
+        : "web";
+  const platformInfo =
+    Platform.OS === "web"
+      ? "Web (Browser)"
+      : `${Platform.OS === "ios" ? "iOS" : "Android"} ${Platform.Version} · ${__DEV__ ? "Development" : "Release"}`;
+  const runtimeVersion =
+    Updates.runtimeVersion ||
+    (typeof Constants.expoConfig?.runtimeVersion === "string"
+      ? Constants.expoConfig.runtimeVersion
+      : (
+          Constants.expoConfig?.runtimeVersion as
+            { policy?: string } | undefined
+        )?.policy) ||
+    "v57.0.0";
+
+  const isOtaEnabled = Platform.OS !== "web" && Updates.isEnabled;
+  const updateStatusText = !isOtaEnabled
+    ? Platform.OS === "web"
+      ? "N/A (Web)"
+      : "Disabled (Local / Dev)"
+    : Updates.isEmbeddedLaunch
+      ? "Embedded Binary"
+      : "Active OTA Update";
+
+  const updateDate = Updates.createdAt
+    ? new Date(Updates.createdAt).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
+
+  const checkForUpdates = async () => {
+    if (!isOtaEnabled) {
+      notify("OTA updates are only active on installed native builds.");
+      return;
+    }
+    setCheckingUpdate(true);
+    try {
+      const check = await Updates.checkForUpdateAsync();
+      if (check.isAvailable) {
+        setDialog({
+          title: "Update Available",
+          message:
+            "A new update was found for this app. Download and apply the update now?",
+          confirmLabel: "Download & Restart",
+          onConfirm: async () => {
+            notify("Downloading update…");
+            await Updates.fetchUpdateAsync();
+            await Updates.reloadAsync();
+          },
+        });
+      } else {
+        notify("You are on the latest update.");
+      }
+    } catch (err) {
+      notify(`Check failed: ${(err as Error).message}`);
+    } finally {
+      setCheckingUpdate(false);
+    }
+  };
   return (
     <Screen title="About" subtitle="KCESAR, KCSARA, and this app">
       <Kicker>Organization</Kicker>
@@ -62,6 +145,25 @@ export default function About() {
         SAR in Washington is 100% volunteer-driven and provided free of charge.
         Fear of cost must never prevent or delay calling 911.
       </Callout>
+      <Kicker>Connect</Kicker>
+      <Card>
+        {[
+          { title: "Follow KCESAR", url: "https://linktr.ee/kingcounty_esar" },
+          { title: "Donate or volunteer", url: "https://www.kcesar.org/" },
+          { title: "Send feedback", url: "https://www.kcesar.org/contact-us" },
+        ].map((r) => (
+          <Row
+            key={r.title}
+            title={r.title}
+            icon={ExternalLink}
+            onPress={() => void run(() => Linking.openURL(r.url))}
+          />
+        ))}
+      </Card>
+      <Note>
+        External links require Internet. Feedback channels are not emergency
+        services.
+      </Note>
       <Kicker>Privacy</Kicker>
       <Card>
         <T>
@@ -125,25 +227,163 @@ export default function About() {
           onPress={() => router.push("/resources")}
         />
       </Card>
-      <Kicker>Connect</Kicker>
+      <Kicker>Build & Update Info</Kicker>
       <Card>
-        {[
-          { title: "Follow KCESAR", url: "https://linktr.ee/kingcounty_esar" },
-          { title: "Donate or volunteer", url: "https://www.kcesar.org/" },
-          { title: "Send feedback", url: "https://www.kcesar.org/contact-us" },
-        ].map((r) => (
-          <Row
-            key={r.title}
-            title={r.title}
-            icon={ExternalLink}
-            onPress={() => void run(() => Linking.openURL(r.url))}
+        <Heading>Version Details</Heading>
+        <View style={{ gap: 4, marginVertical: 8 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              paddingVertical: 8,
+              borderBottomWidth: 1,
+              borderBottomColor: C.line,
+            }}
+          >
+            <T style={{ fontFamily: fonts.bold, color: C.muted, fontSize: 13 }}>
+              App Version
+            </T>
+            <T
+              selectable
+              testID="build-version"
+              style={{ fontFamily: fonts.bold, fontSize: 13 }}
+            >
+              {appVersion} ({buildNumber})
+            </T>
+          </View>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              paddingVertical: 8,
+              borderBottomWidth: 1,
+              borderBottomColor: C.line,
+            }}
+          >
+            <T style={{ fontFamily: fonts.bold, color: C.muted, fontSize: 13 }}>
+              Platform
+            </T>
+            <T selectable style={{ fontSize: 13 }}>
+              {platformInfo}
+            </T>
+          </View>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              paddingVertical: 8,
+              borderBottomWidth: 1,
+              borderBottomColor: C.line,
+            }}
+          >
+            <T style={{ fontFamily: fonts.bold, color: C.muted, fontSize: 13 }}>
+              Runtime Version
+            </T>
+            <T selectable style={{ fontSize: 13 }}>
+              {runtimeVersion}
+            </T>
+          </View>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              paddingVertical: 8,
+              borderBottomWidth:
+                !!Updates.channel || !!Updates.updateId || !!updateDate ? 1 : 0,
+              borderBottomColor: C.line,
+            }}
+          >
+            <T style={{ fontFamily: fonts.bold, color: C.muted, fontSize: 13 }}>
+              OTA Status
+            </T>
+            <T
+              selectable
+              style={{
+                fontSize: 13,
+                fontFamily: fonts.bold,
+                color: isOtaEnabled ? C.green : C.muted,
+              }}
+            >
+              {updateStatusText}
+            </T>
+          </View>
+          {!!Updates.channel && (
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingVertical: 8,
+                borderBottomWidth: 1,
+                borderBottomColor: C.line,
+              }}
+            >
+              <T
+                style={{ fontFamily: fonts.bold, color: C.muted, fontSize: 13 }}
+              >
+                Channel
+              </T>
+              <T selectable style={{ fontSize: 13 }}>
+                {Updates.channel}
+              </T>
+            </View>
+          )}
+          {!!Updates.updateId && (
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingVertical: 8,
+                borderBottomWidth: !!updateDate ? 1 : 0,
+                borderBottomColor: C.line,
+              }}
+            >
+              <T
+                style={{ fontFamily: fonts.bold, color: C.muted, fontSize: 13 }}
+              >
+                Update ID
+              </T>
+              <T selectable style={{ fontSize: 13, fontFamily: fonts.bold }}>
+                {Updates.updateId.slice(0, 8)}…
+              </T>
+            </View>
+          )}
+          {!!updateDate && (
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingVertical: 8,
+              }}
+            >
+              <T
+                style={{ fontFamily: fonts.bold, color: C.muted, fontSize: 13 }}
+              >
+                Update Released
+              </T>
+              <T selectable style={{ fontSize: 13 }}>
+                {updateDate}
+              </T>
+            </View>
+          )}
+        </View>
+        <View style={{ marginTop: 10 }}>
+          <Button
+            label={checkingUpdate ? "Checking…" : "Check for Updates"}
+            icon={RefreshCw}
+            variant="outline"
+            small
+            disabled={checkingUpdate}
+            onPress={() => void run(checkForUpdates)}
           />
-        ))}
+        </View>
       </Card>
-      <Note>
-        External links require Internet. Feedback channels are not emergency
-        services.
-      </Note>
     </Screen>
   );
 }

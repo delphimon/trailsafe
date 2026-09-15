@@ -87,10 +87,13 @@ export function AppOverlays() {
   return (
     <>
       {!!toast && (
-        <View pointerEvents="none" style={[styles.toast, { backgroundColor: C.ink }]}>
+        <View
+          pointerEvents="none"
+          style={[styles.toast, { backgroundColor: C.toastBg }]}
+        >
           <T
             accessibilityLiveRegion="polite"
-            style={{ color: C.headerText, fontSize: 13, textAlign: "center" }}
+            style={{ color: C.toastText, fontSize: 13, textAlign: "center" }}
           >
             {toast}
           </T>
@@ -103,14 +106,17 @@ export function AppOverlays() {
         onRequestClose={() => setDialog(null)}
       >
         <View style={styles.scrim}>
-          <View accessibilityViewIsModal style={[styles.dialog, { backgroundColor: C.paper }]}>
+          <View
+            accessibilityViewIsModal
+            style={[styles.dialog, { backgroundColor: C.paper }]}
+          >
             <T
               accessibilityRole="header"
               style={{
                 fontFamily: fonts.display,
                 fontSize: 27,
                 lineHeight: 32,
-                color: C.forest,
+                color: C.heading,
                 marginBottom: 12,
               }}
             >

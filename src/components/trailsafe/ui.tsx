@@ -23,68 +23,14 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColorScheme } from "react-native";
+import {
+  LightColors,
+  DarkColors,
+  type ThemeColors,
+  fonts,
+} from "./theme";
 
-export const LightColors = {
-  forest: "#1B3A2E",
-  deep: "#132720",
-  green: "#25503F",
-  stone: "#EAEDE7",
-  line: "#CBD1C4",
-  ink: "#171B18",
-  muted: "#5C645D",
-  paper: "#F6F7F3",
-  orange: "#E4572E",
-  orangeDark: "#B83B1A",
-  amber: "#FBF1DD",
-  white: "#FFFFFF",
-  cardBg: "#FFFFFF",
-  chipBg: "#FFFFFF",
-  inputBg: "#FFFFFF",
-  calloutBorder: "#EAD3A0",
-  criticalBg: "#FBE7E0",
-  criticalBorder: "#F0B29C",
-  criticalText: "#7A2A11",
-  calloutTitle: "#5C3F0C",
-  checkBorder: "#84907E",
-  headerText: "#FFFFFF",
-  headerSub: "#CFE0D6",
-  checkBg: "#F0F5EE",
-  fieldLabel: "#3A413B",
-  inputPlaceholder: "#758073",
-  chevron: "#7E8B7D",
-};
-
-export const DarkColors = {
-  forest: "#4A6B58",
-  deep: "#0B120E",
-  green: "#6C8A79",
-  stone: "#1E2621",
-  line: "#2D3A32",
-  ink: "#E6EBE8",
-  muted: "#8C9B92",
-  paper: "#151A17",
-  orange: "#E4572E",
-  orangeDark: "#F0734F",
-  amber: "#2E2512",
-  white: "#1E2621",
-  cardBg: "#1E2621",
-  chipBg: "#1E2621",
-  inputBg: "#1E2621",
-  calloutBorder: "#4F432A",
-  criticalBg: "#471708",
-  criticalBorder: "#7A2A11",
-  criticalText: "#FFDED1",
-  calloutTitle: "#EAD3A0",
-  checkBorder: "#5C645D",
-  headerText: "#E6EBE8",
-  headerSub: "#8C9B92",
-  checkBg: "#1E2621",
-  fieldLabel: "#B4C2BB",
-  inputPlaceholder: "#6B7B71",
-  chevron: "#8C9B92",
-};
-
-export type ThemeColors = typeof LightColors;
+export { LightColors, DarkColors, type ThemeColors, fonts };
 
 export function useThemeStyles() {
   const scheme = useColorScheme();
@@ -93,13 +39,6 @@ export function useThemeStyles() {
   const s = React.useMemo(() => getStyles(C), [C]);
   return { C, s, isDark };
 }
-
-export const fonts = {
-  body: "PublicSans_400Regular",
-  medium: "PublicSans_500Medium",
-  bold: "PublicSans_700Bold",
-  display: "BarlowCondensed_600SemiBold",
-};
 export function T({ style, ...props }: TextProps) {
   const { s } = useThemeStyles();
   return <Text {...props} style={[s.text, style]} />;
@@ -182,11 +121,13 @@ export function Button({
 }) {
   const { C, s } = useThemeStyles();
   const color =
-    variant === "light"
+    variant === "orange"
       ? C.white
-      : variant === "outline" || variant === "ghost"
-        ? C.forest
-        : C.white;
+      : variant === "light"
+        ? C.white
+        : variant === "outline" || variant === "ghost"
+          ? C.btnOutlineText
+          : C.btnPrimaryText;
   return (
     <Pressable
       testID={testID}
@@ -198,9 +139,13 @@ export function Button({
       style={({ pressed }) => [
         s.button,
         variant === "orange" && { backgroundColor: C.orange },
-        (variant === "outline" || variant === "ghost") && {
-          backgroundColor: variant === "ghost" ? "transparent" : C.white,
-          borderColor: variant === "ghost" ? C.line : C.forest,
+        variant === "outline" && {
+          backgroundColor: C.btnOutlineBg,
+          borderColor: C.btnOutlineBorder,
+        },
+        variant === "ghost" && {
+          backgroundColor: "transparent",
+          borderColor: C.line,
         },
         variant === "light" && {
           backgroundColor: "transparent",
@@ -278,10 +223,13 @@ export function Checkbox({
       <View
         style={[
           s.check,
-          checked && { backgroundColor: C.forest, borderColor: C.forest },
+          checked && {
+            backgroundColor: C.btnPrimaryBg,
+            borderColor: C.btnPrimaryBg,
+          },
         ]}
       >
-        {checked && <Check size={16} color={C.headerText} />}
+        {checked && <Check size={16} color={C.btnPrimaryText} />}
       </View>
       <View style={{ flex: 1, gap: 4 }}>
         <T style={{ fontFamily: fonts.bold, fontSize: 14 }}>{label}</T>
@@ -308,14 +256,17 @@ export function Chip({
       onPress={onPress}
       style={[
         s.chip,
-        selected && { backgroundColor: C.forest, borderColor: C.forest },
+        selected && {
+          backgroundColor: C.chipSelectedBg,
+          borderColor: C.chipSelectedBg,
+        },
       ]}
     >
       <T
         style={{
           fontFamily: fonts.bold,
           fontSize: 13,
-          color: selected ? "white" : C.forest,
+          color: selected ? C.chipSelectedText : C.chipText,
         }}
       >
         {label}
@@ -418,14 +369,14 @@ export const getStyles = (C: ThemeColors) => StyleSheet.create({
     fontFamily: fonts.display,
     fontSize: 24,
     lineHeight: 30,
-    color: C.forest,
+    color: C.heading,
     marginBottom: 7,
   },
   kicker: {
     fontFamily: fonts.display,
     fontSize: 17,
     lineHeight: 23,
-    color: C.green,
+    color: C.kicker,
     marginTop: 22,
     marginBottom: 10,
   },
@@ -460,7 +411,7 @@ export const getStyles = (C: ThemeColors) => StyleSheet.create({
     borderColor: "transparent",
     borderRadius: 10,
     padding: 15,
-    backgroundColor: C.forest,
+    backgroundColor: C.btnPrimaryBg,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -525,7 +476,7 @@ export const getStyles = (C: ThemeColors) => StyleSheet.create({
     backgroundColor: C.cardBg,
   },
   header: {
-    backgroundColor: C.forest,
+    backgroundColor: C.headerBg,
     paddingHorizontal: 20,
     paddingBottom: 16,
   },

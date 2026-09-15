@@ -4,6 +4,8 @@ export type Profile = {
   phone: string;
   vehicle: string;
   plate: string;
+  vehicle2: string;
+  plate2: string;
   medical: string;
   comms: string[];
 };
@@ -46,6 +48,8 @@ export const emptyProfile: Profile = {
   phone: "",
   vehicle: "",
   plate: "",
+  vehicle2: "",
+  plate2: "",
   medical: "",
   comms: [],
 };
@@ -83,7 +87,12 @@ export function newPlan(profile: Profile = emptyProfile): TripPlan {
     route: "",
     backup: "",
     partySize: "",
-    ...profile,
+    name: profile.name,
+    phone: profile.phone,
+    vehicle: profile.vehicle,
+    plate: profile.plate,
+    medical: profile.medical,
+    comms: [...profile.comms],
     members: "",
     allergies: "",
     experience: "",

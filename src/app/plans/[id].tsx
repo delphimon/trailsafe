@@ -87,8 +87,8 @@ function PlanEditor({
   isNew: boolean;
   editInitially: boolean;
 }) {
-  const { s } = useThemeStyles();
-  const { update } = useStore();
+  const { C, s } = useThemeStyles();
+  const { data, update } = useStore();
   const { run, copy, share, notify, setDialog } = useApp();
   const [plan, setPlan] = useState(initial),
     [editing, setEditing] = useState(editInitially),
@@ -604,6 +604,83 @@ function PlanEditor({
             onPress={() => change("remind", !plan.remind)}
           />
           <Kicker>Vehicle (recommended)</Kicker>
+          {(() => {
+            const car1Desc = data.profile.vehicle.trim();
+            const car1Plate = data.profile.plate.trim();
+            const hasCar1 = Boolean(car1Desc || car1Plate);
+
+            const car2Desc = data.profile.vehicle2?.trim() ?? "";
+            const car2Plate = data.profile.plate2?.trim() ?? "";
+            const hasCar2 = Boolean(car2Desc || car2Plate);
+
+            const hasSavedCars = hasCar1 || hasCar2;
+            const isCar1Selected =
+              hasCar1 &&
+              plan.vehicle.trim() === car1Desc &&
+              plan.plate.trim() === car1Plate;
+            const isCar2Selected =
+              hasCar2 &&
+              plan.vehicle.trim() === car2Desc &&
+              plan.plate.trim() === car2Plate;
+
+            const formatLabel = (num: number, desc: string, plate: string) => {
+              const main = desc || plate;
+              const truncated =
+                main.length > 20 ? `${main.slice(0, 18)}…` : main;
+              return `Car ${num}: ${truncated}`;
+            };
+
+            if (!hasSavedCars) {
+              return (
+                <View style={{ marginBottom: 10 }}>
+                  <Note>
+                    Tip: Save up to two vehicles in My Profile to quickly select
+                    between them here.
+                  </Note>
+                </View>
+              );
+            }
+
+            return (
+              <View style={{ marginBottom: 14 }}>
+                <T style={{ fontSize: 13, color: C.muted, marginBottom: 8 }}>
+                  Select vehicle for this trip:
+                </T>
+                <View
+                  style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}
+                >
+                  {hasCar1 && (
+                    <Chip
+                      label={formatLabel(1, car1Desc, car1Plate)}
+                      selected={isCar1Selected}
+                      onPress={() => {
+                        setPlan((p) => ({
+                          ...p,
+                          vehicle: data.profile.vehicle,
+                          plate: data.profile.plate,
+                        }));
+                        setErrors([]);
+                      }}
+                    />
+                  )}
+                  {hasCar2 && (
+                    <Chip
+                      label={formatLabel(2, car2Desc, car2Plate)}
+                      selected={isCar2Selected}
+                      onPress={() => {
+                        setPlan((p) => ({
+                          ...p,
+                          vehicle: data.profile.vehicle2,
+                          plate: data.profile.plate2,
+                        }));
+                        setErrors([]);
+                      }}
+                    />
+                  )}
+                </View>
+              </View>
+            );
+          })()}
           {field("vehicle", "Vehicle color, make, model", "Blue Rivian R1S")}
           {field("plate", "License plate and state", "WA ABC123")}
           <Kicker>Communications carried</Kicker>

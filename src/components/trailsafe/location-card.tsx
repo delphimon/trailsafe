@@ -44,7 +44,9 @@ export function LocationCard() {
   return (
     <View
       style={{
-        backgroundColor: C.forest,
+        backgroundColor: C.locationCardBg,
+        borderWidth: 1,
+        borderColor: C.locationCardBorder,
         borderRadius: 10,
         padding: 17,
         marginVertical: 16,
@@ -97,7 +99,7 @@ export function LocationCard() {
                 flex: 1,
                 minHeight: 36,
                 borderRadius: 6,
-                backgroundColor: selected ? "#789987" : "transparent",
+                backgroundColor: selected ? "#2E684E" : "transparent",
                 alignItems: "center",
                 justifyContent: "center",
               }}

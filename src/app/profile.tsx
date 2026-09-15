@@ -5,11 +5,14 @@ import { useApp } from "@/state/app";
 import { emptyProfile, type Profile as ProfileData } from "@/lib/plans";
 import {
   Button,
+  Card,
   Chip,
   Field,
   Kicker,
   Note,
   Screen,
+  T,
+  fonts,
   useThemeStyles,
 } from "@/components/trailsafe/ui";
 export default function Profile() {
@@ -23,7 +26,7 @@ export default function Profile() {
   return <ProfileEditor initial={data.profile} />;
 }
 function ProfileEditor({ initial }: { initial: ProfileData }) {
-  const { s } = useThemeStyles();
+  const { C, s } = useThemeStyles();
   const { update, ready, error } = useStore();
   const { run, notify, setDialog } = useApp();
   const [profile, setProfile] = useState(initial);
@@ -39,26 +42,85 @@ function ProfileEditor({ initial }: { initial: ProfileData }) {
         All fields are optional.
       </Note>
       <View style={{ marginTop: 20 }}>
-        {(["name", "phone", "vehicle", "plate", "medical"] as const).map(
-          (k, i) => (
-            <Field
-              key={k}
-              label={
-                [
-                  "Your name",
-                  "Phone / contact method",
-                  "Vehicle color, make, model",
-                  "License plate and state",
-                  "Medical considerations (optional)",
-                ][i]
-              }
-              value={profile[k]}
-              onChangeText={(v) => setProfile((p) => ({ ...p, [k]: v }))}
-              multiline={k === "medical"}
-              keyboardType={k === "phone" ? "phone-pad" : "default"}
-            />
-          ),
-        )}
+        <Field
+          label="Your name"
+          value={profile.name}
+          onChangeText={(v) => setProfile((p) => ({ ...p, name: v }))}
+        />
+        <Field
+          label="Phone / contact method"
+          value={profile.phone}
+          onChangeText={(v) => setProfile((p) => ({ ...p, phone: v }))}
+          keyboardType="phone-pad"
+        />
+      </View>
+
+      <Kicker>Saved Vehicles</Kicker>
+      <View style={{ marginBottom: 12 }}>
+        <Note>
+          Save up to two vehicles to easily select which car you are taking when
+          creating a new trip plan.
+        </Note>
+      </View>
+
+      <Card>
+        <T
+          style={{
+            fontFamily: fonts.bold,
+            fontSize: 16,
+            color: C.heading,
+            marginBottom: 12,
+          }}
+        >
+          Primary Vehicle (Car 1)
+        </T>
+        <Field
+          label="Car 1: Color, make, model"
+          placeholder="e.g. Silver Subaru Outback"
+          value={profile.vehicle}
+          onChangeText={(v) => setProfile((p) => ({ ...p, vehicle: v }))}
+        />
+        <Field
+          label="Car 1: License plate and state"
+          placeholder="e.g. WA ABC123"
+          value={profile.plate}
+          onChangeText={(v) => setProfile((p) => ({ ...p, plate: v }))}
+        />
+      </Card>
+
+      <Card>
+        <T
+          style={{
+            fontFamily: fonts.bold,
+            fontSize: 16,
+            color: C.heading,
+            marginBottom: 12,
+          }}
+        >
+          Secondary Vehicle (Car 2)
+        </T>
+        <Field
+          label="Car 2: Color, make, model"
+          placeholder="e.g. Blue Rivian R1S"
+          value={profile.vehicle2}
+          onChangeText={(v) => setProfile((p) => ({ ...p, vehicle2: v }))}
+        />
+        <Field
+          label="Car 2: License plate and state"
+          placeholder="e.g. WA XYZ789"
+          value={profile.plate2}
+          onChangeText={(v) => setProfile((p) => ({ ...p, plate2: v }))}
+        />
+      </Card>
+
+      <Kicker>Safety & Medical</Kicker>
+      <View style={{ marginTop: 8 }}>
+        <Field
+          label="Medical considerations (optional)"
+          value={profile.medical}
+          multiline
+          onChangeText={(v) => setProfile((p) => ({ ...p, medical: v }))}
+        />
       </View>
       <Kicker>Usual communications</Kicker>
       <View style={s.wrap}>

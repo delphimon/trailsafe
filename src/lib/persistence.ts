@@ -31,11 +31,17 @@ export function parseStoredData(raw: string): StoredData {
   const profileFields = ["name", "phone", "vehicle", "plate", "medical"];
   if (
     !profileFields.every((k) => typeof v.profile[k] === "string") ||
+    (v.profile.vehicle2 !== undefined && typeof v.profile.vehicle2 !== "string") ||
+    (v.profile.plate2 !== undefined && typeof v.profile.plate2 !== "string") ||
     !Array.isArray(v.profile.comms) ||
     !v.profile.comms.every((x: unknown) => typeof x === "string") ||
     !v.checks.every((x: unknown) => typeof x === "string")
   )
     throw new Error("Saved data is damaged. It has been preserved.");
+  v.profile.vehicle2 =
+    typeof v.profile.vehicle2 === "string" ? v.profile.vehicle2 : "";
+  v.profile.plate2 =
+    typeof v.profile.plate2 === "string" ? v.profile.plate2 : "";
   const strings = [
     "id",
     "title",

@@ -82,6 +82,38 @@ test("versioned storage round trips without losing plan details", () => {
   };
   assert.deepEqual(parseStoredData(JSON.stringify(s)), s);
 });
+test("versioned storage supports dual vehicles in profile and migrates legacy profile", () => {
+  const withDualCars = {
+    ...initialData,
+    profile: {
+      ...initialData.profile,
+      vehicle: "Silver Subaru Outback",
+      plate: "WA ABC123",
+      vehicle2: "Blue Rivian R1S",
+      plate2: "WA XYZ789",
+    },
+  };
+  assert.deepEqual(parseStoredData(JSON.stringify(withDualCars)), withDualCars);
+
+  // Legacy profile with only vehicle and plate (no vehicle2 or plate2)
+  const legacyProfile = {
+    name: "Hiker",
+    phone: "206 555 0100",
+    vehicle: "Silver Subaru Outback",
+    plate: "WA ABC123",
+    medical: "None",
+    comms: ["Phone"],
+  };
+  const legacyRaw = JSON.stringify({
+    ...initialData,
+    profile: legacyProfile,
+  });
+  const parsed = parseStoredData(legacyRaw);
+  assert.equal(parsed.profile.vehicle, "Silver Subaru Outback");
+  assert.equal(parsed.profile.plate, "WA ABC123");
+  assert.equal(parsed.profile.vehicle2, "");
+  assert.equal(parsed.profile.plate2, "");
+});
 test("damaged or unknown storage is rejected instead of silently reset", () => {
   for (const raw of [
     "invalid",
