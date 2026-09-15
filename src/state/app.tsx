@@ -1,3 +1,16 @@
+/**
+ * @file app.tsx
+ * @description Application-level UI state, notifications, system handoffs, and emergency action orchestration.
+ *
+ * Responsibilities:
+ * 1. Global Practice Mode: Manages the active Practice state across all tabs and screens.
+ * 2. System Handoffs: Provides resilient wrappers around native clipboard (`expo-clipboard`),
+ *    share sheets (`react-native` Share), and SMS composer (`expo-sms`).
+ * 3. Emergency 911 Guard: Coordinates `emergency(kind, situation)` actions, ensuring that practice mode
+ *    never opens native phone dialers or sends messages, while real actions prepare emergency drafts with coordinates.
+ * 4. Location Coordination: Automatically activates the `useAutomaticLocation` hook when the user visits `/emergency`.
+ */
+
 import React, { createContext, useContext, useState } from "react";
 import { Linking, Platform, Share } from "react-native";
 import { usePathname } from "expo-router";
@@ -7,26 +20,43 @@ import { useAutomaticLocation } from "@/hooks/use-location";
 import { buildEmergencyDraft, performEmergencyAction } from "@/lib/emergency";
 import { useStore } from "./store";
 
+/** Generic modal alert/confirmation dialog state. */
 type Dialog = {
   title: string;
   message: string;
   confirmLabel?: string;
   onConfirm?: () => void | Promise<void>;
 };
+
+/** App context interface. */
 type AppValue = {
+  /** True when practice mode is enabled, isolating all 911 triggers. */
   practice: boolean;
   setPractice: (v: boolean) => void;
+  /** Active modal dialog, or null if no dialog is presented. */
   dialog: Dialog | null;
   setDialog: (v: Dialog | null) => void;
+  /** Active temporary toast message text. */
   toast: string;
+  /** Displays a transient toast notification. */
   notify: (text: string) => void;
+  /** Executes an async operation with automatic error catching and dialog display. */
   run: (fn: () => Promise<unknown>) => Promise<void>;
+  /** Copies text to device clipboard with user notification. */
   copy: (text: string) => Promise<void>;
+  /** Opens native share sheet or falls back to clipboard on unsupported browsers. */
   share: (text: string, title?: string) => Promise<void>;
+  /** Initiates an emergency call or text with practice safety interlock. */
   emergency: (kind: "call" | "text", situation?: string) => Promise<void>;
+  /** Active GPS location hook state. */
   location: ReturnType<typeof useAutomaticLocation>;
 };
+
 const Context = createContext<AppValue | null>(null);
+
+/**
+ * Top-level application context provider managing modal dialogs, toasts, practice mode, and handoffs.
+ */
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const { data } = useStore();

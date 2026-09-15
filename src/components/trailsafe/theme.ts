@@ -1,3 +1,17 @@
+/**
+ * @file theme.ts
+ * @description Design tokens, color palettes, typography, and contrast standards for TrailSafe.
+ *
+ * Architecture Notes:
+ * 1. Pure TypeScript Module: Kept free of React Native / JSX runtime imports so it can be directly
+ *    imported and executed by Node.js test runners (`node:test` + `tsx`) without bundler mocks.
+ * 2. WCAG Contrast Compliance: Every foreground/background pairing meets or exceeds WCAG 2.1 AA
+ *    contrast standards (>= 4.5:1 for standard text, >= 3.0:1 for large/bold text). Verified by `tests/theme.test.ts`.
+ * 3. Semantic Tokens: Colors are structured into semantic roles (`headerBg`, `heading`, `kicker`,
+ *    `locationCardBg`, `btnPrimaryBg`, `toastBg`, etc.) to prevent naive inversion bugs when switching themes.
+ */
+
+/** Light theme palette (classic Pacific Northwest forest green & paper identity). */
 export const LightColors = {
   forest: "#1B3A2E",
   deep: "#132720",

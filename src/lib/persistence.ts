@@ -1,14 +1,41 @@
+/**
+ * @file persistence.ts
+ * @description Local device storage schema, validation, and migration logic.
+ *
+ * Core Principles:
+ * 1. Offline & Local-Only: All user data (trip plans, profile details, checklist state)
+ *    is saved exclusively in local AsyncStorage on the device. No cloud sync, accounts, or remote storage.
+ * 2. Non-Destructive Integrity: If parsing or validation fails, an error is thrown and the existing
+ *    raw data is strictly preserved rather than silently overwritten or reset with initial defaults.
+ * 3. Backward Compatibility & Migration: Schema changes gracefully upgrade older stored profiles
+ *    (such as migrating single-vehicle profiles to dual vehicles) while maintaining type safety.
+ */
+
 import { CoordinateFormat } from "./coordinates";
 import { Profile, TripPlan, emptyProfile } from "./plans";
+
+/**
+ * Top-level structure stored under AsyncStorage key `trailsafe.local.v1`.
+ */
 export type StoredData = {
+  /** Schema version identifier. */
   version: 1;
+  /** Array of all saved trip plans (drafts, current, and completed). */
   plans: TripPlan[];
+  /** Reusable user profile containing name, phone, dual vehicles, medical notes, and comms. */
   profile: Profile;
+  /** Array of completed checklist item IDs (e.g. Ten Essentials). */
   checks: string[];
+  /** Selected trip type preset for checklist add-ons ("day", "overnight", or "winter"). */
   tripType: "day" | "overnight" | "winter";
+  /** User's preferred coordinate display format across the app. */
   format: CoordinateFormat;
 };
+
+/** AsyncStorage key for TrailSafe local data. */
 export const STORAGE_KEY = "trailsafe.local.v1";
+
+/** Default state initialized when no saved record exists on the device. */
 export const initialData: StoredData = {
   version: 1,
   plans: [],
@@ -17,6 +44,21 @@ export const initialData: StoredData = {
   tripType: "day",
   format: "DD",
 };
+
+/**
+ * Parses and validates raw JSON from AsyncStorage into a validated `StoredData` object.
+ *
+ * Validates:
+ * - Version number (must be 1).
+ * - Proper array and object types across all fields.
+ * - Profile fields, validating `vehicle2` and `plate2` and normalizing legacy profiles.
+ * - Every TripPlan object, asserting all required string properties, valid statuses,
+ *   number finiteness for timestamps/revisions, boolean flags, and valid IANA time zone strings.
+ *
+ * @param raw Raw JSON string retrieved from AsyncStorage.
+ * @throws Error with descriptive message if the data is malformed, unrecognized, or damaged.
+ * @returns Validated StoredData object.
+ */
 export function parseStoredData(raw: string): StoredData {
   const v = JSON.parse(raw);
   if (

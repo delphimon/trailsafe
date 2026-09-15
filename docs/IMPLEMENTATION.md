@@ -49,12 +49,36 @@ The content inventory and most prose come from the HTML. Corrections are isolate
 - “Get Location” references now point to the automatic location card.
 - No article falsely says it has completed KCESAR/medical/dispatch review.
 
+## Dark Mode Audit & Contrast Refinement (Recommendation 12)
+
+A comprehensive audit of the dark theme (`DarkColors`) identified critical readability and contrast regressions resulting from naive 1:1 color mapping (e.g. replacing `#FFFFFF` with `#1E2621` in dark mode caused dark text on dark green/orange buttons):
+- **Token Separation**: Extracted color definitions into pure TypeScript (`src/components/trailsafe/theme.ts`) to enable Node test execution without React Native transpilation overhead.
+- **Semantic Tokens**: Introduced dedicated semantic tokens (`headerBg`, `heading`, `kicker`, `locationCardBg`, `locationCardBorder`, `btnPrimaryBg/Text`, `btnOutlineBg/Border/Text`, `chipText`, `chipSelectedBg/Text`, `toastBg/Text`).
+- **WCAG Standards**: Restored `white: "#FFFFFF"` across both palettes. Ensured button text achieves >= 4.5:1 contrast, outline buttons ("TEXT 911") achieve >= 11:1 contrast, and dialog titles achieve >= 12:1 contrast.
+- **Automated Verification**: Created `tests/theme.test.ts`, an automated W3C relative luminance and contrast ratio test suite verifying >= 4.5:1 for standard text and >= 3.0:1 for large/bold text across both themes.
+
+## Native Build & OTA Update Integration
+
+Added native build metadata and OTA update management directly to the About screen (`src/app/about.tsx`):
+- **Native Version Info**: Surfaces `Constants.expoConfig.version`, native build numbers (`ios.buildNumber` or `android.versionCode`), platform OS version, and runtime version.
+- **`expo-updates` Status**: Displays active OTA update status (Embedded Binary, Active OTA Update, or Disabled), active EAS release channel, and update UUID/date.
+- **Manual Update Check**: Provides an interactive "Check for Updates" trigger invoking `Updates.checkForUpdateAsync()` with safe user confirmation alerts to download and apply updates.
+
+## Dual Vehicle Profile & Plan Selection
+
+Extended vehicle management to support multi-vehicle households and flexible car selection:
+- **Profile Schema Extension**: Added `vehicle2` and `plate2` to `Profile` in `src/lib/plans.ts`.
+- **Storage Migration**: Updated `parseStoredData` in `src/lib/persistence.ts` to seamlessly validate and normalize legacy single-vehicle profiles to empty string defaults without data loss.
+- **Profile UI**: Reorganized `src/app/profile.tsx` into structured cards for Personal info, Primary Vehicle (Car 1), Secondary Vehicle (Car 2), Medical, and Comms.
+- **Quick Plan Selection**: Added quick-select chips (`Car 1` / `Car 2`) under the Vehicle kicker in `src/app/plans/[id].tsx`, allowing one-tap population of trailhead vehicle details during plan creation.
+
 ## Primary technical and safety references consulted
 
 - [Expo SDK 57 reference](https://docs.expo.dev/versions/v57.0.0/)
 - [Expo Location 57](https://docs.expo.dev/versions/v57.0.0/sdk/location/)
 - [Expo Router 57](https://docs.expo.dev/versions/v57.0.0/sdk/router/)
 - [Expo Print 57](https://docs.expo.dev/versions/v57.0.0/sdk/print/)
+- [Expo Updates 57](https://docs.expo.dev/versions/v57.0.0/sdk/updates/)
 - Installed `expo-sms` types/source for composer results and simulator/browser limitations (the versioned SMS web documentation failed to load).
 - [PROJ4JS](https://proj4js.org/)
 - [King County SAR: When/How to Call for Help](https://kingcountysar.org/when-how-to-call-for-help/)
@@ -62,5 +86,6 @@ The content inventory and most prose come from the HTML. Corrections are isolate
 - [911.gov: text-to-911 bounce-back](https://www.911.gov/calling-911/frequently-asked-questions/)
 - [CDC: heat-related illnesses](https://www.cdc.gov/niosh/heat-stress/about/illnesses.html)
 - [CDC: hypothermia](https://www.cdc.gov/winter-weather/prevention/index.html)
+- [W3C WCAG 2.1 Contrast Standards](https://www.w3.org/WAI/WCAG21/Understanding/contrast-minimum.html)
 
 This implementation and source cross-check are not substitutes for the product definition’s organizational, medical, and dispatch approval before publication.

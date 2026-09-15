@@ -68,11 +68,11 @@ The preview server supports dynamic routes for device-local trip plans and bundl
 - **Emergency:** native call/text handoffs, location-first text drafts, no-delivery claims, bounce-back guidance, and a practice mode that blocks all emergency handoffs.
 - **Automatic location:** begins when Emergency opens, after the operating system’s required permission prompt. No Get Location button. Foreground-only updates stop when leaving Emergency or backgrounding the app.
 - **Coordinate dropdown:** WGS84 decimal degrees, degrees and decimal minutes (DDM), and UTM. Format persists. Includes uncertainty, real fix timestamp/age, stale and poor-accuracy warnings, copy/share, and Maps handoff. UTM handles Norway/Svalbard exceptions, both hemispheres, and polar exclusions.
-- **Trip plans:** create, edit, save draft, mark current, complete, duplicate, delete, text preview, copy, share, and PDF/print. Explicit start/return/overdue dates support overnight trips. Updated plans are labeled. Optional SAR details stay collapsed initially.
-- **Reusable profile:** local name/contact, vehicle, equipment, and optional medical considerations prefill new plans. Existing plans retain their original details.
+- **Trip plans:** create, edit, save draft, mark current, complete, duplicate, delete, text preview, copy, share, safe return check-in draft, and PDF/print. Explicit start/return/overdue dates support overnight trips. One-tap quick vehicle selection from saved profile cars. Updated plans are labeled. Optional SAR details stay collapsed initially.
+- **Reusable profile:** local name/contact, dual vehicle management (Car 1 and Car 2), equipment, and optional medical considerations prefill new plans. Existing plans retain their original details.
 - **Prepare:** persistent Ten Essentials and phone checklists, trip-type add-ons, an explicit food reminder, reset, and external condition resources.
 - **Guide:** 20 bundled articles, missing-versus-overdue branching, full-text search, and source references.
-- **About:** organization distinctions, privacy, content version/review status, source directory, profile management, and local data deletion.
+- **About:** organization distinctions, privacy, content version/review status, source directory, native build metadata, OTA update status (`expo-updates`), check for updates flow, profile management, and local data deletion.
 
 There is no account, backend, analytics, automatic emergency notification, or background tracking. Plans are not monitored. Copy, share, Maps, and phone/message actions are explicit. Device backups may include saved local app data.
 
@@ -97,14 +97,16 @@ Set `TRAILSAFE_BROWSER` to an existing Chromium executable if needed. See [valid
 
 ## Source and maintenance
 
+- [Architecture & Technical Reference](docs/ARCHITECTURE.md): Full technical specifications, data flows, and subsystem deep dive.
+- [Agent & Developer Guide](AGENTS.md): Essential rules, conventions, and file guide for developers and AI agents.
+- [Implementation Decisions](docs/IMPLEMENTATION.md): Scope reconciliation, design, technical limits, and content corrections.
 - `src/app/`: Expo Router screens.
-- `src/components/trailsafe/`: native shared UI, coordinate card, emergency controls.
+- `src/components/trailsafe/`: native shared UI, coordinate card, emergency controls, and design tokens (`theme.ts`).
 - `src/content/library.json`: editable offline content blocks and metadata; no HTML/WebView runtime.
-- `src/lib/`: coordinate conversion, trip logic, safe PDF text escaping, persistence validation, and emergency action guard.
+- `src/lib/`: coordinate conversion, trip logic, safe PDF text escaping, persistence validation, dual vehicle migration, and emergency action guard.
 - `src/state/`: local storage and shared application state.
 - `src/hooks/use-location.ts`: foreground lifecycle, native Expo Location, and browser geolocation adapter.
 - `docs/reference/`: unchanged supplied documents for provenance.
-- [Implementation decisions](docs/IMPLEMENTATION.md): scope reconciliation, design, technical limits, and content corrections.
 
 Content changes should normally edit `src/content/library.json` directly. `npm run content:extract` is a one-time reconstruction tool for the supplied prototype and will replace subsequent manual edits; do not run it casually. The extractor parses data literals rather than executing the reference document’s JavaScript.
 

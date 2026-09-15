@@ -1,16 +1,30 @@
-# Validation — September 6, 2026
+# Validation — September 15, 2026
 
 ## Completed
 
-- TypeScript strict typecheck.
-- Expo ESLint, including React Compiler rules.
-- 24 unit tests: DD/DDM, rounding carry, WGS84 UTM known fixtures, both hemispheres, Norway/Svalbard, antimeridian and polar limits, invalid coordinates, stale/poor/mock fix labels, practice isolation, unknown/missing-person SMS locations, article targets, overnight dates, invalid plan inputs, time-zone-based overdue checks, updated text, PDF escaping, versioned storage, and rejection of damaged data.
-- 8 Chromium mobile browser end-to-end tests against the production-style web export: automatic coordinates, format selection and reload persistence, copy/share metadata, location-watch cleanup, denied location, stale/poor fixes, practice mode on hub and article screens, offline checklist/search/article use after launch, plan save/edit/share/duplicate/delete, profile reload/prefill, and 320-pixel layout.
+- **TypeScript Strict Typecheck**: Passed with 0 errors (`npm run typecheck`).
+- **Expo ESLint**: Passed with 0 errors (`npx eslint .`).
+- **44 Unit & Math Tests (`npm test`)**:
+  - Coordinate transformations (DD, DDM, UTM WGS84 projections, Norway/Svalbard zones, antimeridian and polar boundaries).
+  - Practice isolation (asserting zero native handoffs when practice is enabled).
+  - Emergency message generation (asserting overdue drafts never insert caller GPS).
+  - Trip plan validation (overnight date math, midnight deadline carry, time-zone overdue checks, PDF escaping, HTML generator).
+  - Versioned storage round-tripping, corrupted data rejection, and dual-vehicle legacy profile migration.
+  - Theme color token parity and mathematical W3C WCAG 2.1 relative luminance contrast tests (>= 4.5:1 body text, >= 3.0:1 bold text across all light/dark surfaces).
+- **9 Chromium Browser End-to-End Tests (`npm run test:e2e`)**:
+  - Automatic coordinates, dropdown persistence, and watcher cleanup.
+  - Denied location permission handling.
+  - Stale and poor accuracy warning retention during copy/share.
+  - Practice actions across emergency and guide screens.
+  - Offline checklist, search, and article reading.
+  - Trip creation, midnight buffer, persistence, editing, and deletion.
+  - Reusable profile persistence with dual vehicle saving and one-tap plan prefill selection.
+  - Small screen 320px responsive layout without overflow.
+  - About screen native build info and OTA update checking action.
 - All browser location values are injected test fixtures. Phone and share integrations are intercepted. No test calls/texts were sent to emergency services.
 - Expo iOS, Android, and web JavaScript/Hermes exports.
 - iOS native prebuild and CocoaPods dependency installation.
-- Xcode Release simulator build and one native XCTest UI flow on iPhone 17 Pro / iOS 26.5: launch, automatic simulated GPS fix, DDM and UTM selection, and guarded practice call/text actions. All passed; no real emergency handoff occurred.
-- Generated iOS plist checked: foreground-only location description, no Always-location or motion usage descriptions, no background location mode.
+- Xcode Release simulator build and native XCTest UI flow on iPhone 17 Pro / iOS 26.5.
 
 ## Native build
 

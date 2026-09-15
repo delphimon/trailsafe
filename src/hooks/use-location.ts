@@ -1,10 +1,42 @@
+/**
+ * @file use-location.ts
+ * @description Automatic foreground location acquisition hook with battery and privacy safeguards.
+ *
+ * Operational Principles:
+ * 1. Automatic On-Screen Start: Location acquisition automatically initiates when the emergency screen mounts.
+ *    No manual "Get Location" button is needed or expected by hikers under extreme stress.
+ * 2. Foreground-Only: Watches are strictly active while the app is foregrounded and active (`AppState === 'active'`).
+ *    Backgrounding the app or navigating away immediately tears down GPS hardware subscriptions to conserve battery.
+ * 3. Platform Geolocation Isolation: On web, uses `navigator.geolocation` directly to bypass Expo SDK 57's
+ *    known web adapter watch ID collision bug while preserving high accuracy and error reporting.
+ * 4. Defensive Recovery: Automatically schedules a 30-second backoff retry when satellite visibility is temporarily
+ *    lost, rather than leaving the emergency screen stuck in a permanent error state.
+ */
+
 import { useEffect, useState } from "react";
 import { AppState, Platform } from "react-native";
 import * as Location from "expo-location";
 import { Fix, validCoordinates } from "@/lib/coordinates";
+
+/** Current operational state of the location service. */
 export type LocationStatus =
-  "idle" | "locating" | "located" | "denied" | "disabled" | "unavailable";
-export function useAutomaticLocation(enabled: boolean) {
+  | "idle"        // Location watching has not been requested
+  | "locating"    // Acquiring satellite lock or querying provider
+  | "located"     // Valid, fresh GPS fix received
+  | "denied"      // Location permission rejected by user or system
+  | "disabled"    // Device-level location services are turned off
+  | "unavailable";// Provider failed, timed out (15s), or satellite signal lost
+
+/**
+ * React hook that manages automatic GPS tracking while an emergency or map surface is visible.
+ *
+ * @param enabled True to begin active location acquisition; false to stop and release hardware.
+ * @returns Object containing the latest in-memory `fix` and current lifecycle `status`.
+ */
+export function useAutomaticLocation(enabled: boolean): {
+  fix: Fix | null;
+  status: LocationStatus;
+} {
   const [fix, setFix] = useState<Fix | null>(null),
     [status, setStatus] = useState<LocationStatus>("idle");
   const [active, setActive] = useState(AppState.currentState === "active"),

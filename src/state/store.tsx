@@ -1,3 +1,15 @@
+/**
+ * @file store.tsx
+ * @description Centralized React state store backed by serialized AsyncStorage persistence.
+ *
+ * Architecture & Concurrency:
+ * 1. Serialized Promise Queue: All mutations run sequentially through an internal `queue` promise ref.
+ *    This prevents race conditions, partial writes, and read-modify-write corruption across rapid updates.
+ * 2. Write Guard (`writable`): If AsyncStorage read fails on startup (e.g. damaged JSON), `writable`
+ *    remains false and mutations reject immediately, guaranteeing user data is never accidentally wiped.
+ * 3. Optimistic State Propagation: State updates only update React state after `AsyncStorage.setItem()` succeeds.
+ */
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
   createContext,
@@ -13,14 +25,26 @@ import {
   STORAGE_KEY,
   type StoredData,
 } from "@/lib/persistence";
+
+/** Store context value contract. */
 type Store = {
+  /** In-memory snapshot of local app data. */
   data: StoredData;
+  /** True when initial load from AsyncStorage has finished. */
   ready: boolean;
+  /** Error message if loading or parsing failed, or null if healthy. */
   error: string | null;
+  /** Queues a state updater function and persists the result to AsyncStorage. */
   update: (fn: (s: StoredData) => StoredData) => Promise<void>;
+  /** Clears AsyncStorage and resets in-memory data to initial blank state. */
   reset: () => Promise<void>;
 };
+
 const Context = createContext<Store | null>(null);
+
+/**
+ * Root context provider for TrailSafe persistent state.
+ */
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState(initialData),
     [ready, setReady] = useState(false),
