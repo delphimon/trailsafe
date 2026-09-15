@@ -82,11 +82,12 @@ Implemented hands-free voice controls and hardware button shortcuts to assist hi
 - **Hands-Free Trip Plan Management**:
   - Voice triggers: *"Hey Siri, mark my trip complete in TrailSafe"*, *"Hey Google, mark my trip complete in TrailSafe"*, *"Hey Siri, start my trip in TrailSafe"*.
   - Behavior: Routes to `trailsafe://plan/current/complete` or `start` ([action].tsx](file:///Users/andrew/development/trailsafe/src/app/plan/current/[action].tsx)). Automatically transitions the current plan to `completed` in `AsyncStorage` and renders a prominent toast instructing the user to message their emergency contact. This directly targets the primary cause of false SAR callouts: overdue deadlines triggered when hikers reach their vehicle safely but forget to notify home contacts.
-- **Safety Guide Voice Search**:
-  - Voice triggers: *"Hey Siri, search in TrailSafe"*, *"Hey Siri, search guide in TrailSafe"*.
-  - Behavior: Routes to `trailsafe://guide?search=<query>`, pre-filtering the 20 offline survival guides instantly.
-- **AppIntents Metadata Constraint & Solution**:
-  - Apple's `appintentsmetadataprocessor` strictly forbids open-ended primitive `String` property interpolations inside `AppShortcut` phrases (`\(\.$query)` causes compile failures). Trigger phrases were implemented using static patterns (`"Search in \(.applicationName)"`), allowing Siri to prompt for search terms while preserving full parameter passing to the intent.
+- **Safety Guide Voice Search (`ShowInAppSearchResultsIntent`)**:
+  - Voice triggers: *"Hey Siri, search for hypothermia in TrailSafe"*, *"Hey Siri, search in TrailSafe"*, *"Hey Siri, search TrailSafe for bear safety"*.
+  - Protocol Conformance: Conforms to Apple's system-level `ShowInAppSearchResultsIntent` protocol with `criteria: StringSearchCriteria` and `searchScopes: [.general]`. Conformance to this specific system intent is required for iOS Siri to recognize that the app supports in-app search (otherwise, Siri defaults to *"I can't search within the [App] app"*).
+  - Behavior: Extracts `criteria.term` and routes to `trailsafe://guide?search=<query>`, pre-filtering the 20 offline survival guides instantly.
+- **AppIntents Metadata Constraints**:
+  - Apple's `appintentsmetadataprocessor` strictly forbids open-ended primitive `String` property interpolations inside `AppShortcut` phrases. Conforming to `ShowInAppSearchResultsIntent` with `StringSearchCriteria` delegates dynamic search query parsing directly to iOS's natural language engine while providing clean static shortcuts in `AppShortcutsProvider`.
 
 ## On-Device Search Indexing (CoreSpotlight & Android Shortcuts)
 

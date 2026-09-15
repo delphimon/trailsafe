@@ -35,18 +35,17 @@ struct CompleteCurrentTripIntent: AppIntent {
 }
 
 // MARK: - Search Safety Guide Intent
-@available(iOS 16.0, *)
-struct SearchGuideIntent: AppIntent {
-  static var title: LocalizedStringResource = "Search Safety Guide"
-  static var description = IntentDescription("Searches the offline TrailSafe safety and survival guide.")
-  static var openAppWhenRun: Bool = true
+@available(iOS 17.2, *)
+struct SearchGuideIntent: ShowInAppSearchResultsIntent {
+  static var title: LocalizedStringResource = "Search in TrailSafe"
+  static var searchScopes: [StringSearchScope] = [.general]
 
-  @Parameter(title: "Search Query")
-  var query: String?
+  @Parameter(title: "Search Term", requestValueDialog: IntentDialog("What would you like to search for?"))
+  var criteria: StringSearchCriteria
 
   @MainActor
   func perform() async throws -> some IntentResult {
-    let q = query ?? ""
+    let q = criteria.term
     let encoded = q.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? q
     let urlString = q.isEmpty ? "trailsafe://guide" : "trailsafe://guide?search=\(encoded)"
     if let url = URL(string: urlString) {
@@ -57,7 +56,7 @@ struct SearchGuideIntent: AppIntent {
 }
 
 // MARK: - App Shortcuts Provider
-@available(iOS 16.0, *)
+@available(iOS 17.2, *)
 struct TrailSafeShortcuts: AppShortcutsProvider {
   static var appShortcuts: [AppShortcut] {
     AppShortcut(
@@ -93,3 +92,4 @@ struct TrailSafeShortcuts: AppShortcutsProvider {
     )
   }
 }
+

@@ -174,7 +174,7 @@ graph TD
 - **Voice Intents & Deep-Link Protocol**:
   - `OpenEmergencyIntent`: Deep-links to `trailsafe://emergency`. Instantly initiates high-accuracy GPS fix, displays coordinates in the user's preferred format (DD, DDM, UTM), and prepares the 911 SMS draft without dispatching. Compatible with Siri phrases ("Open Emergency in TrailSafe", "I need help in TrailSafe") and physical Action Button / Lock Screen controls.
   - `CompleteCurrentTripIntent`: Deep-links to `trailsafe://plan/current/complete`. Transitions the active trip plan to `completed` in `AsyncStorage`, presents a toast reminding the hiker to notify emergency contacts, and avoids SAR false alarms.
-  - `SearchGuideIntent`: Deep-links to `trailsafe://guide?search=<query>`. Pre-populates the search bar and immediately filters offline survival articles.
+  - `SearchGuideIntent`: Conforms to Apple's `ShowInAppSearchResultsIntent` system protocol (with `criteria: StringSearchCriteria`). Deep-links to `trailsafe://guide?search=<query>`, pre-populating the search bar and immediately filtering offline survival articles.
 - **CoreSpotlight & Native Device Indexing**:
   - Local Expo module `modules/device-search` exposes `indexItems(items)` and `clearItems()` bridging to Apple's `CSSearchableIndex` on iOS and Android's `ShortcutManagerCompat`.
   - Indexes all 20 bundled offline emergency articles with rich extracted keywords (e.g. hypothermia, cold, shivering, rewarming).
