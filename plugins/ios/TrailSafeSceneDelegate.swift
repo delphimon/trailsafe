@@ -1,5 +1,7 @@
 // TrailSafe scene lifecycle
 // Appended to AppDelegate.swift by with-ios-scenes.cjs during Expo prebuild.
+import CoreSpotlight
+
 class TrailSafeSceneDelegate: UIResponder, UIWindowSceneDelegate {
   var window: UIWindow?
 
@@ -29,6 +31,11 @@ class TrailSafeSceneDelegate: UIResponder, UIWindowSceneDelegate {
         "UIApplicationLaunchOptionsUserActivityTypeKey": activity.activityType,
         "UIApplicationLaunchOptionsUserActivityKey": activity,
       ]
+      if activity.activityType == CSSearchableItemActionType,
+         let identifier = activity.userInfo?[CSSearchableItemActivityIdentifier] as? String,
+         let url = URL(string: identifier) {
+        launchOptions[.url] = url
+      }
     }
     factory.startReactNative(withModuleName: "main", in: window, launchOptions: launchOptions)
     window.makeKeyAndVisible()
@@ -46,6 +53,12 @@ class TrailSafeSceneDelegate: UIResponder, UIWindowSceneDelegate {
   }
 
   func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
+    if userActivity.activityType == CSSearchableItemActionType,
+       let identifier = userActivity.userInfo?[CSSearchableItemActivityIdentifier] as? String,
+       let url = URL(string: identifier) {
+      _ = appDelegate?.application(UIApplication.shared, open: url, options: [:])
+      return
+    }
     _ = appDelegate?.application(UIApplication.shared, continue: userActivity, restorationHandler: { _ in })
   }
 

@@ -21,6 +21,7 @@ import {
   PracticeBanner,
 } from "@/components/trailsafe/shell";
 import { useThemeStyles } from "@/components/trailsafe/ui";
+import { indexGuideContent } from "@/lib/search-indexing";
 
 void SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -39,7 +40,10 @@ export default function RootLayout() {
   }, []);
   const ready = fontsLoaded || !!fontError || fontTimeout;
   useEffect(() => {
-    if (ready) void SplashScreen.hideAsync().catch(() => {});
+    if (ready) {
+      void SplashScreen.hideAsync().catch(() => {});
+      void indexGuideContent().catch(() => {});
+    }
   }, [ready]);
   // Mount native Text after font registration; never block emergency access on a font failure.
   if (!ready) return null;

@@ -6,6 +6,7 @@
     "@expo-google-fonts/barlow-condensed": "^0.4.1",
     "@expo-google-fonts/public-sans": "^0.4.2",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "device-search": "file:./modules/device-search",
     "expo": "~57.0.20",
     "expo-clipboard": "~57.0.1",
     "expo-constants": "~57.0.17",
@@ -57,6 +58,13 @@
     "test:e2e": "playwright test",
     "export": "expo export --platform all",
     "content:extract": "node scripts/extract-content.cjs && python3 scripts/build-content.py"
+  },
+  "expo": {
+    "autolinking": {
+      "searchPaths": [
+        "modules"
+      ]
+    }
   },
   "private": true
 }

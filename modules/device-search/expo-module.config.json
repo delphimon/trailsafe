@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["DeviceSearchModule"]
+  },
+  "android": {
+    "modules": ["com.appliedinteractions.trailsafe.devicesearch.DeviceSearchModule"]
+  }
+}

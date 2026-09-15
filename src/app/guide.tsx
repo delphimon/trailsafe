@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { BookOpen, ExternalLink } from "lucide-react-native";
 import { articles, topics } from "@/content";
 import {
@@ -13,7 +13,16 @@ import {
   T,
 } from "@/components/trailsafe/ui";
 export default function Guide() {
-  const [query, setQuery] = useState("");
+  const params = useLocalSearchParams<{ search?: string; q?: string }>();
+  const deepLinkQuery =
+    (typeof params.search === "string"
+      ? params.search
+      : typeof params.q === "string"
+        ? params.q
+        : "") || "";
+  const [userQuery, setUserQuery] = useState<string | null>(null);
+  const query = userQuery ?? deepLinkQuery;
+
   const q = query.trim().toLowerCase();
   const results = topics.filter((t) =>
     [
@@ -36,7 +45,7 @@ export default function Guide() {
         label="Search safety topics"
         placeholder="Try “water”, “cold”, or “radio”"
         value={query}
-        onChangeText={setQuery}
+        onChangeText={setUserQuery}
         autoCorrect={false}
       />
       <Note>{results.length} topics · Available offline</Note>
