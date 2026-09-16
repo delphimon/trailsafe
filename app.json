@@ -61,8 +61,7 @@
           "motionUsagePermission": false
         }
       ],
-      "expo-secure-store",
-      "expo-audio"
+      "expo-audio",
     ],
     "experiments": {
       "typedRoutes": true,

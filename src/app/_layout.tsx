@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import * as SplashScreen from "expo-splash-screen";
-import Bugsnag from '@bugsnag/expo';
+import { Platform } from "react-native";
 
-Bugsnag.start();
+if (typeof window !== 'undefined' && Platform.OS !== 'web') {
+  const Bugsnag = require('@bugsnag/expo').default || require('@bugsnag/expo');
+  Bugsnag.start();
+}
 import { Stack } from "expo-router/stack";
 import { StatusBar } from "expo-status-bar";
 import { View } from "react-native";
