@@ -23,6 +23,7 @@ graph TD
     subgraph UI ["User Interface Layer (React Native + Expo Router)"]
         Home["Home (/)"]
         Emergency["Emergency (/emergency)"]
+        Tools["Tools (/tools)"]
         Plans["Trip Plans (/plans, /plans/[id])"]
         PlanAction["Plan Actions (/plan/current/[action])"]
         Profile["Profile (/profile)"]
@@ -42,6 +43,9 @@ graph TD
         PlanLogic["Plans (plans.ts)<br/>Validation, overdue calc, PDF/HTML"]
         PersistLogic["Persistence (persistence.ts)<br/>Schema validation & profile migration"]
         SearchLogic["Search Indexing (search-indexing.ts)<br/>Content hashing & keywords"]
+        SolarLogic["Solar & Dusk (solar.ts)<br/>NOAA ephemeris & canopy penalty"]
+        SignalLogic["Signaling (signaling.ts)<br/>Morse SOS & Alpine whistle cadence"]
+        HikingLogic["Hiking Tools (hiking-tools.ts)<br/>Naismith pace & avalanche risk"]
     end
 
     subgraph Hardware ["Device Hardware & Native Modules"]
@@ -52,12 +56,18 @@ graph TD
         OTAUpdates["expo-updates (EAS Update)"]
         VoiceIntents["Siri & Google Assistant<br/>(TrailSafeIntents.swift & shortcuts.xml)"]
         DeviceSearch["CoreSpotlight & Shortcuts<br/>(modules/device-search)"]
+        AudioHaptics["Web Audio API & Vibration"]
     end
 
     Home --> StoreContext
     Emergency --> AppContext
     Emergency --> Coords
     Emergency --> GPS
+    Tools --> SolarLogic
+    Tools --> SignalLogic
+    Tools --> HikingLogic
+    Tools --> GPS
+    Tools --> AudioHaptics
     Plans --> PlanLogic
     Plans --> StoreContext
     PlanAction --> StoreContext
@@ -183,6 +193,21 @@ graph TD
   - `plugins/with-app-intents.cjs` automatically injects `TrailSafeIntents.swift`, `Info.plist` user activity types, and Android `shortcuts.xml` during `npx expo prebuild --clean`.
   - `getGuideContentVersion()` computes a deterministic hash of the library contents. When an OTA JavaScript update via `expo-updates` changes the offline library, the app detects the version bump and automatically re-indexes native search without requiring a new App Store binary.
 
+### G. Wilderness Tools, Solar / Forest Dusk & Signaling Subsystem
+- **Files**: `src/lib/solar.ts`, `src/lib/signaling.ts`, `src/lib/hiking-tools.ts`, `src/app/tools.tsx`
+- **Offline Astronomical Solar Engine (`src/lib/solar.ts`)**:
+  - Pure analytical NOAA ephemeris equations computing Sunrise, Solar Noon, Horizon Sunset, Civil Dusk (sun 6° below horizon), and Nautical Dusk (sun 12° below horizon) without internet access.
+  - **PNW Forest Dusk Factor**: Deducts 30 min (moderate forest) or 60 min (dense old-growth timber / glaciated canyons) from civil twilight to calculate realistic ambient trail light loss and warn hikers before headlamps become essential.
+  - Computes solar azimuth and elevation angles for sun-compass orientation and cross-checking compass headings against the sun's position.
+  - Includes pre-packaged coordinates for six major PNW trail regions (Snoqualmie Pass, Mt. Rainier Paradise, North Cascades Mt. Baker, Olympic Hoh Rainforest, Leavenworth, Columbia River Gorge).
+- **Audible & Visual Emergency Signaling (`src/lib/signaling.ts`)**:
+  - **Alpine Distress Whistle Cadence**: Implements the universal alpine Search and Rescue distress signal (3 sharp blasts of 3s each, separated by 1s pauses, followed by a mandatory 60s silent listening window). Generates a piercing 2.8 kHz synthesized whistle tone via Web Audio API and triggers hardware vibration on native devices. Teaches that SAR ground teams reply with 2 blasts.
+  - **Optical Screen Beacon**: High-contrast optical signaling modes (high-frequency emergency strobe, ITU-R Morse code SOS, 100% red night-vision preserving lantern, and daylight aircraft signal mirror sighting guide).
+- **Backcountry Utilities (`src/lib/hiking-tools.ts`)**:
+  - **Avalanche Slope Inclinometer**: Live tilt sensor identifying the critical 30°–45° prime slab avalanche danger zone.
+  - **Naismith's Rule Hiking Time**: Calculates mountain travel time with Langmuir elevation adjustments, alerting if estimated finish occurs after Forest Dusk.
+  - **Water Treatment Countdown**: Temperature-sensitive disinfection timers (cold glacial runoff vs warm water, boiling altitude adjustments, and UV purification).
+
 ---
 
 ## 4. Offline Content Engine
@@ -200,11 +225,11 @@ graph TD
 
 | Test Suite | Framework | Command | Scope |
 | :--- | :--- | :--- | :--- |
-| **Unit & Math Tests** | `node:test` + `tsx` | `npm test` | Coordinates, UTM projections, date wrapping, storage migration, practice guards, guide content hashing, keyword extraction, and hands-free plan completion (48 tests). |
+| **Unit & Math Tests** | `node:test` + `tsx` | `npm test` | Coordinates, UTM projections, date wrapping, storage migration, practice guards, solar ephemeris, forest dusk, Morse SOS, whistle cadence, and backcountry tools (59 tests). |
 | **Theme Contrast Tests** | `node:test` + `tsx` | `npm test` | Mathematical W3C relative luminance and contrast ratios for WCAG AA compliance. |
 | **Type Integrity** | `tsc --noEmit` | `npm run typecheck` | Strict TypeScript compilation across all app routes, modules, and components. |
 | **Linter** | `eslint` | `npx eslint .` | React Compiler, React Native, and Expo Router lint rules. |
-| **Web Export** | `expo export` | `npx expo export --platform web` | Validates static route generation across all 13 routes (including `/plan/current/[action]`). |
-| **End-to-End Tests** | Playwright | `npm run test:e2e` | 9 full browser flows against production web export on port 8082 with Chrome. |
+| **Web Export** | `expo export` | `npx expo export --platform web` | Validates static route generation across all 14 routes (including `/tools`). |
+| **End-to-End Tests** | Playwright | `npm run test:e2e` | 10 full browser flows against production web export on port 8082 with Chrome. |
 | **Native iOS Smoke** | XCTest | `tests/native/TrailSafeSmoke.swift` | Native Xcode Release simulator build verifying GPS and UI. |
 | **Physical iOS Release** | `xcrun devicectl` | `bash scripts/install-iphone.sh` | Signed Release build and direct installation on physical iPhone hardware. |

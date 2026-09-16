@@ -101,7 +101,7 @@ export default function About() {
     }
   };
   return (
-    <Screen title="About" subtitle="KCESAR, KCSARA, and this app">
+    <Screen back={true} title="About" subtitle="KCESAR, KCSARA, and this app">
       <Kicker>Organization</Kicker>
       <Card>
         <Heading>About KCESAR</Heading>

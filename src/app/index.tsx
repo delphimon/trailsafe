@@ -5,6 +5,7 @@ import {
   ClipboardList,
   Siren,
   ArrowUpRight,
+  Info,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path } from "react-native-svg";
@@ -20,12 +21,31 @@ import {
   T,
 } from "@/components/trailsafe/ui";
 import { useStore } from "@/state/store";
+import { Pressable } from "react-native";
 export default function Home() {
   const { C } = useThemeStyles();
   const { data } = useStore();
   const plan = data.plans.find((p) => p.status === "current");
   return (
-    <Screen title="TrailSafe" subtitle="King County Explorer Search & Rescue">
+    <Screen 
+      title="TrailSafe" 
+      subtitle="King County Explorer Search & Rescue"
+      rightAction={
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="About"
+          onPress={() => router.push("/about")}
+          style={({ pressed }) => ({
+            padding: 8,
+            opacity: pressed ? 0.6 : 1,
+            backgroundColor: 'rgba(255,255,255,0.15)',
+            borderRadius: 20,
+          })}
+        >
+          <Info color={C.headerText} size={20} />
+        </Pressable>
+      }
+    >
       <LinearGradient
         colors={["#25503F", "#132720"]}
         style={{

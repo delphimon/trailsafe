@@ -22,7 +22,7 @@ This guide gives developers and AI agents the full context needed to build, test
 3. **No Unmonitored Safety Illusion**:
    - TrailSafe never claims or implies background dispatch monitoring, cloud synchronization, or automatic emergency signaling. If a user is overdue, the app relies on the hiker's chosen emergency contact to notify 911.
 4. **Offline & Client-Side Privacy**:
-   - There are zero accounts, analytics, advertising SDKs, cloud databases, or telemetry trackers. All user data is stored strictly on-device in `AsyncStorage`.
+   - There are zero accounts, analytics, advertising SDKs, or telemetry trackers (with the exception of Bugsnag for anonymized crash reporting). All user data is stored strictly on-device in `AsyncStorage`.
 
 ---
 
@@ -32,6 +32,7 @@ This guide gives developers and AI agents the full context needed to build, test
 - **Routing**: Expo Router 57 (`src/app/` file-system routing)
 - **Language**: TypeScript 6 (strict mode enabled)
 - **State & Storage**: React Context + `@react-native-async-storage/async-storage`
+- **Native Modules**: `expo-sensors` (inclinometer), `expo-av` (audio whistle), `@bugsnag/expo` (crash reporting)
 - **Coordinate Transformations**: `proj4` (WGS84 projection to UTM zones 1–60)
 - **Typography**: `@expo-google-fonts/public-sans` (body) & `@expo-google-fonts/barlow-condensed` (headings)
 - **Icons**: `lucide-react-native`
@@ -61,6 +62,7 @@ trailsafe/
 │   │   ├── _layout.tsx           # App root: font loading, splash, StoreProvider, AppProvider, Shell, Search Indexing
 │   │   ├── index.tsx             # Home screen (Emergency hero, quick links, current plan banner)
 │   │   ├── emergency.tsx         # Emergency screen (LocationCard, Call/Text 911, Practice toggle)
+│   │   ├── tools.tsx             # Wilderness tools (Solar & Forest Dusk, Signaling, Backcountry utilities)
 │   │   ├── prepare.tsx           # Checklists (Ten Essentials, phone prep, trip presets)
 │   │   ├── guide.tsx             # Offline survival & first-aid library search (supports ?search= query)
 │   │   ├── article/[id].tsx      # Dynamic article reader for library topics
@@ -88,7 +90,10 @@ trailsafe/
 │   │   ├── plans.ts              # TripPlan schema, validation, overdue calculations, HTML export
 │   │   ├── persistence.ts        # Storage schema, parseStoredData validation, profile migration
 │   │   ├── export-plan.ts        # PDF generation (expo-print) and share sheet (expo-sharing)
-│   │   └── search-indexing.ts    # Guide content hashing and CoreSpotlight/Android indexing
+│   │   ├── search-indexing.ts    # Guide content hashing and CoreSpotlight/Android indexing
+│   │   ├── solar.ts              # Offline astronomical solar calculations & PNW forest dusk factor
+│   │   ├── signaling.ts          # Optical Morse SOS and alpine distress whistle cadence
+│   │   └── hiking-tools.ts       # Naismith hiking time, avalanche slope risk, water treatment
 │   ├── state/
 │   │   ├── store.tsx             # Queued serialized storage store (StoreProvider, useStore)
 │   │   └── app.tsx               # UI dialogs, toasts, practice mode, emergency actions (useApp)
@@ -101,8 +106,10 @@ trailsafe/
 │   ├── plans.test.ts             # Unit tests for plan validation, storage, and dual vehicle migration
 │   ├── theme.test.ts             # Automated WCAG AA/AAA relative luminance contrast suite
 │   ├── search-indexing.test.ts   # Unit tests for content hashing, keyword extraction, and hands-free actions
+│   ├── solar.test.ts             # Unit tests for astronomical solar equations and forest dusk penalties
+│   ├── signaling.test.ts         # Unit tests for Morse SOS, whistle cadence, and backcountry tools
 │   ├── e2e/
-│   │   └── app.spec.ts           # 9 Playwright end-to-end browser tests
+│   │   └── app.spec.ts           # 10 Playwright end-to-end browser tests
 │   └── native/                   # Native iOS smoke tests (XCTest)
 ├── scripts/
 │   ├── serve-preview.cjs         # Static HTTP server for web export preview on port 8082
@@ -160,13 +167,27 @@ trailsafe/
   - OTA Compatibility: `getGuideContentVersion` hashes article contents. Whenever an OTA update via `expo-updates` changes guide content, the app detects the hash change and silently re-indexes CoreSpotlight/Android shortcuts on launch.
 - **Continuous Native Generation (CNG)**: `plugins/with-app-intents.cjs` injects `TrailSafeIntents.swift`, `Info.plist` activity types, and Android `shortcuts.xml` dynamically during `npx expo prebuild --clean`.
 
+### F. Wilderness Tools, Solar / Forest Dusk & Signaling Subsystem (`src/lib/solar.ts`, `src/lib/signaling.ts`, `src/lib/hiking-tools.ts`, `src/app/tools.tsx`)
+- **Offline Solar & Forest Dusk Engine (`src/lib/solar.ts`)**:
+  - Pure TypeScript NOAA ephemeris calculations (zero network API calls).
+  - Calculates Sunrise, Solar Noon, Horizon Sunset, Civil Dusk (sun 6° below horizon), and Nautical Dusk.
+  - **PNW Forest Dusk Factor**: Deducts 30 min (moderate forest) or 60 min (dense old-growth timber / glaciated canyons) from civil twilight to calculate realistic ambient trail light loss and warn hikers before headlamps become essential.
+  - Sun-compass bearing indicator (solar azimuth and elevation degrees).
+- **Audible & Visual Signaling (`src/lib/signaling.ts`, `src/app/tools.tsx`)**:
+  - **Whistle Cadence**: Enforces universal alpine SAR distress standard (3 sharp blasts of 3s, separated by 1s pause, followed by mandatory 60s silent listening window for responder replies). Generates 2.8 kHz piercing audio tone natively via `expo-av` and `.wav` file (falling back to Web Audio API in browsers) alongside synchronized device vibration. Teaches that SAR ground teams reply with 2 blasts.
+  - **Screen Beacon**: High-contrast optical signaling modes (high-frequency strobe, ITU-R Morse code SOS, 100% red night-vision preserving lantern, and daylight aircraft signal mirror sighting guide).
+- **Backcountry Utilities (`src/lib/hiking-tools.ts`, `src/app/tools.tsx`)**:
+  - **Avalanche Slope Inclinometer**: Live tilt sensor using `expo-sensors` `DeviceMotion` (to measure rotation beta angle), identifying the critical 30°–45° prime slab avalanche danger zone.
+  - **Naismith's Rule Hiking Time**: Calculates mountain travel time with Langmuir elevation adjustments, alerting if estimated finish occurs after Forest Dusk.
+  - **Water Treatment Countdown**: Temperature-sensitive disinfection timers (cold glacial runoff vs warm water, boiling altitude adjustments, and UV purification).
+
 ---
 
 ## 5. Development & Testing Commands
 
 ### Standard Checks
 ```sh
-# 1. Run all 48 unit & contrast tests
+# 1. Run all 59 unit & contrast tests
 npm test
 
 # 2. Strict TypeScript type check

@@ -303,11 +303,13 @@ export function Screen({
   title,
   subtitle,
   back = false,
+  rightAction,
   children,
 }: {
   title: string;
   subtitle?: string;
   back?: boolean;
+  rightAction?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const { C, s } = useThemeStyles();
@@ -318,31 +320,40 @@ export function Screen({
       style={{ flex: 1 }}
     >
       <View style={[s.header, { paddingTop: Math.max(insets.top, 14) + 6 }]}>
-        {back && (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Back"
-            onPress={() =>
-              router.canGoBack() ? router.back() : router.replace("/")
-            }
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 4,
-              minHeight: 44,
-              alignSelf: "flex-start",
-            }}
-          >
-            <ArrowLeft size={18} color={C.headerText} />
-            <T style={{ color: C.headerText, fontFamily: fonts.bold, fontSize: 14 }}>
-              Back
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <View style={{ flex: 1 }}>
+            {back && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Back"
+                onPress={() =>
+                  router.canGoBack() ? router.back() : router.replace("/")
+                }
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 4,
+                  minHeight: 44,
+                  alignSelf: "flex-start",
+                }}
+              >
+                <ArrowLeft size={18} color={C.headerText} />
+                <T style={{ color: C.headerText, fontFamily: fonts.bold, fontSize: 14 }}>
+                  Back
+                </T>
+              </Pressable>
+            )}
+            <T accessibilityRole="header" style={s.headerTitle}>
+              {title}
             </T>
-          </Pressable>
-        )}
-        <T accessibilityRole="header" style={s.headerTitle}>
-          {title}
-        </T>
-        {subtitle && <T style={s.headerSub}>{subtitle}</T>}
+            {subtitle && <T style={s.headerSub}>{subtitle}</T>}
+          </View>
+          {rightAction && (
+            <View style={{ marginLeft: 16, marginTop: back ? 44 : 0 }}>
+              {rightAction}
+            </View>
+          )}
+        </View>
       </View>
       <ScrollView
         keyboardShouldPersistTaps="handled"

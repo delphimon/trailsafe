@@ -60,7 +60,9 @@
           "isAndroidForegroundServiceEnabled": false,
           "motionUsagePermission": false
         }
-      ]
+      ],
+      "expo-secure-store",
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -70,6 +72,9 @@
       "router": {},
       "eas": {
         "projectId": "0e9f0b72-eb3b-4be2-840d-2f1b632e2b6f"
+      },
+      "bugsnag": {
+        "apiKey": "2e086cc635107ef068c55e1ff704d12a"
       }
     },
     "owner": "applied-interactions",

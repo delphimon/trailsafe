@@ -1,6 +1,6 @@
 import { Modal, Platform, Pressable, StyleSheet, View } from "react-native";
 import { router, usePathname } from "expo-router";
-import { Backpack, BookOpen, House, Info, Siren } from "lucide-react-native";
+import { Backpack, BookOpen, Compass, House, Info, Siren } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useApp } from "@/state/app";
 import { Button, useThemeStyles, fonts, T } from "./ui";
@@ -13,14 +13,16 @@ export function BottomBar() {
     { label: "Prepare", path: "/prepare" as const, icon: Backpack },
     { label: "Emergency", path: "/emergency" as const, icon: Siren },
     { label: "Guide", path: "/guide" as const, icon: BookOpen },
-    { label: "About", path: "/about" as const, icon: Info },
+    { label: "Tools", path: "/tools" as const, icon: Compass },
   ];
   const active =
     path.startsWith("/plans") || path === "/profile"
       ? "/prepare"
-      : path.startsWith("/article") || path === "/resources"
+      : path.startsWith("/article") || path === "/resources" || path === "/about"
         ? "/guide"
-        : path;
+        : path.startsWith("/tools")
+          ? "/tools"
+          : path;
   return (
     <View
       accessibilityRole="tablist"
@@ -31,7 +33,7 @@ export function BottomBar() {
         borderTopColor: C.line,
         paddingTop: 8,
         paddingBottom: Math.max(insets.bottom, 10),
-        paddingHorizontal: 3,
+        paddingHorizontal: 2,
       }}
     >
       {tabs.map((tab) => {
@@ -48,28 +50,28 @@ export function BottomBar() {
             accessibilityLabel={tab.label}
             accessibilityState={{ selected }}
             aria-selected={selected}
-            onPress={() => router.navigate(tab.path)}
+            onPress={() => router.navigate(tab.path as any)}
             style={({ pressed }) => ({
               flex: 1,
               minHeight: 52,
-              padding: 4,
+              padding: 2,
               alignItems: "center",
               justifyContent: "center",
-              gap: 4,
+              gap: 2,
               opacity: pressed ? 0.6 : 1,
               borderRadius: 8,
               backgroundColor: selected ? C.checkBg : "transparent",
             })}
           >
             <tab.icon
-              size={22}
+              size={20}
               color={tab.path === "/emergency" ? C.orange : color}
             />
             <T
               style={{
                 fontFamily: fonts.bold,
                 fontSize: 10,
-                lineHeight: 15,
+                lineHeight: 14,
                 color,
               }}
             >

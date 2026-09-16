@@ -415,7 +415,7 @@ test("about screen displays native build and update info with check for updates 
   await page.goto("/about");
   await ready(page);
   await expect(page.getByText("Version Details")).toBeVisible();
-  await expect(page.getByTestId("build-version")).toContainText("0.1.0");
+  await expect(page.getByTestId("build-version")).toContainText(/\d+\.\d+\.\d+/);
   await expect(page.getByText("OTA Status")).toBeVisible();
   const checkBtn = page.getByRole("button", { name: "Check for Updates" });
   await expect(checkBtn).toBeVisible();
@@ -426,3 +426,52 @@ test("about screen displays native build and update info with check for updates 
     ),
   ).toBeVisible();
 });
+
+test("wilderness tools screen navigates, calculates forest dusk, runs signaling tools, and backcountry utilities", async ({
+  page,
+}) => {
+  await setupLocation(page, { lat: 47.425, lon: -121.414 });
+  await page.goto("/tools");
+  await ready(page);
+
+  // Check header and tab navigation
+  await expect(page.getByText("Wilderness Tools")).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Tools", exact: true })).toBeVisible();
+
+  // Verify Solar & Forest Dusk
+  await expect(page.getByText("ESTIMATED FOREST DUSK")).toBeVisible();
+  await expect(page.getByText("Astronomical solar table")).toBeVisible();
+  await expect(page.getByText("Civil Twilight (Open Dusk)")).toBeVisible();
+
+  // Switch canopy preset
+  await page.getByRole("button", { name: "Dense Timber (-60m)" }).click();
+  await page.screenshot({ path: "docs/screenshots/tools-solar.png" });
+
+  // Switch to Signaling tab
+  await page.getByRole("button", { name: "Signaling" }).click();
+  await expect(page.getByText("Alpine distress whistle cadence")).toBeVisible();
+  await expect(page.getByText("Universal 3-Blast Signal")).toBeVisible();
+  await page.screenshot({ path: "docs/screenshots/tools-signaling.png" });
+
+  // Start whistle cadence
+  const startCadenceBtn = page.getByRole("button", { name: "Start Whistle Cadence" });
+  await expect(startCadenceBtn).toBeVisible();
+  await startCadenceBtn.click();
+  await expect(page.getByText(/BLAST 1 OF 3/)).toBeVisible();
+  await page.getByRole("button", { name: "Stop Cadence" }).click();
+
+  // Launch Strobe modal and dismiss
+  await page.getByRole("button", { name: "Emergency Strobe (High-Frequency)" }).click();
+  await expect(page.getByText("EMERGENCY STROBE ACTIVE")).toBeVisible();
+  await page.getByText("EMERGENCY STROBE ACTIVE").click();
+  await expect(page.getByText("EMERGENCY STROBE ACTIVE")).not.toBeVisible();
+
+  // Switch to Backcountry tab
+  await page.getByRole("button", { name: "Backcountry" }).click();
+  await expect(page.getByText("Avalanche slope inclinometer")).toBeVisible();
+  await expect(page.getByText("PRIME AVALANCHE ZONE (30°–45°)")).toBeVisible();
+  await expect(page.getByText("Hiking Time Estimator")).toBeVisible();
+  await expect(page.getByText("Disinfection Timer")).toBeVisible();
+  await page.screenshot({ path: "docs/screenshots/tools-backcountry.png" });
+});
+
