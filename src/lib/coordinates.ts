@@ -203,3 +203,17 @@ export function locationText(
     ...fixWarnings(fix, now),
   ].join("\n");
 }
+
+/**
+ * Calculates the exact magnetic declination (variation) for the current date and location
+ * using the World Magnetic Model (WMM). Positive is East, negative is West.
+ */
+export function getMagneticDeclination(latitude: number, longitude: number): number | null {
+  try {
+    const geo = require("geomagnetism");
+    const result = geo.model().point([latitude, longitude]);
+    return result ? result.decl : null;
+  } catch (error) {
+    return null;
+  }
+}

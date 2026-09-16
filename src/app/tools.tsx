@@ -54,8 +54,11 @@ import {
   WATER_TREATMENT_PRESETS,
   type PaceLevel,
   type PackWeight,
+  type BreakStyle,
   type WaterTreatmentPreset,
 } from "@/lib/hiking-tools";
+
+import { getMagneticDeclination } from "@/lib/coordinates";
 
 type ToolTab = "solar" | "signaling" | "backcountry";
 
@@ -63,8 +66,8 @@ export default function ToolsScreen() {
   const { C, s } = useThemeStyles();
   const [activeTab, setActiveTab] = useState<ToolTab>("solar");
 
-  // GPS & Location for Solar
-  const { fix } = useAutomaticLocation(activeTab === "solar");
+  // GPS & Location
+  const { fix } = useAutomaticLocation(activeTab === "solar" || activeTab === "backcountry");
   const [selectedPresetId, setSelectedPresetId] = useState<string>("gps");
   const [canopy, setCanopy] = useState<CanopyType>("moderate");
 
@@ -233,12 +236,18 @@ export default function ToolsScreen() {
     [deviceTilt],
   );
 
+  const magneticDeclination = useMemo(() => {
+    if (!fix) return null;
+    return getMagneticDeclination(fix.latitude, fix.longitude);
+  }, [fix]);
+
   // Naismith Estimator
   const [hikingMiles, setHikingMiles] = useState(5);
   const [hikingGainFt, setHikingGainFt] = useState(2400);
   const [hikingLossFt, setHikingLossFt] = useState(2400);
-  const [hikingPace, setHikingPace] = useState<PaceLevel>("moderate");
+  const [hikingPace, setHikingPace] = useState<PaceLevel>("casual");
   const [hikingPack, setHikingPack] = useState<PackWeight>("light");
+  const [hikingBreaks, setHikingBreaks] = useState<BreakStyle>("standard");
 
   const hikingEstimate = useMemo(() => {
     return calculateHikingTime(
@@ -247,8 +256,9 @@ export default function ToolsScreen() {
       hikingLossFt,
       hikingPace,
       hikingPack,
+      hikingBreaks,
     );
-  }, [hikingMiles, hikingGainFt, hikingLossFt, hikingPace, hikingPack]);
+  }, [hikingMiles, hikingGainFt, hikingLossFt, hikingPace, hikingPack, hikingBreaks]);
 
   // Water Treatment Timer
   const [selectedWaterPreset, setSelectedWaterPreset] = useState(
@@ -769,6 +779,58 @@ export default function ToolsScreen() {
          ==================================================================== */}
       {activeTab === "backcountry" && (
         <View style={{ gap: 16 }}>
+          {/* Compass Magnetic Declination */}
+          <Kicker>Compass Navigation</Kicker>
+          <Card style={{ padding: 16, gap: 10 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <View style={{ gap: 2 }}>
+                <Heading>Magnetic Declination</Heading>
+                <T style={s.note}>Adjust map compass for true north</T>
+              </View>
+              <Compass size={28} color={C.green} />
+            </View>
+
+            <View
+              style={{
+                backgroundColor: C.checkBg,
+                padding: 14,
+                borderRadius: 10,
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              {magneticDeclination !== null ? (
+                <>
+                  <T
+                    style={{
+                      fontFamily: fonts.display,
+                      fontSize: 34,
+                      lineHeight: 40,
+                      color: C.heading,
+                    }}
+                  >
+                    {Math.abs(magneticDeclination).toFixed(1)}° {magneticDeclination >= 0 ? "East" : "West"}
+                  </T>
+                  <T style={{ fontSize: 13, color: C.ink, textAlign: "center" }}>
+                    {magneticDeclination >= 0
+                      ? "Rotate compass bezel counter-clockwise (East)."
+                      : "Rotate compass bezel clockwise (West)."}
+                  </T>
+                </>
+              ) : (
+                <T style={{ fontSize: 13, color: C.muted, textAlign: "center" }}>
+                  Waiting for GPS location to calculate World Magnetic Model variation...
+                </T>
+              )}
+            </View>
+          </Card>
+
           {/* Avalanche Inclinometer */}
           <Kicker>Avalanche slope inclinometer</Kicker>
           <Card style={{ padding: 16, gap: 10 }}>
@@ -1006,6 +1068,23 @@ export default function ToolsScreen() {
                   onPress={() => setHikingPack("heavy")}
                 />
               </View>
+              <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
+                <Chip
+                  label="No Breaks"
+                  selected={hikingBreaks === "none"}
+                  onPress={() => setHikingBreaks("none")}
+                />
+                <Chip
+                  label="Standard Breaks (10m/hr)"
+                  selected={hikingBreaks === "standard"}
+                  onPress={() => setHikingBreaks("standard")}
+                />
+                <Chip
+                  label="Long + Lunch"
+                  selected={hikingBreaks === "long"}
+                  onPress={() => setHikingBreaks("long")}
+                />
+              </View>
             </View>
 
             {/* Estimated Output */}
@@ -1041,6 +1120,9 @@ export default function ToolsScreen() {
                 Base flat: {hikingEstimate.flatHours}h · Ascent: +
                 {hikingEstimate.ascentMinutes}m · Descent: +
                 {hikingEstimate.descentMinutes}m
+                {hikingEstimate.breaksMinutes > 0
+                  ? ` · Breaks: +${hikingEstimate.breaksMinutes}m`
+                  : ""}
               </T>
             </View>
           </Card>

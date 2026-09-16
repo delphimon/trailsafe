@@ -7,6 +7,7 @@ import {
   fixWarnings,
   locationText,
   validCoordinates,
+  getMagneticDeclination,
 } from "../src/lib/coordinates";
 const fix = {
   latitude: 47.42537,
@@ -86,4 +87,18 @@ test("unknown accuracy is not reported as zero; mocked position is labeled", () 
     fixWarnings({ ...fix, mocked: true }, fix.timestamp).join(" "),
     /SIMULATED/,
   );
+});
+
+test("getMagneticDeclination calculates PNW variation correctly", () => {
+  // Snoqualmie Pass, WA
+  const declination = getMagneticDeclination(47.425, -121.413);
+  assert.ok(declination !== null);
+  // PNW declination is currently around 14° to 16° East
+  assert.ok(declination > 14 && declination < 16, "Snoqualmie Pass should be ~15° East");
+
+  // New York
+  const nyDeclination = getMagneticDeclination(40.712, -74.006);
+  assert.ok(nyDeclination !== null);
+  // NY declination is currently around -12° to -14° West
+  assert.ok(nyDeclination < -10 && nyDeclination > -15, "New York should be West declination");
 });
