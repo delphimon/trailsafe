@@ -439,7 +439,10 @@ test("wilderness tools screen navigates, calculates forest dusk, runs signaling 
   await expect(page.getByRole("tab", { name: "Tools", exact: true })).toBeVisible();
 
   // Verify Solar & Forest Dusk
-  await expect(page.getByText("ESTIMATED FOREST DUSK")).toBeVisible();
+  await expect(
+    page.getByText(/TRAIL LIGHT REMAINING|HEADLAMP REQUIRED/),
+  ).toBeVisible();
+  await expect(page.getByText(/Headlamp needed/i)).toBeVisible();
   await expect(page.getByText("Astronomical solar table")).toBeVisible();
   await expect(page.getByText("Civil Twilight (Open Dusk)")).toBeVisible();
 

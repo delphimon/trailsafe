@@ -127,6 +127,7 @@ export default function ToolsScreen() {
         if (Platform.OS === "web") {
           stopTone = playWebWhistleTone(2800);
         } else if (nativePlayer) {
+          // eslint-disable-next-line react-hooks/immutability
           nativePlayer.loop = true;
           nativePlayer.play();
           stopTone = () => {
@@ -393,7 +394,7 @@ export default function ToolsScreen() {
                   alignItems: "center",
                 }}
               >
-                <View style={{ gap: 4 }}>
+                <View style={{ flex: 1, gap: 4, paddingRight: 12 }}>
                   <T
                     style={{
                       fontFamily: fonts.bold,
@@ -402,43 +403,29 @@ export default function ToolsScreen() {
                       letterSpacing: 1,
                     }}
                   >
-                    ESTIMATED FOREST DUSK
+                    {solar.headlampNeededNow
+                      ? "TRAIL DARKNESS · HEADLAMP REQUIRED"
+                      : "TRAIL LIGHT REMAINING"}
                   </T>
                   <T
                     style={{
                       fontFamily: fonts.display,
-                      fontSize: 32,
-                      lineHeight: 38,
+                      fontSize: 26,
+                      lineHeight: 32,
                       color: C.heading,
                     }}
                   >
-                    {solar.forestDusk.toLocaleTimeString([], {
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}
+                    {solar.headlampStatusHeadline}
                   </T>
                   <T style={{ fontSize: 13, color: C.ink }}>
-                    {solar.minutesUntilForestDusk !== null &&
-                    solar.minutesUntilForestDusk > 0 ? (
-                      <>
-                        Headlamp required in:{" "}
-                        <T
-                          style={{
-                            fontFamily: fonts.bold,
-                            color: C.orangeDark,
-                          }}
-                        >
-                          {formatDurationMinutes(solar.minutesUntilForestDusk)}
-                        </T>
-                      </>
-                    ) : (
-                      <T style={{ fontFamily: fonts.bold, color: C.orange }}>
-                        TRAIL DARKNESS REACHED — HEADLAMP REQUIRED
-                      </T>
-                    )}
+                    {solar.headlampStatusSubtext}
                   </T>
                 </View>
-                <Sunset size={36} color={C.orange} />
+                {solar.headlampNeededNow ? (
+                  <Flashlight size={36} color={C.orange} />
+                ) : (
+                  <Sunset size={36} color={C.orange} />
+                )}
               </View>
             </Card>
           )}

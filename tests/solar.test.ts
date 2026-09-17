@@ -134,8 +134,81 @@ test("formatDurationMinutes handles edge cases and plural formatting", () => {
   assert.equal(formatDurationMinutes(-90), "1h 30m");
 });
 
+test("24-hour headlamp notification logic distinguishes daylight from nighttime without UTC rollover corruption", () => {
+  const lat = 47.6062;
+  const lon = -122.3321; // Seattle, WA (UTC-7 PDT in September)
+
+  // 1. Afternoon daylight: 5:30 PM PDT (00:30 UTC next day)
+  // Forest dusk on moderate canopy is ~7:15 PM PDT.
+  // Must calculate ~1.75 hours (105 min), NOT 25.5 hours.
+  const afternoonDate = new Date("2026-09-17T00:30:00Z");
+  const afternoonTimes = calculateSolarTimes(lat, lon, afternoonDate, "moderate");
+
+  assert.equal(afternoonTimes.headlampNeededNow, false);
+  assert.equal(afternoonTimes.isTrailDaylight, true);
+  assert.ok(
+    afternoonTimes.minutesUntilForestDusk !== null &&
+      afternoonTimes.minutesUntilForestDusk >= 90 &&
+      afternoonTimes.minutesUntilForestDusk <= 120,
+    `Expected ~105 min until dusk tonight, got ${afternoonTimes.minutesUntilForestDusk}`,
+  );
+  assert.match(
+    afternoonTimes.headlampStatusHeadline,
+    /^Headlamp needed in 1h (4[0-9]|5[0-9])m$/,
+  );
+  assert.match(
+    afternoonTimes.headlampStatusSubtext,
+    /Forest Dusk tonight/,
+  );
+
+  // 2. Evening night: 9:00 PM PDT (04:00 UTC next day)
+  // Dusk occurred at ~7:15 PM PDT. It is currently dark!
+  // Must indicate headlamp needed NOW until tomorrow morning's sunrise (~6:48 AM, ~9.8 hours away), NOT 22 hours.
+  const eveningDate = new Date("2026-09-17T04:00:00Z");
+  const eveningTimes = calculateSolarTimes(lat, lon, eveningDate, "moderate");
+
+  assert.equal(eveningTimes.headlampNeededNow, true);
+  assert.equal(eveningTimes.isTrailDaylight, false);
+  assert.ok(eveningTimes.nextSunrise !== null);
+  assert.ok(
+    eveningTimes.minutesUntilNextSunrise !== null &&
+      eveningTimes.minutesUntilNextSunrise >= 550 &&
+      eveningTimes.minutesUntilNextSunrise <= 620,
+    `Expected ~587 min until tomorrow sunrise, got ${eveningTimes.minutesUntilNextSunrise}`,
+  );
+  assert.match(
+    eveningTimes.headlampStatusHeadline,
+    /^Headlamp needed now until /i,
+  );
+  assert.match(
+    eveningTimes.headlampStatusSubtext,
+    /Natural light returns at .* \(in [0-9]+h [0-9]+m\)/,
+  );
+
+  // 3. Pre-dawn night: 4:00 AM PDT (11:00 UTC)
+  // Sun has not risen yet.
+  // Must indicate headlamp needed NOW until today's sunrise (~6:47 AM, ~2.75 hours away).
+  const preDawnDate = new Date("2026-09-16T11:00:00Z");
+  const preDawnTimes = calculateSolarTimes(lat, lon, preDawnDate, "moderate");
+
+  assert.equal(preDawnTimes.headlampNeededNow, true);
+  assert.equal(preDawnTimes.isTrailDaylight, false);
+  assert.ok(preDawnTimes.nextSunrise !== null);
+  assert.ok(
+    preDawnTimes.minutesUntilNextSunrise !== null &&
+      preDawnTimes.minutesUntilNextSunrise >= 150 &&
+      preDawnTimes.minutesUntilNextSunrise <= 180,
+    `Expected ~167 min until today sunrise, got ${preDawnTimes.minutesUntilNextSunrise}`,
+  );
+  assert.match(
+    preDawnTimes.headlampStatusHeadline,
+    /^Headlamp needed now until /i,
+  );
+});
+
 test("invalid coordinates reject invalid bounds", () => {
   assert.throws(() => calculateSolarTimes(95, 0));
   assert.throws(() => calculateSolarTimes(0, 195));
   assert.throws(() => calculateSolarTimes(NaN, 0));
 });
+
