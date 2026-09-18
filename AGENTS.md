@@ -167,19 +167,23 @@ trailsafe/
   - OTA Compatibility: `getGuideContentVersion` hashes article contents. Whenever an OTA update via `expo-updates` changes guide content, the app detects the hash change and silently re-indexes CoreSpotlight/Android shortcuts on launch.
 - **Continuous Native Generation (CNG)**: `plugins/with-app-intents.cjs` injects `TrailSafeIntents.swift`, `Info.plist` activity types, and Android `shortcuts.xml` dynamically during `npx expo prebuild --clean`.
 
-### F. Wilderness Tools, Solar / Forest Dusk & Signaling Subsystem (`src/lib/solar.ts`, `src/lib/signaling.ts`, `src/lib/hiking-tools.ts`, `src/app/tools.tsx`)
-- **Offline Solar & Forest Dusk Engine (`src/lib/solar.ts`)**:
-  - Pure TypeScript NOAA ephemeris calculations (zero network API calls).
-  - Calculates Sunrise, Solar Noon, Horizon Sunset, Civil Dusk (sun 6° below horizon), and Nautical Dusk.
-  - **PNW Forest Dusk Factor**: Deducts 30 min (moderate forest) or 60 min (dense old-growth timber / glaciated canyons) from civil twilight to calculate realistic ambient trail light loss and warn hikers before headlamps become essential.
-  - Sun-compass bearing indicator (solar azimuth and elevation degrees).
-- **Audible & Visual Signaling (`src/lib/signaling.ts`, `src/app/tools.tsx`)**:
-  - **Whistle Cadence**: Enforces universal alpine SAR distress standard (3 sharp blasts of 3s, separated by 1s pause, followed by mandatory 60s silent listening window for responder replies). Generates 2.8 kHz piercing audio tone natively via `expo-av` and `.wav` file (falling back to Web Audio API in browsers) alongside synchronized device vibration. Teaches that SAR ground teams reply with 2 blasts.
-  - **Screen Beacon**: High-contrast optical signaling modes (high-frequency strobe, ITU-R Morse code SOS, 100% red night-vision preserving lantern, and daylight aircraft signal mirror sighting guide).
-- **Backcountry Utilities (`src/lib/hiking-tools.ts`, `src/app/tools.tsx`)**:
-  - **Avalanche Slope Inclinometer**: Live tilt sensor using `expo-sensors` `DeviceMotion` (to measure rotation beta angle), identifying the critical 30°–45° prime slab avalanche danger zone.
-  - **Naismith's Rule Hiking Time**: Calculates mountain travel time with Langmuir elevation adjustments, alerting if estimated finish occurs after Forest Dusk.
-  - **Water Treatment Countdown**: Temperature-sensitive disinfection timers (cold glacial runoff vs warm water, boiling altitude adjustments, and UV purification).
+### F. Wilderness Tools, Solar / Forest Dusk, Signaling & Hazards Subsystem (`src/lib/solar.ts`, `src/lib/signaling.ts`, `src/lib/hypothermia.ts`, `src/lib/hiking-tools.ts`, `src/app/tools.tsx`)
+The Tools screen (`/tools`) is organized into four distinct, focused tabs:
+1. **Solar & Forest Dusk (`src/lib/solar.ts`)**:
+   - Pure TypeScript NOAA ephemeris calculations (zero network API calls).
+   - Calculates Sunrise, Solar Noon, Horizon Sunset, Civil Dusk (sun 6° below horizon), and Nautical Dusk.
+   - **PNW Forest Dusk Factor**: Deducts 30 min (moderate forest) or 60 min (dense old-growth timber / glaciated canyons) from civil twilight to calculate realistic ambient trail light loss and warn hikers before headlamps become essential. Includes clear-sky baseline disclaimer.
+   - Sun-compass bearing indicator (solar azimuth and elevation degrees).
+2. **Audible & Visual Signaling (`src/lib/signaling.ts`)**:
+   - **Whistle Cadence**: Enforces universal alpine SAR distress standard (3 sharp blasts of 3s, separated by 1s pause, followed by mandatory 60s silent listening window for responder replies). Generates 2.8 kHz piercing audio tone natively via `expo-av` and `.wav` file (falling back to Web Audio API in browsers) alongside synchronized device vibration. Teaches that SAR ground teams reply with 2 blasts.
+   - **Screen Beacon**: High-contrast optical signaling modes (high-frequency strobe, ITU-R Morse code SOS, 100% red night-vision preserving lantern, and daylight aircraft signal mirror sighting guide).
+3. **Wilderness Hazards (`src/lib/hypothermia.ts`, `src/app/tools.tsx`)**:
+   - **Hypothermia & Wind Chill Index**: NWS Wind Chill matrix factoring in PNW "Cascade Concrete" wet cooling deductions (-12°F damp, -22°F soaked). Detects the deadly 25x thermal conductivity hazard in 32°F–52°F wet wind. Includes "The Umbles" clinical diagnostic markers, shivering cessation warning, and SAR field rewarming protocol.
+   - **Avalanche Slope Inclinometer**: Live tilt sensor using `expo-sensors` `DeviceMotion` (to measure rotation beta angle), identifying the critical 30°–45° prime slab avalanche danger zone.
+4. **Backcountry Utilities (`src/lib/hiking-tools.ts`, `src/lib/coordinates.ts`, `src/app/tools.tsx`)**:
+   - **Compass Magnetic Declination**: Live World Magnetic Model true north variation calculated from current GPS fix, providing exact compass bezel adjustment instructions.
+   - **Naismith's Rule Hiking Time**: Calculates mountain travel time with Langmuir elevation adjustments, alerting if estimated finish occurs after Forest Dusk.
+   - **Water Treatment Countdown**: Temperature-sensitive disinfection timers (cold glacial runoff vs warm water, boiling altitude adjustments, and UV purification).
 
 ---
 
@@ -187,7 +191,7 @@ trailsafe/
 
 ### Standard Checks
 ```sh
-# 1. Run all 59 unit & contrast tests
+# 1. Run all 68 unit & contrast tests
 npm test
 
 # 2. Strict TypeScript type check

@@ -472,10 +472,26 @@ test("wilderness tools screen navigates, calculates forest dusk, runs signaling 
   await page.getByText("EMERGENCY STROBE ACTIVE").click();
   await expect(page.getByText("EMERGENCY STROBE ACTIVE")).not.toBeVisible();
 
-  // Switch to Backcountry tab
-  await page.getByRole("button", { name: "Backcountry" }).click();
+  // Switch to Hazards tab
+  await page.getByRole("button", { name: "Hazards" }).click();
   await expect(page.getByText("Avalanche slope inclinometer")).toBeVisible();
   await expect(page.getByText("PRIME AVALANCHE ZONE (30°–45°)")).toBeVisible();
+
+  // Verify Hypothermia & Wind Chill Index (Cascade Concrete Hazard)
+  await expect(page.getByRole("heading", { name: "Hypothermia & Wind Chill", exact: true })).toBeVisible();
+  await expect(page.getByText("CASCADE CONCRETE ZONE")).toBeVisible();
+  await expect(page.getByText(/Early Warning: The "Umbles" Checklist/)).toBeVisible();
+  await expect(page.getByText("Search & Rescue Field Protocol:")).toBeVisible();
+  await page.screenshot({ path: "docs/screenshots/tools-hazards.png" });
+
+  // Switch preset to Crisp Alpine Ridge (Dry)
+  await page.getByRole("button", { name: "Crisp Alpine Ridge (Dry)" }).click();
+  await expect(page.getByText("Dry Clothing (0°F penalty)")).toBeVisible();
+
+  // Switch to Backcountry tab
+  await page.getByRole("button", { name: "Backcountry" }).click();
+  await expect(page.getByText("Compass Navigation")).toBeVisible();
+  await expect(page.getByText("Magnetic Declination")).toBeVisible();
   await expect(page.getByText("Hiking Time Estimator")).toBeVisible();
   await expect(page.getByText("Disinfection Timer")).toBeVisible();
   await page.screenshot({ path: "docs/screenshots/tools-backcountry.png" });

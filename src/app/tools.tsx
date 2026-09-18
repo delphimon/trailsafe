@@ -14,15 +14,18 @@ import {
   AlertTriangle,
   Cloud,
   Compass,
+  Droplets,
   Eye,
   Flashlight,
   Megaphone,
   Radio,
   Sun,
   Sunset,
+  Thermometer,
   Timer,
   Volume2,
   VolumeX,
+  Wind,
 } from "lucide-react-native";
 import {
   Button,
@@ -60,15 +63,26 @@ import {
 } from "@/lib/hiking-tools";
 
 import { getMagneticDeclination } from "@/lib/coordinates";
+import {
+  assessHypothermiaRisk,
+  HYPOTHERMIA_FIELD_STEPS,
+  HYPOTHERMIA_PRESETS,
+  HYPOTHERMIA_UMBLES_MARKERS,
+  SHIVERING_CESSATION_WARNING,
+  type HypothermiaPreset,
+  type MoistureCondition,
+} from "@/lib/hypothermia";
 
-type ToolTab = "solar" | "signaling" | "backcountry";
+type ToolTab = "solar" | "signaling" | "hazards" | "backcountry";
 
 export default function ToolsScreen() {
   const { C, s } = useThemeStyles();
   const [activeTab, setActiveTab] = useState<ToolTab>("solar");
 
   // GPS & Location
-  const { fix } = useAutomaticLocation(activeTab === "solar" || activeTab === "backcountry");
+  const { fix } = useAutomaticLocation(
+    activeTab === "solar" || activeTab === "hazards" || activeTab === "backcountry",
+  );
   const [selectedPresetId, setSelectedPresetId] = useState<string>("gps");
   const [canopy, setCanopy] = useState<CanopyType>("moderate");
 
@@ -243,6 +257,23 @@ export default function ToolsScreen() {
     return getMagneticDeclination(fix.latitude, fix.longitude);
   }, [fix]);
 
+  // Hypothermia & Wind Chill Index (Cascade Concrete Hazard)
+  const [hypoTempF, setHypoTempF] = useState<number>(38);
+  const [hypoWindMph, setHypoWindMph] = useState<number>(25);
+  const [hypoMoisture, setHypoMoisture] = useState<MoistureCondition>("soaked");
+  const [selectedHypoPreset, setSelectedHypoPreset] = useState<string>("cascade-concrete");
+
+  const hypoAssessment = useMemo(() => {
+    return assessHypothermiaRisk(hypoTempF, hypoWindMph, hypoMoisture);
+  }, [hypoTempF, hypoWindMph, hypoMoisture]);
+
+  const handleSelectHypoPreset = (p: HypothermiaPreset) => {
+    setSelectedHypoPreset(p.id);
+    setHypoTempF(p.airTempF);
+    setHypoWindMph(p.windMph);
+    setHypoMoisture(p.moisture);
+  };
+
   // Naismith Estimator
   const [hikingMiles, setHikingMiles] = useState(5);
   const [hikingGainFt, setHikingGainFt] = useState(2400);
@@ -305,10 +336,10 @@ export default function ToolsScreen() {
   return (
     <Screen
       title="Wilderness Tools"
-      subtitle="Offline solar, signaling, and backcountry utilities"
+      subtitle="Offline solar, signaling, hazards, and trail utilities"
     >
       {/* Tab Switcher */}
-      <View style={{ flexDirection: "row", gap: 6, marginBottom: 16 }}>
+      <View style={[s.wrap, { marginBottom: 16 }]}>
         <Chip
           label="Solar & Dusk"
           selected={activeTab === "solar"}
@@ -318,6 +349,11 @@ export default function ToolsScreen() {
           label="Signaling"
           selected={activeTab === "signaling"}
           onPress={() => setActiveTab("signaling")}
+        />
+        <Chip
+          label="Hazards"
+          selected={activeTab === "hazards"}
+          onPress={() => setActiveTab("hazards")}
         />
         <Chip
           label="Backcountry"
@@ -794,62 +830,10 @@ export default function ToolsScreen() {
       )}
 
       {/* ====================================================================
-          TAB 3: BACKCOUNTRY UTILITIES SUITE
+          TAB 3: WILDERNESS HAZARD ASSESSMENTS
          ==================================================================== */}
-      {activeTab === "backcountry" && (
+      {activeTab === "hazards" && (
         <View style={{ gap: 16 }}>
-          {/* Compass Magnetic Declination */}
-          <Kicker>Compass Navigation</Kicker>
-          <Card style={{ padding: 16, gap: 10 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <View style={{ gap: 2 }}>
-                <Heading>Magnetic Declination</Heading>
-                <T style={s.note}>Adjust map compass for true north</T>
-              </View>
-              <Compass size={28} color={C.green} />
-            </View>
-
-            <View
-              style={{
-                backgroundColor: C.checkBg,
-                padding: 14,
-                borderRadius: 10,
-                alignItems: "center",
-                gap: 4,
-              }}
-            >
-              {magneticDeclination !== null ? (
-                <>
-                  <T
-                    style={{
-                      fontFamily: fonts.display,
-                      fontSize: 34,
-                      lineHeight: 40,
-                      color: C.heading,
-                    }}
-                  >
-                    {Math.abs(magneticDeclination).toFixed(1)}° {magneticDeclination >= 0 ? "East" : "West"}
-                  </T>
-                  <T style={{ fontSize: 13, color: C.ink, textAlign: "center" }}>
-                    {magneticDeclination >= 0
-                      ? "Rotate compass bezel counter-clockwise (East)."
-                      : "Rotate compass bezel clockwise (West)."}
-                  </T>
-                </>
-              ) : (
-                <T style={{ fontSize: 13, color: C.muted, textAlign: "center" }}>
-                  Waiting for GPS location to calculate World Magnetic Model variation...
-                </T>
-              )}
-            </View>
-          </Card>
-
           {/* Avalanche Inclinometer */}
           <Kicker>Avalanche slope inclinometer</Kicker>
           <Card style={{ padding: 16, gap: 10 }}>
@@ -952,6 +936,389 @@ export default function ToolsScreen() {
                 small
                 onPress={() => setDeviceTilt((v) => Math.min(90, v + 5))}
               />
+            </View>
+          </Card>
+
+          {/* Hypothermia & Wind Chill Index (Cascade Concrete Hazard) */}
+          <Kicker>Hypothermia &amp; wind chill (Cascade Concrete)</Kicker>
+          <Card style={{ padding: 16, gap: 12 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <View style={{ flex: 1, gap: 2, paddingRight: 8 }}>
+                <Heading>Hypothermia &amp; Wind Chill</Heading>
+                <T style={s.note}>
+                  Wet cold (35°F–50°F with rain and wind) strips body heat 25x faster than air
+                </T>
+              </View>
+              <Thermometer size={28} color={hypoAssessment.color} />
+            </View>
+
+            {/* Presets */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 6, paddingBottom: 4 }}
+            >
+              {HYPOTHERMIA_PRESETS.map((p) => (
+                <Chip
+                  key={p.id}
+                  label={p.name}
+                  selected={selectedHypoPreset === p.id}
+                  onPress={() => handleSelectHypoPreset(p)}
+                />
+              ))}
+            </ScrollView>
+
+            {/* Assessment Hero Card */}
+            <View
+              style={{
+                backgroundColor: C.checkBg,
+                borderColor: hypoAssessment.color,
+                borderWidth: 1.5,
+                padding: 14,
+                borderRadius: 10,
+                gap: 6,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 6,
+                }}
+              >
+                <T
+                  style={{
+                    fontFamily: fonts.bold,
+                    fontSize: 11,
+                    color: hypoAssessment.color,
+                    letterSpacing: 1,
+                  }}
+                >
+                  {hypoAssessment.riskTitle}
+                </T>
+                {hypoAssessment.isCascadeConcreteHazard && (
+                  <View
+                    style={{
+                      backgroundColor: C.criticalBg,
+                      paddingHorizontal: 8,
+                      paddingVertical: 2,
+                      borderRadius: 4,
+                      borderWidth: 1,
+                      borderColor: C.criticalBorder,
+                    }}
+                  >
+                    <T
+                      style={{
+                        fontSize: 10,
+                        fontFamily: fonts.bold,
+                        color: C.criticalText,
+                      }}
+                    >
+                      CASCADE CONCRETE ZONE
+                    </T>
+                  </View>
+                )}
+              </View>
+
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "baseline",
+                  gap: 8,
+                }}
+              >
+                <T
+                  style={{
+                    fontFamily: fonts.display,
+                    fontSize: 36,
+                    lineHeight: 42,
+                    color: C.heading,
+                  }}
+                >
+                  {hypoAssessment.effectiveTempF}°F
+                </T>
+                <T style={{ fontSize: 13, color: C.ink }}>
+                  Effective Thermal Loss
+                </T>
+              </View>
+
+              <T style={{ fontSize: 12, color: C.muted }}>
+                Air: {hypoAssessment.airTempF}°F · Wind Chill: {hypoAssessment.windChillF}°F
+                {hypoAssessment.wetChillPenaltyF > 0
+                  ? ` · Wet Clothing Penalty: -${hypoAssessment.wetChillPenaltyF}°F`
+                  : " · Dry Clothing (0°F penalty)"}
+              </T>
+
+              <View
+                style={{
+                  borderTopWidth: 1,
+                  borderTopColor: C.line,
+                  paddingTop: 8,
+                  gap: 4,
+                }}
+              >
+                <T style={{ fontSize: 13, fontFamily: fonts.bold, color: hypoAssessment.color }}>
+                  Estimated Onset: {hypoAssessment.timeToExhaustion}
+                </T>
+                <T style={{ fontSize: 12, lineHeight: 18, color: C.ink }}>
+                  {hypoAssessment.riskDescription}
+                </T>
+              </View>
+            </View>
+
+            {/* Interactive Inputs */}
+            <View style={{ gap: 10 }}>
+              {/* Temperature */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <T style={{ fontFamily: fonts.bold }}>
+                  Air Temp: {hypoTempF}°F
+                </T>
+                <View style={{ flexDirection: "row", gap: 6 }}>
+                  <Button
+                    label="-5°"
+                    variant="outline"
+                    small
+                    onPress={() => {
+                      setSelectedHypoPreset("");
+                      setHypoTempF((t) => Math.max(-20, t - 5));
+                    }}
+                  />
+                  <Button
+                    label="-1°"
+                    variant="outline"
+                    small
+                    onPress={() => {
+                      setSelectedHypoPreset("");
+                      setHypoTempF((t) => Math.max(-20, t - 1));
+                    }}
+                  />
+                  <Button
+                    label="+1°"
+                    variant="outline"
+                    small
+                    onPress={() => {
+                      setSelectedHypoPreset("");
+                      setHypoTempF((t) => Math.min(80, t + 1));
+                    }}
+                  />
+                  <Button
+                    label="+5°"
+                    variant="outline"
+                    small
+                    onPress={() => {
+                      setSelectedHypoPreset("");
+                      setHypoTempF((t) => Math.min(80, t + 5));
+                    }}
+                  />
+                </View>
+              </View>
+
+              {/* Wind Speed */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <Wind size={16} color={C.muted} />
+                  <T style={{ fontFamily: fonts.bold }}>
+                    Wind Speed: {hypoWindMph} mph
+                  </T>
+                </View>
+                <View style={{ flexDirection: "row", gap: 6 }}>
+                  <Button
+                    label="-5"
+                    variant="outline"
+                    small
+                    onPress={() => {
+                      setSelectedHypoPreset("");
+                      setHypoWindMph((w) => Math.max(0, w - 5));
+                    }}
+                  />
+                  <Button
+                    label="+5"
+                    variant="outline"
+                    small
+                    onPress={() => {
+                      setSelectedHypoPreset("");
+                      setHypoWindMph((w) => Math.min(80, w + 5));
+                    }}
+                  />
+                  <Button
+                    label="+10"
+                    variant="outline"
+                    small
+                    onPress={() => {
+                      setSelectedHypoPreset("");
+                      setHypoWindMph((w) => Math.min(80, w + 10));
+                    }}
+                  />
+                </View>
+              </View>
+
+              {/* Moisture Condition */}
+              <View style={{ gap: 4 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <Droplets size={16} color={C.muted} />
+                  <T style={{ fontFamily: fonts.bold, fontSize: 13 }}>
+                    Clothing &amp; Moisture Condition:
+                  </T>
+                </View>
+                <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
+                  <Chip
+                    label="Dry (0°F loss)"
+                    selected={hypoMoisture === "dry"}
+                    onPress={() => {
+                      setSelectedHypoPreset("");
+                      setHypoMoisture("dry");
+                    }}
+                  />
+                  <Chip
+                    label="Damp / Sweat (-12°F)"
+                    selected={hypoMoisture === "damp"}
+                    onPress={() => {
+                      setSelectedHypoPreset("");
+                      setHypoMoisture("damp");
+                    }}
+                  />
+                  <Chip
+                    label="Soaked / Rain (-22°F)"
+                    selected={hypoMoisture === "soaked"}
+                    onPress={() => {
+                      setSelectedHypoPreset("");
+                      setHypoMoisture("soaked");
+                    }}
+                  />
+                </View>
+              </View>
+            </View>
+
+            {/* The Umbles Diagnostic Card */}
+            <View
+              style={{
+                backgroundColor: C.stone,
+                padding: 12,
+                borderRadius: 8,
+                gap: 8,
+              }}
+            >
+              <T style={{ fontFamily: fonts.bold, fontSize: 13, color: C.ink }}>
+                Early Warning: The &quot;Umbles&quot; Checklist
+              </T>
+              {HYPOTHERMIA_UMBLES_MARKERS.map((m) => (
+                <View key={m.name} style={{ gap: 1 }}>
+                  <T style={{ fontSize: 12, color: C.ink }}>
+                    • <T style={{ fontFamily: fonts.bold }}>{m.name}</T> ({m.system}): {m.symptom}
+                  </T>
+                </View>
+              ))}
+
+              <View
+                style={{
+                  backgroundColor: C.criticalBg,
+                  borderColor: C.criticalBorder,
+                  borderWidth: 1,
+                  padding: 10,
+                  borderRadius: 6,
+                  marginTop: 4,
+                }}
+              >
+                <T style={{ fontSize: 12, color: C.criticalText, lineHeight: 16 }}>
+                  {SHIVERING_CESSATION_WARNING}
+                </T>
+              </View>
+            </View>
+
+            {/* Field Action Steps */}
+            <View style={{ gap: 6 }}>
+              <T style={{ fontFamily: fonts.bold, fontSize: 13 }}>
+                Search &amp; Rescue Field Protocol:
+              </T>
+              {HYPOTHERMIA_FIELD_STEPS.map((step) => (
+                <View key={step.step} style={{ flexDirection: "row", gap: 8 }}>
+                  <T style={{ fontFamily: fonts.bold, fontSize: 12, color: C.green }}>
+                    {step.step}.
+                  </T>
+                  <T style={{ flex: 1, fontSize: 12, lineHeight: 17, color: C.ink }}>
+                    <T style={{ fontFamily: fonts.bold }}>{step.title}</T>: {step.text}
+                  </T>
+                </View>
+              ))}
+            </View>
+          </Card>
+        </View>
+      )}
+
+      {/* ====================================================================
+          TAB 4: BACKCOUNTRY UTILITIES SUITE
+         ==================================================================== */}
+      {activeTab === "backcountry" && (
+        <View style={{ gap: 16 }}>
+          {/* Compass Magnetic Declination */}
+          <Kicker>Compass Navigation</Kicker>
+          <Card style={{ padding: 16, gap: 10 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <View style={{ gap: 2 }}>
+                <Heading>Magnetic Declination</Heading>
+                <T style={s.note}>Adjust map compass for true north</T>
+              </View>
+              <Compass size={28} color={C.green} />
+            </View>
+
+            <View
+              style={{
+                backgroundColor: C.checkBg,
+                padding: 14,
+                borderRadius: 10,
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              {magneticDeclination !== null ? (
+                <>
+                  <T
+                    style={{
+                      fontFamily: fonts.display,
+                      fontSize: 34,
+                      lineHeight: 40,
+                      color: C.heading,
+                    }}
+                  >
+                    {Math.abs(magneticDeclination).toFixed(1)}° {magneticDeclination >= 0 ? "East" : "West"}
+                  </T>
+                  <T style={{ fontSize: 13, color: C.ink, textAlign: "center" }}>
+                    {magneticDeclination >= 0
+                      ? "Rotate compass bezel counter-clockwise (East)."
+                      : "Rotate compass bezel clockwise (West)."}
+                  </T>
+                </>
+              ) : (
+                <T style={{ fontSize: 13, color: C.muted, textAlign: "center" }}>
+                  Waiting for GPS location to calculate World Magnetic Model variation...
+                </T>
+              )}
             </View>
           </Card>
 
@@ -1264,9 +1631,9 @@ export default function ToolsScreen() {
               Planned Wilderness Tools Roadmap:
             </T>
             <T style={{ fontSize: 13, lineHeight: 20 }}>
-              • <T style={{ fontFamily: fonts.bold }}>Wind Chill &amp; Wet Cold Matrix</T>:
+              ✓ <T style={{ fontFamily: fonts.bold, color: C.green }}>Wind Chill &amp; Wet Cold Matrix (Active Above)</T>:
               Calculates &quot;Cascade Concrete&quot; hypothermia risk when rain is combined
-              with 40°F–50°F wind.
+              with 35°F–50°F wind.
             </T>
             <T style={{ fontSize: 13, lineHeight: 20 }}>
               • <T style={{ fontFamily: fonts.bold }}>Backcountry SOAP Handover</T>:
