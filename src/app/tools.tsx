@@ -12,6 +12,7 @@ import { DeviceMotion } from "expo-sensors";
 import { useAudioPlayer } from "expo-audio";
 import {
   AlertTriangle,
+  Cloud,
   Compass,
   Eye,
   Flashlight,
@@ -374,7 +375,8 @@ export default function ToolsScreen() {
           <Note>
             In dense Pacific Northwest coniferous forests (hemlock, cedar, fir)
             and steep valleys, usable trail light ends 45–60 minutes earlier than
-            civil twilight.
+            civil twilight. Estimates are based on a clear sky — clouds or poor
+            weather can make it darker even earlier.
           </Note>
 
           {/* Primary Countdown / Status Banner */}
@@ -426,6 +428,23 @@ export default function ToolsScreen() {
                 ) : (
                   <Sunset size={36} color={C.orange} />
                 )}
+              </View>
+
+              <View
+                style={{
+                  borderTopWidth: 1,
+                  borderTopColor: C.line,
+                  paddingTop: 8,
+                  marginTop: 10,
+                  flexDirection: "row",
+                  alignItems: "flex-start",
+                  gap: 6,
+                }}
+              >
+                <Cloud size={14} color={C.muted} style={{ marginTop: 2 }} />
+                <T style={{ flex: 1, fontSize: 12, color: C.muted, lineHeight: 16 }}>
+                  {solar.weatherDisclaimer}
+                </T>
               </View>
             </Card>
           )}
@@ -548,6 +567,19 @@ export default function ToolsScreen() {
               <T style={{ color: C.muted }}>Total Daylight Duration</T>
               <T style={{ fontFamily: fonts.bold }}>
                 {formatDurationMinutes(solar.dayLengthMinutes)}
+              </T>
+            </View>
+
+            <View
+              style={{
+                borderTopWidth: 1,
+                borderTopColor: C.line,
+                paddingTop: 8,
+                marginTop: 2,
+              }}
+            >
+              <T style={{ fontSize: 12, color: C.muted, lineHeight: 16 }}>
+                Table calculations assume clear skies. Clouds, smoke, or poor weather make darkness fall earlier.
               </T>
             </View>
           </Card>

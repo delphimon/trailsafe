@@ -5,6 +5,7 @@ import {
   formatDurationMinutes,
   getCanopyOffsetMinutes,
   PNW_TRAILHEAD_PRESETS,
+  SOLAR_WEATHER_DISCLAIMER,
 } from "../src/lib/solar";
 
 test("solar calculations accurately determine sunrise and sunset for PNW", () => {
@@ -206,9 +207,20 @@ test("24-hour headlamp notification logic distinguishes daylight from nighttime 
   );
 });
 
+test("solar calculations include clear-sky and weather disclaimer", () => {
+  const times = calculateSolarTimes(47.6062, -122.3321);
+  assert.equal(times.weatherDisclaimer, SOLAR_WEATHER_DISCLAIMER);
+  assert.match(times.weatherDisclaimer, /based on a clear sky/i);
+  assert.match(
+    times.weatherDisclaimer,
+    /clouds or poor weather can make it darker even earlier/i,
+  );
+});
+
 test("invalid coordinates reject invalid bounds", () => {
   assert.throws(() => calculateSolarTimes(95, 0));
   assert.throws(() => calculateSolarTimes(0, 195));
   assert.throws(() => calculateSolarTimes(NaN, 0));
 });
+
 

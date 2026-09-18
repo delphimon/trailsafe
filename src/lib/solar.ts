@@ -90,10 +90,17 @@ export interface SolarTimes {
   headlampNeededNow: boolean;
   headlampStatusHeadline: string;
   headlampStatusSubtext: string;
+  weatherDisclaimer: string;
   minutesUntilSunset: number | null;
   minutesUntilForestDusk: number | null;
   minutesUntilNextSunrise: number | null;
 }
+
+/**
+ * Standard disclaimer noting that dusk calculations are clear-sky models.
+ */
+export const SOLAR_WEATHER_DISCLAIMER =
+  "Estimates are based on a clear sky. Clouds or poor weather can make it darker even earlier.";
 
 /**
  * Returns canopy loss offset in minutes.
@@ -468,6 +475,7 @@ export function calculateSolarTimes(
     headlampNeededNow,
     headlampStatusHeadline,
     headlampStatusSubtext,
+    weatherDisclaimer: SOLAR_WEATHER_DISCLAIMER,
     minutesUntilSunset,
     minutesUntilForestDusk,
     minutesUntilNextSunrise,
