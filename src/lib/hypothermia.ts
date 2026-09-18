@@ -28,10 +28,54 @@ export interface HypothermiaAssessment {
   riskLevel: HypothermiaRiskLevel;
   riskTitle: string;
   riskDescription: string;
+  plainExplanation: string;
   timeToExhaustion: string;
   isCascadeConcreteHazard: boolean;
   color: string;
 }
+
+export interface HypothermiaPrinciple {
+  number: number;
+  title: string;
+  shortKicker: string;
+  summary: string;
+  explanation: string;
+}
+
+export const HYPOTHERMIA_CORE_PRINCIPLES: HypothermiaPrinciple[] = [
+  {
+    number: 1,
+    title: "The Cascade Concrete Phenomenon",
+    shortKicker: "35°F–50°F Trap",
+    summary: "Most hypothermia rescues occur in wet 35°F–50°F rain, not sub-zero blizzards.",
+    explanation:
+      "In the Pacific Northwest Cascades and Olympics, the vast majority of Search & Rescue hypothermia emergencies occur in wet, rainy conditions between 35°F and 50°F, not sub-zero blizzards. Above-freezing temperatures trick hikers into underestimating exposure danger.",
+  },
+  {
+    number: 2,
+    title: "Water's 25x Thermal Conductivity",
+    shortKicker: "25x Heat Loss",
+    summary: "Water drains body heat 25 times faster than dry air.",
+    explanation:
+      "Water conducts heat away from the human body approximately 25 times faster than air. Saturated clothing (cotton denim, soaked fleece, or wet synthetics) acts as an aggressive thermal siphon, rapidly draining core body heat.",
+  },
+  {
+    number: 3,
+    title: "Wind Convection & The 45-Minute Drop",
+    shortKicker: "<45-Min Onset",
+    summary: "Wind strips your heat layer; hypothermia onset in under 45–60 minutes.",
+    explanation:
+      "Wind continuously strips the thin insulating boundary layer of warm air trapped near the skin. When combined with wet fabrics, core body temperature can drop from normal to moderate hypothermia in under 45–60 minutes once movement stops.",
+  },
+  {
+    number: 4,
+    title: "The 'Umbles' Diagnostic Markers",
+    shortKicker: "Spot It Early",
+    summary: "Stumbles, Mumbles, Fumbles, Grumbles signal brain cooling.",
+    explanation:
+      "Stumbles (tripping/ataxia), Mumbles (slurred speech), Fumbles (inability to zip jackets or open food), and Grumbles (unusual apathy or irritability) represent the classic early field signs of brain cooling before life-threatening shivering cessation occurs.",
+  },
+];
 
 export interface HypothermiaPreset {
   id: string;
@@ -138,9 +182,23 @@ export function assessHypothermiaRisk(
     color = "#C98A2C"; // Amber
   }
 
+  const roundedTemp = Math.round(airTempF);
+  const roundedWind = Math.max(0, Math.round(windMph));
+
+  let plainExplanation = "";
+  if (isCascadeConcreteHazard) {
+    plainExplanation = `Air is ${roundedTemp}°F, but ${roundedWind} mph wind and soaked clothing chills your core as fast as ${effectiveTempF}°F sub-freezing air. Saturated fabric drains body heat 25x faster than dry air.`;
+  } else if (effectiveTempF <= 32) {
+    plainExplanation = `Air is ${roundedTemp}°F, but ${roundedWind} mph wind and ${moisture} clothing cools your core like ${effectiveTempF}°F freezing air.`;
+  } else if (effectiveTempF <= 48 || moisture !== "dry") {
+    plainExplanation = `Air is ${roundedTemp}°F with ${roundedWind} mph wind. Core stays warm while moving, but cools rapidly to ${effectiveTempF}°F during rest stops.`;
+  } else {
+    plainExplanation = `Normal cool weather (${roundedTemp}°F). Active hiking produces enough warmth to maintain core temperature. Keep dry layers accessible.`;
+  }
+
   return {
-    airTempF: Math.round(airTempF),
-    windMph: Math.max(0, Math.round(windMph)),
+    airTempF: roundedTemp,
+    windMph: roundedWind,
     moisture,
     windChillF,
     effectiveTempF,
@@ -148,6 +206,7 @@ export function assessHypothermiaRisk(
     riskLevel,
     riskTitle,
     riskDescription,
+    plainExplanation,
     timeToExhaustion,
     isCascadeConcreteHazard,
     color,

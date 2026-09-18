@@ -220,10 +220,10 @@
     },
     {
       "title": "Cold & hypothermia",
-      "sub": "Recognizing and responding to cold injury",
+      "sub": "The Cascade Concrete hazard, the Umbles, and field response",
       "kind": "article",
       "target": "cold-hypothermia",
-      "keywords": "cold hypothermia shivering wet windchill"
+      "keywords": "cold hypothermia shivering wet windchill cascade concrete umbles"
     },
     {
       "title": "Heat",
@@ -503,58 +503,77 @@
     },
     "cold-hypothermia": {
       "title": "Cold & Hypothermia",
-      "subtitle": "Recognizing and responding to cold injury",
+      "subtitle": "The Cascade Concrete hazard, the Umbles, and field rescue",
       "blocks": [
         {
-          "type": "paragraph",
-          "text": "Hypothermia can develop in mild, wet weather — you don’t need freezing temperatures for it to be dangerous."
+          "type": "callout",
+          "title": "The Deadly PNW Myth: 'It’s Not Even Freezing'",
+          "text": "In the Pacific Northwest Cascades and Olympics, the vast majority of Search & Rescue hypothermia emergencies occur in wet, rainy conditions between 35°F and 50°F — NOT in sub-zero winter blizzards. Above-freezing temperatures trick hikers into underestimating exposure, but wet cold strips body heat 25x faster than dry air.",
+          "critical": true
+        },
+        {
+          "type": "heading",
+          "text": "The Science: Why Wet Cold Kills in Under an Hour"
+        },
+        {
+          "type": "list",
+          "items": [
+            "1. Water conducts heat 25x faster than air: Saturated clothing (cotton denim, soaked fleece, or wet synthetics) turns your layers into an aggressive thermal siphon. Water conducts heat away from your core 25 times faster than still air.",
+            "2. Wind convection strips your thermal blanket: Wind continuously strips the microscopic boundary layer of warm air trapped near the skin. In wet clothes, a 15–25 mph wind causes catastrophic convective cooling.",
+            "3. The 45-Minute Drop: Once hiking stops (due to injury, exhaustion, or taking a rest break), core body temperature can plunge into moderate hypothermia in under 45 to 60 minutes."
+          ]
         },
         {
           "type": "heading",
           "text": "Recognize it early"
         },
         {
+          "type": "paragraph",
+          "text": "Early Warning: The 'Umbles' Checklist. As the brain cools, cerebral coordination deteriorates before the victim realizes they are in danger. Watch your hiking partners closely for the classic 'Umbles':"
+        },
+        {
           "type": "list",
           "items": [
-            "Shivering that won’t stop",
-            "Fumbling hands, stumbling",
-            "Slurred speech or confusion",
-            "Unusual tiredness or wanting to lie down"
+            "Stumbles (Gross Motor / Ataxia): Tripping on trail roots, clumsy footing, stumbling, lagging behind the group.",
+            "Mumbles (Speech & Cognition / Dysarthria): Slurred speech, slow answers to simple questions, confusion, repeating themselves.",
+            "Fumbles (Fine Motor): Inability to zip a jacket, tie boot laces, operate headlamp switches, or open snack packages.",
+            "Grumbles (Behavior & Attitude): Uncharacteristic apathy, irritability, irrational stubbornness, refusing to put on rain gear or stop."
           ]
         },
         {
           "type": "callout",
-          "title": "A warning sign, not a good one",
-          "text": "Someone who stops shivering while still cold and wet may be getting worse, not better.",
+          "title": "Critical Red Flag: Shivering Has Stopped",
+          "text": "Violent shivering is the body fighting for survival. If a cold, wet hiker STOPS shivering while still cold and exposed, their core body temperature has fallen below 90°F (32°C). This indicates metabolic exhaustion and life-threatening severe hypothermia. Immediate SAR evacuation is required.",
           "critical": true
         },
         {
           "type": "heading",
-          "text": "Respond"
+          "text": "SAR Field Protocol: The Hypo Burrito Wrap"
         },
         {
           "type": "steps",
           "items": [
-            "Get the person out of wind and wet.",
-            "Replace wet clothing with dry insulating layers if you have them.",
-            "Insulate them from the cold ground, not just from the air.",
-            "If they’re alert and can swallow, give warm, sugary fluids — never if confused or unconscious.",
-            "Handle the person gently. Do not make a confused or severely cold person walk.",
-            "Call 911 for anything beyond mild shivering."
+            "Stop & shelter immediately: Escape wind and precipitation behind trees, boulders, or inside a tent, tarp, or bothy bag. Continuing to walk in wet wind accelerates heat loss.",
+            "Insulate from the cold ground: Place sleeping pads, empty backpacks, or dense evergreen boughs beneath the person. Ground conduction drains heat 3x faster than still air.",
+            "Vapor barrier / Hypo burrito wrap: If dry clothes are available, strip wet layers. If NO dry clothes exist, keep wet layers on but wrap the subject inside a waterproof vapor barrier (trash bags, space blanket, bivy) inside a dry sleeping bag to trap humidity and stop evaporative heat loss.",
+            "Warm sweet calories (alert only): Give warm, highly sugary fluids (tea with sugar, cocoa, hot cider) ONLY if the subject is fully conscious and swallowing easily. Never force fluids into someone who is drowsy or confused.",
+            "Handle gently and keep horizontal: Never force a confused or non-shivering hypothermic subject to exercise. Rough jostling can push cold, acidotic blood from the limbs into the heart, triggering fatal ventricular fibrillation.",
+            "Call 911 / Activate SOS: Severe hypothermia cannot be safely re-warmed with a campfire on the trail; it requires SAR evacuation and hospital core rewarming."
           ]
         },
         {
           "type": "note",
-          "text": "This app can’t diagnose hypothermia. When in doubt, treat it as serious and call."
+          "text": "Prevention principle: 'Cotton kills.' Never wear cotton socks, jeans, or t-shirts in the backcountry. Put on your waterproof shell BEFORE your clothes become damp, and add an insulating layer as soon as you stop hiking."
         }
       ],
       "id": "cold-hypothermia",
-      "contentVersion": "2026.09.06",
+      "contentVersion": "2026.09.18",
       "reviewStatus": "Draft — organizational review pending",
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://kingcountysar.org/when-how-to-call-for-help/",
-        "https://www.cdc.gov/winter-weather/prevention/index.html"
+        "https://www.cdc.gov/winter-weather/prevention/index.html",
+        "Mountaineering: The Freedom of the Hills (Hypothermia & Cold Weather Safety)"
       ]
     },
     "heat": {

@@ -480,13 +480,15 @@ test("wilderness tools screen navigates, calculates forest dusk, runs signaling 
   // Verify Hypothermia & Wind Chill Index (Cascade Concrete Hazard)
   await expect(page.getByRole("heading", { name: "Hypothermia & Wind Chill", exact: true })).toBeVisible();
   await expect(page.getByText("CASCADE CONCRETE ZONE")).toBeVisible();
+  await expect(page.getByText("Why Wet Cold Kills: 4 Life-Safety Principles")).toBeVisible();
+  await expect(page.getByText("Core Chill Equivalent (Feels Like)")).toBeVisible();
   await expect(page.getByText(/Early Warning: The "Umbles" Checklist/)).toBeVisible();
-  await expect(page.getByText("Search & Rescue Field Protocol:")).toBeVisible();
+  await expect(page.getByText(/Search & Rescue Field Protocol/i)).toBeVisible();
   await page.screenshot({ path: "docs/screenshots/tools-hazards.png" });
 
   // Switch preset to Crisp Alpine Ridge (Dry)
   await page.getByRole("button", { name: "Crisp Alpine Ridge (Dry)" }).click();
-  await expect(page.getByText("Dry Clothing (0°F penalty)")).toBeVisible();
+  await expect(page.getByText(/Dry Clothing \(0°F penalty\)/).first()).toBeVisible();
 
   // Switch to Backcountry tab
   await page.getByRole("button", { name: "Backcountry" }).click();

@@ -4,6 +4,7 @@ import {
   assessHypothermiaRisk,
   calculateWindChill,
   getWetChillPenalty,
+  HYPOTHERMIA_CORE_PRINCIPLES,
   HYPOTHERMIA_FIELD_STEPS,
   HYPOTHERMIA_PRESETS,
   HYPOTHERMIA_UMBLES_MARKERS,
@@ -91,4 +92,32 @@ test("The Umbles markers and SAR field steps are complete and medically sound", 
   assert.match(HYPOTHERMIA_FIELD_STEPS[0].title, /Stop & Shelter/i);
   assert.match(HYPOTHERMIA_FIELD_STEPS[1].title, /Vapor Barrier|Burrito/i);
   assert.match(HYPOTHERMIA_FIELD_STEPS[2].title, /Ground/i);
+});
+
+test("HYPOTHERMIA_CORE_PRINCIPLES and plainExplanation explain the 4 critical life-safety principles", () => {
+  assert.equal(HYPOTHERMIA_CORE_PRINCIPLES.length, 4);
+
+  // 1. Cascade Concrete
+  assert.match(HYPOTHERMIA_CORE_PRINCIPLES[0].title, /Cascade Concrete/i);
+  assert.match(HYPOTHERMIA_CORE_PRINCIPLES[0].explanation, /35°F and 50°F/i);
+
+  // 2. 25x Water Conductivity
+  assert.match(HYPOTHERMIA_CORE_PRINCIPLES[1].title, /25x/i);
+  assert.match(HYPOTHERMIA_CORE_PRINCIPLES[1].explanation, /25 times faster/i);
+
+  // 3. Wind Convection
+  assert.match(HYPOTHERMIA_CORE_PRINCIPLES[2].title, /Wind Convection/i);
+  assert.match(HYPOTHERMIA_CORE_PRINCIPLES[2].explanation, /45–60 minutes/i);
+
+  // 4. The Umbles
+  assert.match(HYPOTHERMIA_CORE_PRINCIPLES[3].title, /Umbles/i);
+  assert.match(HYPOTHERMIA_CORE_PRINCIPLES[3].explanation, /Stumbles.*Mumbles.*Fumbles/i);
+
+  // Test plainExplanation
+  const cascade = assessHypothermiaRisk(38, 25, "soaked");
+  assert.match(cascade.plainExplanation, /25x faster/i);
+  assert.match(cascade.plainExplanation, /38°F/);
+
+  const dry = assessHypothermiaRisk(55, 5, "dry");
+  assert.match(dry.plainExplanation, /55°F/);
 });
