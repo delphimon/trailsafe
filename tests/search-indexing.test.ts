@@ -67,9 +67,11 @@ test("hands-free trip completion transitions current plan to completed", () => {
     overdueDate: "2026-09-15",
     overdueTime: "19:00",
     timeZone: "America/Los_Angeles",
-    name: "Hiker",
+    travelerName: "Hiker",
+    travelerPhone: "555",
+    trustedContactName: "Jane",
+    trustedContactPhone: "999",
     partySize: "1",
-    phone: "206 555 0100",
     trailhead: "Alpental",
     route: "Snow Lake",
   };

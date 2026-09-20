@@ -55,11 +55,6 @@ test("alpine SAR whistle cadence mandates 3 blasts and 60-second listening windo
     60,
     "Listening window must be at least 60 seconds",
   );
-  assert.match(
-    listeningPhase.displayInstruction,
-    /2 blasts/i,
-    "Instruction must teach hiker that responders reply with 2 blasts",
-  );
 });
 
 test("Naismith's Rule calculation factors in elevation gain and pack weight", () => {
@@ -86,26 +81,6 @@ test("Naismith's Rule calculation factors in elevation gain and pack weight", ()
   assert.equal(zero.formattedDuration, "0m");
 });
 
-test("slope avalanche risk flags 30°-45° as prime hazard zone", () => {
-  const low = getSlopeAvalancheRisk(22);
-  assert.equal(low.level, "low");
-  assert.equal(low.color, "#2D6A4F");
-
-  const prime34 = getSlopeAvalancheRisk(34);
-  assert.equal(prime34.level, "prime");
-  assert.equal(prime34.color, "#E4572E");
-  assert.match(prime34.title, /PRIME AVALANCHE ZONE/);
-
-  const prime38 = getSlopeAvalancheRisk(38);
-  assert.equal(prime38.level, "prime");
-
-  const prime45 = getSlopeAvalancheRisk(45);
-  assert.equal(prime45.level, "prime");
-
-  const extreme = getSlopeAvalancheRisk(52);
-  assert.equal(extreme.level, "extreme");
-  assert.equal(extreme.color, "#C98A2C");
-});
 
 test("water treatment presets contain essential cold-water and boil variations", () => {
   assert.equal(WATER_TREATMENT_PRESETS.length, 6);

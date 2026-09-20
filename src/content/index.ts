@@ -34,3 +34,27 @@ export const topics = [
     keywords: "other emergency help",
   },
 ];
+
+export type TopicGroup = {
+  label: string;
+  topics: typeof topics;
+};
+
+export const topicGroups: TopicGroup[] = [
+  {
+    label: "🚨 Emergency Response",
+    topics: topics.filter(t => ["g-lost", "g-injured", "g-stranded", "g-missing-split", "g-other", "g-waiting"].includes(t.target)),
+  },
+  {
+    label: "📞 Getting Help",
+    topics: topics.filter(t => ["calling-help", "signaling", "satellite-plb", "backcountry-radio"].includes(t.target)),
+  },
+  {
+    label: "🌡️ Environmental Hazards",
+    topics: topics.filter(t => ["cold-hypothermia", "heat", "winter-safety", "wildlife", "river-crossings"].includes(t.target)),
+  },
+  {
+    label: "🎒 Preparation",
+    topics: topics.filter(t => ["ten-essentials", "clothing-layering", "phone-smart", "unexpected-overnight", "children-family", "lessons-learned"].includes(t.target)),
+  },
+];

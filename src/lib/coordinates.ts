@@ -197,7 +197,11 @@ export function locationText(
   if (!formatted) return null;
   return [
     `Location (${format}, WGS84): ${formatted.replace("\n", ", ")}`,
-    ...(fix.altitude != null ? [`Elevation: ${Math.round(fix.altitude * 3.28084)} ft`] : []),
+    ...(fix.altitude != null
+      ? [
+          `Device elevation: ~${Math.round(fix.altitude * 3.28084)} ft`,
+        ]
+      : []),
     `Accuracy: ${fix.accuracy != null && fix.accuracy >= 0 ? `±${Math.round(fix.accuracy * 3.28084)} ft` : "unknown"}`,
     `Fix recorded: ${new Date(fix.timestamp).toISOString()} (${fixAge(fix, now)} seconds old)`,
     ...fixWarnings(fix, now),

@@ -119,10 +119,10 @@ export function getSlopeAvalancheRisk(degrees: number): SlopeRisk {
     return {
       degrees: angle,
       level: "low",
-      title: "Low Slab Hazard (<30°)",
+      title: "Angle < 30°",
       description:
-        "Slab avalanches rarely initiate under 30°. Watch for steep slopes or overhead cornices directly above you.",
-      color: "#2D6A4F", // Green
+        "Slab avalanches rarely initiate under 30°. WARNING: You can still be hit by avalanches starting from steeper slopes above you. This tool does not evaluate snowpack, weather, or overhead hazards.",
+      color: "#5C6A64", // Neutral slate instead of green
     };
   }
 
@@ -130,20 +130,20 @@ export function getSlopeAvalancheRisk(degrees: number): SlopeRisk {
     return {
       degrees: angle,
       level: "prime",
-      title: "PRIME AVALANCHE ZONE (30°–45°)",
+      title: "PRIME AVALANCHE ANGLE (30°–45°)",
       description:
-        "CRITICAL: Over 90% of human-triggered slab avalanches occur on 30°–45° slopes. 37°–39° is the statistical peak of danger.",
-      color: "#E4572E", // Danger orange/red
+        "Over 90% of human-triggered slab avalanches occur on 30°–45° slopes. This angle is prime for slab avalanches if snowpack conditions allow.",
+      color: "#D9534F", // Red/Warning
     };
   }
 
   return {
     degrees: angle,
     level: "extreme",
-    title: "Extreme / Sluff Zone (>45°)",
+    title: "Steep Angle (>45°)",
     description:
-      "Slopes steeper than 45° sluff snow frequently. Primary hazards are falling, rockfall, and triggering slides onto lower angles.",
-    color: "#C98A2C", // Amber
+      "Slopes over 45° frequently shed snow as sluffs, preventing deep slab buildup, but can still produce avalanches under certain conditions.",
+    color: "#C68228", // Orange/Caution
   };
 }
 

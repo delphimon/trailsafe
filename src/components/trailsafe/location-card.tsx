@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Linking, Modal, Platform, Pressable, View } from "react-native";
 import {
   Check,
-  ChevronDown,
   Copy,
   LocateFixed,
   MapPin,
@@ -23,8 +22,7 @@ export function LocationCard() {
   const { C, s } = useThemeStyles();
   const { location, run, copy, share } = useApp(),
     { data, update } = useStore();
-  const [open, setOpen] = useState(false),
-    [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
@@ -41,6 +39,17 @@ export function LocationCard() {
     unavailable: "Still searching for a location fix…",
   };
   const age = fix ? fixAge(fix, now) : 0;
+  const formatAge = (seconds: number) => {
+    if (seconds < 60) return `${Math.round(seconds)}s ago`;
+    return `${Math.round(seconds / 60)} min ago`;
+  };
+  const cardTitle = !fix
+    ? "YOUR LOCATION"
+    : age > 120
+      ? `LAST KNOWN LOCATION — ${formatAge(age)}`
+      : fix.accuracy != null && fix.accuracy > 100
+        ? "APPROXIMATE CURRENT LOCATION"
+        : "YOUR LOCATION";
   return (
     <View
       style={{
@@ -69,9 +78,25 @@ export function LocationCard() {
             letterSpacing: 1,
           }}
         >
-          YOUR LOCATION
+          {cardTitle}
         </T>
       </View>
+      {fix &&
+        fixWarnings(fix, now).map((w) => (
+          <View
+            key={w}
+            style={{
+              backgroundColor: "#5C3527",
+              borderRadius: 6,
+              padding: 10,
+              marginBottom: 12,
+            }}
+          >
+            <T style={{ fontSize: 12, lineHeight: 19, color: "#FFDED1" }}>
+              {w}
+            </T>
+          </View>
+        ))}
       <View
         accessibilityRole="radiogroup"
         accessibilityLabel="Coordinate format toggle"
@@ -117,37 +142,6 @@ export function LocationCard() {
           );
         })}
       </View>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Coordinate format"
-        accessibilityHint="Choose decimal degrees, DDM, or UTM"
-        accessibilityState={{ expanded: open }}
-        aria-expanded={open}
-        onPress={() => setOpen(true)}
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          borderWidth: 1,
-          borderColor: "#789987",
-          borderRadius: 6,
-          padding: 11,
-          minHeight: 44,
-          marginBottom: 15,
-        }}
-      >
-        <T
-          style={{
-            color: "white",
-            fontSize: 13,
-            fontFamily: fonts.bold,
-            flex: 1,
-          }}
-        >
-          {FORMATS.find((f) => f.value === data.format)?.label}
-        </T>
-        <ChevronDown size={17} color="white" />
-      </Pressable>
       {fix && coords ? (
         <>
           <T
@@ -158,22 +152,23 @@ export function LocationCard() {
               fontVariant: ["tabular-nums"],
               fontSize: data.format === "UTM" ? 18 : 23,
               lineHeight: 33,
-              color: "white",
+              color: age >= 120 ? "#FFDED1" : "white",
             }}
           >
             {coords}
           </T>
           {fix.altitude != null && (
-            <T
-              style={{
-                fontFamily: fonts.bold,
-                fontSize: 18,
-                color: "white",
-                marginTop: 2,
-              }}
-            >
-              Elevation: {Math.round(fix.altitude * 3.28084)} ft
-            </T>
+            <View style={{ marginTop: 2 }}>
+              <T
+                style={{
+                  fontFamily: fonts.bold,
+                  fontSize: 18,
+                  color: age >= 120 ? "#FFDED1" : "white",
+                }}
+              >
+                Device elevation: ~{Math.round(fix.altitude * 3.28084)} ft
+              </T>
+            </View>
           )}
           <T
             style={{
@@ -194,7 +189,7 @@ export function LocationCard() {
           </T>
         </>
       ) : fix ? (
-        <T style={{ color: "white", marginBottom: 12 }}>
+        <T style={{ color: age >= 120 ? "#FFDED1" : "white", marginBottom: 12 }}>
           UTM is defined between 80° S and 84° N. Choose DD or DDM for this
           location.
         </T>
@@ -206,22 +201,6 @@ export function LocationCard() {
           {messages[location.status]}
         </T>
       )}
-      {fix &&
-        fixWarnings(fix, now).map((w) => (
-          <View
-            key={w}
-            style={{
-              backgroundColor: "#5C3527",
-              borderRadius: 6,
-              padding: 10,
-              marginBottom: 12,
-            }}
-          >
-            <T style={{ fontSize: 12, lineHeight: 19, color: "#FFDED1" }}>
-              {w}
-            </T>
-          </View>
-        ))}
       {(location.status === "denied" ||
         location.status === "disabled" ||
         location.status === "unavailable") && (
@@ -326,88 +305,6 @@ export function LocationCard() {
           }
         />
       </View>
-      <Modal
-        visible={open}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setOpen(false)}
-      >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(8,20,13,.6)",
-            justifyContent: "center",
-            padding: 24,
-            alignItems: "center",
-          }}
-        >
-          <View
-            accessibilityViewIsModal
-            style={{
-              width: "100%",
-              maxWidth: 460,
-              padding: 22,
-              borderRadius: 16,
-              backgroundColor: C.paper,
-            }}
-          >
-            <T
-              accessibilityRole="header"
-              style={{
-                fontFamily: fonts.display,
-                fontSize: 26,
-                marginBottom: 16,
-              }}
-            >
-              Coordinate format
-            </T>
-            {FORMATS.map((format) => (
-              <Pressable
-                key={format.value}
-                accessibilityRole="radio"
-                accessibilityState={{ checked: data.format === format.value }}
-                aria-checked={data.format === format.value}
-                onPress={() =>
-                  void run(async () => {
-                    await update((d) => ({ ...d, format: format.value }));
-                    setOpen(false);
-                  })
-                }
-                style={{
-                  minHeight: 60,
-                  paddingVertical: 14,
-                  borderBottomWidth: 1,
-                  borderBottomColor: C.line,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 12,
-                }}
-              >
-                <T style={{ flex: 1, fontSize: 14 }}>{format.label}</T>
-                {data.format === format.value && (
-                  <Check size={20} color={C.green} />
-                )}
-              </Pressable>
-            ))}
-            <T
-              style={{
-                fontSize: 12,
-                color: C.muted,
-                lineHeight: 19,
-                marginVertical: 16,
-              }}
-            >
-              All formats use WGS84. Read the format and accuracy aloud with
-              your coordinates.
-            </T>
-            <Button
-              label="Close"
-              variant="outline"
-              onPress={() => setOpen(false)}
-            />
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }

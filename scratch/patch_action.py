@@ -1,27 +1,11 @@
-/**
- * @file [action].tsx
- * @description Route handler for hands-free voice assistant trip plan management actions.
- *
- * Deep Links:
- * - `trailsafe://plan/current/complete`: Marks the current active trip plan as completed.
- * - `trailsafe://plan/current/start`: Promotes the most recently saved draft plan to active.
- */
+import re
 
-import { useEffect, useRef } from "react";
-import { ActivityIndicator, View } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
-import { Screen, T } from "@/components/trailsafe/ui";
-import { useStore } from "@/state/store";
-import { useApp } from "@/state/app";
-import { cancelTripReminders } from "@/lib/notifications";
+with open('src/app/plan/current/[action].tsx', 'r') as f:
+    content = f.read()
 
-export default function CurrentPlanActionScreen() {
-  const { action } = useLocalSearchParams<{ action: string }>();
-  const { data, ready, update } = useStore();
-  const { notify, setDialog } = useApp();
-  const processedRef = useRef(false);
-
-useEffect(() => {
+# I will replace the useEffect content to show a dialog instead.
+new_effect = """
+  useEffect(() => {
     if (!ready || processedRef.current) return;
     processedRef.current = true;
 
@@ -33,7 +17,6 @@ useEffect(() => {
           message: `Are you sure you want to mark "${currentPlan.title || 'your trip'}" as complete?`,
           confirmLabel: "Mark Complete",
           onConfirm: () => {
-            void cancelTripReminders();
             void update((s) => ({
               ...s,
               plans: s.plans.map((p) =>
@@ -98,13 +81,10 @@ useEffect(() => {
       router.replace("/plans");
     }
   }, [action, ready, data.plans, update, notify, setDialog]);
+"""
 
-  return (
-    <Screen title="Updating Trip Plan">
-      <View style={{ alignItems: "center", paddingVertical: 40 }}>
-        <ActivityIndicator size="large" color="#4BAE74" />
-        <T style={{ marginTop: 16 }}>Updating your trip plan status...</T>
-      </View>
-    </Screen>
-  );
-}
+content = re.sub(r'  useEffect\(\(\) => \{.*?void handleAction\(\);\n  \}, \[action, ready, data\.plans, update, notify\]\);', new_effect.strip(), content, flags=re.DOTALL)
+content = content.replace('const { notify } = useApp();', 'const { notify, setDialog } = useApp();')
+
+with open('src/app/plan/current/[action].tsx', 'w') as f:
+    f.write(content)

@@ -14,10 +14,21 @@ import {
   T,
 } from "@/components/trailsafe/ui";
 import { useApp } from "@/state/app";
+import { useLocation } from "@/hooks/use-location";
+import { useEffect } from "react";
 export default function ArticleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const article = articles[id];
   const { run } = useApp();
+  const { requestLocation } = useLocation();
+  const isIncident = typeof id === "string" && id.startsWith("g-");
+
+  useEffect(() => {
+    if (isIncident) {
+      return requestLocation();
+    }
+  }, [isIncident, requestLocation]);
+
   if (id === "g-missing-split")
     return (
       <Screen title="Missing or Overdue" back>
@@ -53,11 +64,15 @@ export default function ArticleScreen() {
         />
       </Screen>
     );
+
   return (
     <Screen title={article.title} subtitle={article.subtitle || undefined} back>
-      <View style={{ marginBottom: 18 }}>
-        <EmergencyActions compact situation={article.title} />
-      </View>
+      {isIncident && (
+        <View style={{ marginBottom: 18 }}>
+          <EmergencyActions compact situation={article.title} />
+        </View>
+      )}
+
       {id === "g-overdue" && (
         <Note>
           The location in a text draft is your phone’s location, not the missing

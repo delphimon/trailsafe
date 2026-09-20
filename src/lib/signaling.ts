@@ -4,7 +4,7 @@
  *
  * Operational Principles:
  * 1. Universal SAR Whistle Standard: Search and Rescue teams globally recognize 3 sharp blasts
- *    as the distress signal. Responders reply with 2 blasts. A critical mistake made by lost hikers
+ *    as the distress signal. Listen carefully for any replies. A critical mistake made by lost hikers
  *    is continuously blowing without pausing to listen; this module enforces the mandatory 60-second
  *    listening phase.
  * 2. Optimal Audio Acoustics: Whistle audio synthesis targets 2.8 kHz, the optimal frequency for
@@ -110,7 +110,7 @@ export const WHISTLE_CADENCE_STEPS: WhistleStep[] = [
     isBlasting: false,
     durationSeconds: 60,
     displayTitle: "LISTEN FOR RESCUERS",
-    displayInstruction: "Remain completely silent. Responders reply with 2 blasts.",
+    displayInstruction: "Remain completely silent. Listen carefully for any replies.",
   },
 ];
 

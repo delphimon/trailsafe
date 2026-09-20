@@ -15,8 +15,10 @@ import { initialData, parseStoredData } from "../src/lib/persistence";
 const p = {
   ...newPlan(),
   title: "Granite Mountain",
-  name: "Hiker",
-  phone: "206 555 0100",
+  travelerName: "Hiker",
+  defaultTrustedContactName: "Jane",
+  travelerPhone: "206 555 0100",
+  defaultTrustedContactPhone: "999",
   partySize: "2",
   trailhead: "Granite Mountain trailhead",
   route: "Summit and return",
@@ -97,8 +99,10 @@ test("versioned storage supports dual vehicles in profile and migrates legacy pr
 
   // Legacy profile with only vehicle and plate (no vehicle2 or plate2)
   const legacyProfile = {
-    name: "Hiker",
-    phone: "206 555 0100",
+    travelerName: "Hiker",
+  defaultTrustedContactName: "Jane",
+    travelerPhone: "206 555 0100",
+  defaultTrustedContactPhone: "999",
     vehicle: "Silver Subaru Outback",
     plate: "WA ABC123",
     medical: "None",
@@ -118,7 +122,7 @@ test("damaged or unknown storage is rejected instead of silently reset", () => {
   for (const raw of [
     "invalid",
     "{}",
-    JSON.stringify({ ...initialData, version: 2 }),
+    JSON.stringify({ ...initialData, version: 4 }),
     JSON.stringify({ ...initialData, plans: [{}] }),
     JSON.stringify({ ...initialData, plans: [{ ...p, timeZone: "bad-zone" }] }),
   ])

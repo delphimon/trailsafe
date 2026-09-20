@@ -19,15 +19,20 @@ import { Profile, TripPlan, emptyProfile } from "./plans";
  */
 export type StoredData = {
   /** Schema version identifier. */
-  version: 1;
+  version: 3;
   /** Array of all saved trip plans (drafts, current, and completed). */
   plans: TripPlan[];
   /** Reusable user profile containing name, phone, dual vehicles, medical notes, and comms. */
   profile: Profile;
   /** Array of completed checklist item IDs (e.g. Ten Essentials). */
-  checks: string[];
-  /** Selected trip type preset for checklist add-ons ("day", "overnight", or "winter"). */
-  tripType: "day" | "overnight" | "winter";
+  checklist: {
+    checks: string[];
+    startedAt: number;
+    updatedAt: number;
+    planId?: string;
+  };
+  tripDuration: "day" | "overnight";
+  winterConditions: boolean;
   /** User's preferred coordinate display format across the app. */
   format: CoordinateFormat;
 };
@@ -37,11 +42,12 @@ export const STORAGE_KEY = "trailsafe.local.v1";
 
 /** Default state initialized when no saved record exists on the device. */
 export const initialData: StoredData = {
-  version: 1,
+  version: 3,
   plans: [],
   profile: emptyProfile,
-  checks: [],
-  tripType: "day",
+  checklist: { checks: [], startedAt: Date.now(), updatedAt: Date.now() },
+  tripDuration: "day",
+  winterConditions: false,
   format: "DD",
 };
 
@@ -62,22 +68,54 @@ export const initialData: StoredData = {
 export function parseStoredData(raw: string): StoredData {
   const v = JSON.parse(raw);
   if (
-    v?.version !== 1 ||
+    ![1, 2, 3].includes(v?.version) ||
     !Array.isArray(v.plans) ||
-    !Array.isArray(v.checks) ||
     !v.profile ||
-    !["day", "overnight", "winter"].includes(v.tripType) ||
     !["DD", "DDM", "UTM"].includes(v.format)
   )
     throw new Error("Unrecognized saved data. It has been preserved.");
-  const profileFields = ["name", "phone", "vehicle", "plate", "medical"];
+
+  if (v.version === 1) {
+    v.profile.travelerName = typeof v.profile.name === "string" ? v.profile.name : "";
+    v.profile.travelerPhone = typeof v.profile.phone === "string" ? v.profile.phone : "";
+    v.profile.defaultTrustedContactName = "";
+    v.profile.defaultTrustedContactPhone = "";
+    delete v.profile.name;
+    delete v.profile.phone;
+  }
+
+  if (v.version === 1 || v.version === 2) {
+    v.checklist = {
+      checks: Array.isArray(v.checks) ? v.checks : [],
+      startedAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    v.tripDuration = v.tripType === "overnight" ? "overnight" : "day";
+    v.winterConditions = v.tripType === "winter";
+    delete v.checks;
+    delete v.tripType;
+  }
+  
+  if (!v.checklist || !Array.isArray(v.checklist.checks) || typeof v.checklist.startedAt !== "number" || typeof v.checklist.updatedAt !== "number" || !["day", "overnight"].includes(v.tripDuration)) {
+    throw new Error("Saved data is damaged. It has been preserved.");
+  }
+
+  const profileFields = [
+    "travelerName",
+    "travelerPhone",
+    "defaultTrustedContactName",
+    "defaultTrustedContactPhone",
+    "vehicle",
+    "plate",
+    "medical"
+  ];
   if (
     !profileFields.every((k) => typeof v.profile[k] === "string") ||
     (v.profile.vehicle2 !== undefined && typeof v.profile.vehicle2 !== "string") ||
     (v.profile.plate2 !== undefined && typeof v.profile.plate2 !== "string") ||
     !Array.isArray(v.profile.comms) ||
     !v.profile.comms.every((x: unknown) => typeof x === "string") ||
-    !v.checks.every((x: unknown) => typeof x === "string")
+    !v.checklist.checks.every((x: unknown) => typeof x === "string")
   )
     throw new Error("Saved data is damaged. It has been preserved.");
   v.profile.vehicle2 =
@@ -98,8 +136,10 @@ export function parseStoredData(raw: string): StoredData {
     "route",
     "backup",
     "partySize",
-    "name",
-    "phone",
+    "travelerName",
+    "travelerPhone",
+    "trustedContactName",
+    "trustedContactPhone",
     "vehicle",
     "plate",
     "members",
@@ -112,9 +152,25 @@ export function parseStoredData(raw: string): StoredData {
     "extraVehicles",
     "notes",
   ];
-  for (const p of v.plans) {
+
+  let currentPlanCount = 0;
+  let latestCurrentPlanIdx = -1;
+  let maxUpdatedAt = 0;
+
+  for (let i = 0; i < v.plans.length; i++) {
+    const p = v.plans[i];
+    if (!p) throw new Error("A saved trip plan is damaged. It has been preserved.");
+
+    if (v.version === 1) {
+      p.travelerName = typeof p.name === "string" ? p.name : "";
+      p.travelerPhone = typeof p.phone === "string" ? p.phone : "";
+      p.trustedContactName = "";
+      p.trustedContactPhone = "";
+      delete p.name;
+      delete p.phone;
+    }
+
     if (
-      !p ||
       !strings.every((k) => typeof p[k] === "string") ||
       !["draft", "current", "completed"].includes(p.status) ||
       !Array.isArray(p.comms) ||
@@ -130,6 +186,24 @@ export function parseStoredData(raw: string): StoredData {
         "A saved trip has an unsupported time zone. It has been preserved.",
       );
     }
+
+    if (p.status === "current") {
+      currentPlanCount++;
+      if (p.updatedAt > maxUpdatedAt) {
+        maxUpdatedAt = p.updatedAt;
+        latestCurrentPlanIdx = i;
+      }
+    }
   }
-  return v;
+
+  if (currentPlanCount > 1) {
+    for (let i = 0; i < v.plans.length; i++) {
+      if (v.plans[i].status === "current" && i !== latestCurrentPlanIdx) {
+        v.plans[i].status = "draft";
+      }
+    }
+  }
+
+  v.version = 3;
+  return v as StoredData;
 }

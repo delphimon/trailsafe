@@ -24,6 +24,7 @@ import {
 } from "lucide-react-native";
 import { useState } from "react";
 import { Linking, Platform, View } from "react-native";
+import { getGuideContentVersion } from "@/lib/search-indexing";
 
 export default function About() {
   const { C } = useThemeStyles();
@@ -142,8 +143,7 @@ export default function About() {
         emergency, call or text 911.
       </Callout>
       <Callout title="Search and rescue is free">
-        SAR in Washington is 100% volunteer-driven and provided free of charge.
-        Fear of cost must never prevent or delay calling 911.
+        Don't delay calling 911 because of cost. In Washington State, search-and-rescue response does not bill rescued persons.
       </Callout>
       <Kicker>Connect</Kicker>
       <Card>
@@ -167,9 +167,7 @@ export default function About() {
       <Kicker>Privacy</Kicker>
       <Card>
         <T>
-          Your trip plans, profile, and checklists are stored locally. No
-          accounts, advertising, analytics, cloud database, or background
-          location tracking. KCESAR does not receive your location or trip
+          Your trip plans, profile, and checklists are stored locally. No accounts, advertising, or behavioral analytics. Anonymous crash diagnostics are collected to fix bugs (Bugsnag). No cloud database or background location tracking. KCESAR does not receive your location or trip
           information.
         </T>
         <T style={{ marginTop: 12 }}>
@@ -212,7 +210,7 @@ export default function About() {
         <T>
           Based on the supplied TrailSafe prototype and product definition.
           Safety guidance is bundled with the app for offline use. Content
-          version: 2026.09.06.
+          version: {getGuideContentVersion()}.
         </T>
         <T style={{ marginTop: 12 }}>
           Organizational endorsement, medical review, and dispatch-facing

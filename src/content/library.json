@@ -1,8 +1,8 @@
 {
   "ESSENTIALS": [
     [
-      "Hydration",
-      "Dehydration causes fatigue and poor decisions before you even feel thirsty."
+      "Water",
+      "Bring at least 1 liter per 2 hours of hiking. Carry more in heat or at altitude. For longer trips, carry a treatment method (filter, tablets, or UV)."
     ],
     [
       "Navigation",
@@ -13,12 +13,12 @@
       "Cascade weather can shift fast — an extra layer keeps a cold snap from becoming hypothermia."
     ],
     [
-      "Illumination",
-      "A dedicated headlamp means fading daylight doesn’t force you to burn your phone battery."
+      "Headlamp",
+      "Carry a dedicated headlamp, not just your phone flashlight. Fading daylight shouldn't force you to burn phone battery."
     ],
     [
-      "Combustion",
-      "A reliable way to start a fire or heat water matters if you end up out longer than planned."
+      "Fire starter",
+      "Waterproof matches or lighter plus tinder. A reliable way to start a fire or heat water if you're out longer than planned."
     ],
     [
       "Communication",
@@ -33,8 +33,8 @@
       "Sunburn and glare add up fast at elevation and on snow."
     ],
     [
-      "Shelter",
-      "An emergency bivy or space blanket can get you through a night you didn’t plan for."
+      "Emergency shelter",
+      "A bivy sack or space blanket weighs ounces and can get you through a night you didn't plan for."
     ],
     [
       "First aid",
@@ -53,11 +53,8 @@
   ],
   "ADD_ONS": {
     "day": {
-      "title": "Day hike add-ons",
-      "items": [
-        "Headlamp — yes, even for a short hike",
-        "Emergency shelter (bivy or space blanket)"
-      ]
+      "title": "Additional reminders",
+      "items": []
     },
     "overnight": {
       "title": "Overnight add-ons",
@@ -325,7 +322,7 @@
         {
           "type": "callout",
           "title": "SAR is free",
-          "text": "Search and rescue in Washington is 100% volunteer-driven and provided free of charge. Fear of cost must never prevent or delay calling 911."
+          "text": "Don't delay calling 911 because of cost. In Washington State, search-and-rescue response does not bill rescued persons."
         }
       ],
       "id": "calling-help",

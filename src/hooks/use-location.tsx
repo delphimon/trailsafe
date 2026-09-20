@@ -13,7 +13,7 @@
  *    lost, rather than leaving the emergency screen stuck in a permanent error state.
  */
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, createContext, useContext, useCallback, useMemo } from "react";
 import { AppState, Platform } from "react-native";
 import * as Location from "expo-location";
 import { Fix, validCoordinates } from "@/lib/coordinates";
@@ -135,13 +135,24 @@ export function useAutomaticLocation(enabled: boolean): {
         if (cancelled) return;
         if (permission.status === "undetermined")
           permission = await Location.requestForegroundPermissionsAsync();
+
         if (cancelled) return;
         if (permission.status !== "granted") {
           setStatus("denied");
           return;
         }
         timeout = setTimeout(unavailable, 15000);
+        
+        // Query last-known position first
+        try {
+          const last = await Location.getLastKnownPositionAsync({ maxAge: 10 * 60 * 1000 });
+          if (!cancelled && last && status !== "located") {
+            receive(last);
+          }
+        } catch {}
+
         subscription = await Location.watchPositionAsync(
+
           {
             accuracy: Location.Accuracy.High,
             timeInterval: 5000,
@@ -164,4 +175,37 @@ export function useAutomaticLocation(enabled: boolean): {
     };
   }, [enabled, active, retry]);
   return { fix, status };
+}
+
+
+
+type LocationContextType = {
+  fix: Fix | null;
+  status: LocationStatus;
+  requestLocation: () => () => void;
+};
+
+const LocationContext = createContext<LocationContextType | null>(null);
+
+export function LocationProvider({ children }: { children: React.ReactNode }) {
+  const [requests, setRequests] = useState(0);
+  const enabled = requests > 0;
+  
+  // The existing hook handles the watch automatically when enabled is true
+  const { fix, status } = useAutomaticLocation(enabled);
+
+  const requestLocation = useCallback(() => {
+    setRequests((n) => n + 1);
+    return () => setRequests((n) => Math.max(0, n - 1));
+  }, []);
+
+  const value = useMemo(() => ({ fix, status, requestLocation }), [fix, status, requestLocation]);
+
+  return <LocationContext.Provider value={value}>{children}</LocationContext.Provider>;
+}
+
+export function useLocation() {
+  const ctx = useContext(LocationContext);
+  if (!ctx) throw new Error("useLocation must be used within a LocationProvider");
+  return ctx;
 }

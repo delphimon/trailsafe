@@ -23,13 +23,10 @@ export interface HypothermiaAssessment {
   windMph: number;
   moisture: MoistureCondition;
   windChillF: number;
-  effectiveTempF: number;
-  wetChillPenaltyF: number;
   riskLevel: HypothermiaRiskLevel;
   riskTitle: string;
   riskDescription: string;
   plainExplanation: string;
-  timeToExhaustion: string;
   isCascadeConcreteHazard: boolean;
   color: string;
 }
@@ -107,20 +104,8 @@ export function calculateWindChill(tempF: number, windMph: number): number {
   return Math.round(wc);
 }
 
-/**
- * Returns the effective thermal cooling penalty in °F associated with wet clothing.
- * Simulates water's ~25x thermal conductivity over dry air.
- */
-export function getWetChillPenalty(moisture: MoistureCondition): number {
-  switch (moisture) {
-    case "dry":
-      return 0;
-    case "damp":
-      return 12; // Moist base layers / sweat / light drizzle
-    case "soaked":
-      return 22; // Saturated layers in rain / wet snow / river crossing
-  }
-}
+
+
 
 /**
  * Assesses hypothermia and wet cold exposure risk according to temperature, wind, and clothing saturation.
@@ -135,8 +120,6 @@ export function assessHypothermiaRisk(
   moisture: MoistureCondition = "dry",
 ): HypothermiaAssessment {
   const windChillF = calculateWindChill(airTempF, windMph);
-  const wetChillPenaltyF = getWetChillPenalty(moisture);
-  const effectiveTempF = windChillF - wetChillPenaltyF;
 
   // "Cascade Concrete" Hazard: 32°F–52°F with wet layers and substantial wind
   const isCascadeConcreteHazard =
@@ -149,36 +132,32 @@ export function assessHypothermiaRisk(
   let riskTitle = "LOW HYPOTHERMIA HAZARD";
   let riskDescription =
     "Standard cool weather. Normal hiking movement produces adequate body heat. Keep layers handy if stopping.";
-  let timeToExhaustion = "Low risk if active and dry";
   let color = "#2D6A4F"; // Forest green
 
-  if (effectiveTempF <= 15 || isCascadeConcreteHazard) {
+  if (windChillF <= 15 || isCascadeConcreteHazard) {
     riskLevel = "critical";
     riskTitle = isCascadeConcreteHazard
       ? "CRITICAL 'CASCADE CONCRETE' HAZARD"
       : "CRITICAL FREEZING EXPOSURE";
     riskDescription = isCascadeConcreteHazard
-      ? "DEADLY PNW COMBINATION: Soaked clothing + wind strips body heat 25x faster than dry air. In 35°F–50°F rain, mild-to-moderate hypothermia can incapacitate a hiker in <45–60 minutes once movement stops."
+      ? "DEADLY PNW COMBINATION: Soaked clothing + wind strips body heat much faster than dry air. Mild-to-moderate hypothermia can incapacitate a hiker very quickly once movement stops."
       : "EXTREME CORE HEAT LOSS: Severe hypothermia and frostbite hazard. Shivering will rapidly deplete glycogen reserves without immediate waterproof wind shelter.";
-    timeToExhaustion = "< 45–60 minutes if stationary";
     color = "#E4572E"; // Safety Orange / Critical Red
   } else if (
-    effectiveTempF <= 32 ||
+    windChillF <= 32 ||
     (moisture === "soaked" && airTempF <= 55) ||
     (moisture === "damp" && airTempF <= 42 && windMph >= 10)
   ) {
     riskLevel = "high";
     riskTitle = "HIGH HYPOTHERMIA RISK";
     riskDescription =
-      "RAPID HEAT LOSS: Body must shiver continuously to balance heat loss. Wet clothing rapidly exhausts energy reserves within 1–2 hours without windproof shelter and high-calorie food.";
-    timeToExhaustion = "1–2 hours without shelter";
+      "RAPID HEAT LOSS: Body must shiver continuously to balance heat loss. Wet clothing rapidly exhausts energy reserves without windproof shelter and high-calorie food.";
     color = "#D9531E"; // Orange
-  } else if (effectiveTempF <= 48 || moisture !== "dry") {
+  } else if (windChillF <= 48 || moisture !== "dry") {
     riskLevel = "moderate";
     riskTitle = "MODERATE CHILL / MONITOR CLOSELY";
     riskDescription =
       "ELEVATED RISK WHEN STOPPED: Body cools quickly during breaks or summit stops. Put on wind/rain shell before sweat chills. Watch trail partners for early coordination loss.";
-    timeToExhaustion = "2–4 hours if wet and stationary";
     color = "#C98A2C"; // Amber
   }
 
@@ -187,27 +166,24 @@ export function assessHypothermiaRisk(
 
   let plainExplanation = "";
   if (isCascadeConcreteHazard) {
-    plainExplanation = `Air is ${roundedTemp}°F, but ${roundedWind} mph wind and soaked clothing chills your core as fast as ${effectiveTempF}°F sub-freezing air. Saturated fabric drains body heat 25x faster than dry air.`;
-  } else if (effectiveTempF <= 32) {
-    plainExplanation = `Air is ${roundedTemp}°F, but ${roundedWind} mph wind and ${moisture} clothing cools your core like ${effectiveTempF}°F freezing air.`;
-  } else if (effectiveTempF <= 48 || moisture !== "dry") {
-    plainExplanation = `Air is ${roundedTemp}°F with ${roundedWind} mph wind. Core stays warm while moving, but cools rapidly to ${effectiveTempF}°F during rest stops.`;
+    plainExplanation = `Air is ${roundedTemp}°F, but ${roundedWind} mph wind and soaked clothing chills your core rapidly. Saturated fabric drains body heat roughly 25x faster than dry air.`;
+  } else if (windChillF <= 32) {
+    plainExplanation = `Air is ${roundedTemp}°F, but ${roundedWind} mph wind creates a wind chill of ${windChillF}°F.`;
+  } else if (windChillF <= 48 || moisture !== "dry") {
+    plainExplanation = `Air is ${roundedTemp}°F with ${roundedWind} mph wind. Core stays warm while moving, but cools rapidly during rest stops.`;
   } else {
     plainExplanation = `Normal cool weather (${roundedTemp}°F). Active hiking produces enough warmth to maintain core temperature. Keep dry layers accessible.`;
   }
 
   return {
-    airTempF: roundedTemp,
-    windMph: roundedWind,
+    airTempF,
+    windMph,
     moisture,
     windChillF,
-    effectiveTempF,
-    wetChillPenaltyF,
     riskLevel,
     riskTitle,
     riskDescription,
     plainExplanation,
-    timeToExhaustion,
     isCascadeConcreteHazard,
     color,
   };

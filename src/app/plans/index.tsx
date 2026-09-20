@@ -179,7 +179,7 @@ export default function Plans() {
                           }));
                           notify("Trip completed locally.");
                           const text = buildSafeReturnDraft(p);
-                          const targetPhone = p.phone ? [p.phone] : [];
+                          const targetPhone = p.trustedContactPhone ? [p.trustedContactPhone] : [];
                           if (await SMS.isAvailableAsync()) {
                             await SMS.sendSMSAsync(targetPhone, text);
                           } else {

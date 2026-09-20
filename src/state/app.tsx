@@ -11,12 +11,12 @@
  * 4. Location Coordination: Automatically activates the `useAutomaticLocation` hook when the user visits `/emergency`.
  */
 
-import React, { createContext, useContext, useState } from "react";
-import { Linking, Platform, Share } from "react-native";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { AppState, Linking, Platform, Share } from "react-native";
 import { usePathname } from "expo-router";
 import * as Clipboard from "expo-clipboard";
 import * as SMS from "expo-sms";
-import { useAutomaticLocation } from "@/hooks/use-location";
+import { useLocation } from "@/hooks/use-location";
 import { buildEmergencyDraft, performEmergencyAction } from "@/lib/emergency";
 import { useStore } from "./store";
 
@@ -26,6 +26,7 @@ type Dialog = {
   message: string;
   confirmLabel?: string;
   onConfirm?: () => void | Promise<void>;
+  cancelLabel?: string;
 };
 
 /** App context interface. */
@@ -49,7 +50,7 @@ type AppValue = {
   /** Initiates an emergency call or text with practice safety interlock. */
   emergency: (kind: "call" | "text", situation?: string) => Promise<void>;
   /** Active GPS location hook state. */
-  location: ReturnType<typeof useAutomaticLocation>;
+  location: ReturnType<typeof useLocation>;
 };
 
 const Context = createContext<AppValue | null>(null);
@@ -63,7 +64,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [practice, setPractice] = useState(false),
     [dialog, setDialog] = useState<Dialog | null>(null),
     [toast, setToast] = useState("");
-  const location = useAutomaticLocation(path === "/emergency");
+  const location = useLocation();
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "background" || state === "inactive") {
+        setPractice(false);
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
+  useEffect(() => {
+    if (!practice) return;
+    const t = setTimeout(() => setPractice(false), 15 * 60 * 1000);
+    return () => clearTimeout(t);
+  }, [practice]);
+
+  useEffect(() => {
+    if (path === "/emergency") return location.requestLocation();
+  }, [path, location]);
   const notify = (text: string) => setToast(text);
   React.useEffect(() => {
     if (!toast) return;
@@ -107,6 +127,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setDialog({
             title: "Practice Mode",
             message: `In an emergency, this would ${action === "call" ? "open your phone to call 911" : "open a text message to 911"}. Nothing was contacted. No phone or messaging app was opened.`,
+            confirmLabel: "Exit Practice Mode",
+            onConfirm: () => setPractice(false),
+            cancelLabel: "Continue Practice",
           }),
         call: async () => {
           try {
@@ -122,8 +145,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const draft = buildEmergencyDraft(
             location.fix,
             situation,
-            current?.partySize,
-            data.profile.phone || current?.phone,
+            undefined,
+            data.profile.travelerPhone || current?.travelerPhone,
           );
           if (await SMS.isAvailableAsync()) {
             await SMS.sendSMSAsync(["911"], draft);

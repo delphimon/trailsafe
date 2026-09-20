@@ -49,8 +49,7 @@ export default function Emergency() {
         Call if you can, text if you can’t.
       </T>
       <Note>
-        Search and rescue in Washington is free — 100% volunteer-driven and
-        available to everyone. Never let fear of cost delay calling 911.
+        Don't delay calling 911 because of cost. In Washington State, search-and-rescue response does not bill rescued persons.
       </Note>
       <Note>
         These buttons open your phone’s calling and messaging apps. TrailSafe

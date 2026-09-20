@@ -20,10 +20,14 @@ export type PlanStatus = "draft" | "current" | "completed";
  * Used to automatically prefill new trip plans without retyping boilerplate.
  */
 export type Profile = {
-  /** Hiker name. */
-  name: string;
-  /** Primary contact phone or contact method. */
-  phone: string;
+  /** Traveler name. */
+  travelerName: string;
+  /** Traveler primary contact phone or contact method. */
+  travelerPhone: string;
+  /** Default trusted contact name. */
+  defaultTrustedContactName: string;
+  /** Default trusted contact phone. */
+  defaultTrustedContactPhone: string;
   /** Primary vehicle (Car 1): color, make, model (e.g. "Silver Subaru Outback"). */
   vehicle: string;
   /** Primary vehicle (Car 1): license plate and state (e.g. "WA ABC123"). */
@@ -76,10 +80,14 @@ export type TripPlan = {
   backup: string;
   /** Total party count (must be a positive integer). */
   partySize: string;
-  /** Contact person name. */
-  name: string;
-  /** Contact person phone number. */
-  phone: string;
+  /** Traveler name. */
+  travelerName: string;
+  /** Traveler phone number. */
+  travelerPhone: string;
+  /** Trusted contact name holding the plan. */
+  trustedContactName: string;
+  /** Trusted contact phone holding the plan. */
+  trustedContactPhone: string;
   /** Primary vehicle description parked at trailhead. */
   vehicle: string;
   /** Primary vehicle license plate. */
@@ -110,8 +118,10 @@ export type TripPlan = {
 
 /** Default empty profile values. */
 export const emptyProfile: Profile = {
-  name: "",
-  phone: "",
+  travelerName: "",
+  travelerPhone: "",
+  defaultTrustedContactName: "",
+  defaultTrustedContactPhone: "",
   vehicle: "",
   plate: "",
   vehicle2: "",
@@ -174,8 +184,10 @@ export function newPlan(profile: Profile = emptyProfile): TripPlan {
     route: "",
     backup: "",
     partySize: "",
-    name: profile.name,
-    phone: profile.phone,
+    travelerName: profile.travelerName,
+    travelerPhone: profile.travelerPhone,
+    trustedContactName: profile.defaultTrustedContactName,
+    trustedContactPhone: profile.defaultTrustedContactPhone,
     vehicle: profile.vehicle,
     plate: profile.plate,
     medical: profile.medical,
@@ -222,8 +234,8 @@ export function validatePlan(p: TripPlan): string[] {
     ["Trip title", p.title],
     ["Trailhead", p.trailhead],
     ["Planned route", p.route],
-    ["Your name", p.name],
-    ["Your phone / contact method", p.phone],
+    ["Your name", p.travelerName],
+    ["Your phone / contact method", p.travelerPhone],
   ])
     if (!value.trim()) errors.push(`${label} is required.`);
   if (!/^\d+$/.test(p.partySize) || Number(p.partySize) < 1)
@@ -241,6 +253,10 @@ export function validatePlan(p: TripPlan): string[] {
       `${p.overdueDate}T${p.overdueTime}` <= `${p.returnDate}T${p.returnTime}`
     )
       errors.push("Choose an overdue time after expected return.");
+  }
+  if (p.status === "current") {
+    if (!p.trustedContactName.trim()) errors.push("Trusted contact name is required for a Current plan");
+    if (!p.trustedContactPhone.trim()) errors.push("Trusted contact phone is required for a Current plan");
   }
   return errors;
 }
@@ -315,7 +331,12 @@ export function buildPlanText(p: TripPlan): string {
     "",
     `Trip: ${p.title || "(not set)"}`,
     `Party: ${p.partySize || "(not set)"}`,
-    `Contact: ${p.name || "(not set)"} — ${p.phone || "(not set)"}`,
+    "",
+    `Traveler:`,
+    `${p.travelerName || "(not set)"} — ${p.travelerPhone || "(not set)"}`,
+    "",
+    `Trusted contact holding this plan:`,
+    `${p.trustedContactName || "(not set)"} — ${p.trustedContactPhone || "(not set)"}`,
     `All times: ${p.timeZone}`,
     "",
     `Start: ${p.date} ${p.startTime || "(not set)"}`,

@@ -18,7 +18,7 @@ export function BottomBar() {
   const active =
     path.startsWith("/plans") || path === "/profile"
       ? "/prepare"
-      : path.startsWith("/article") || path === "/resources" || path === "/about"
+      : path.startsWith("/article")
         ? "/guide"
         : path.startsWith("/tools")
           ? "/tools"
@@ -139,7 +139,7 @@ export function AppOverlays() {
                 />
               )}
               <Button
-                label={dialog?.onConfirm ? "Cancel" : "Got it"}
+                label={dialog?.cancelLabel || (dialog?.onConfirm ? "Cancel" : "Got it")}
                 variant={dialog?.onConfirm ? "outline" : "primary"}
                 onPress={() => setDialog(null)}
               />

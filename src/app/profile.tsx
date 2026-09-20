@@ -44,15 +44,29 @@ function ProfileEditor({ initial }: { initial: ProfileData }) {
       <View style={{ marginTop: 20 }}>
         <Field
           label="Your name"
-          value={profile.name}
-          onChangeText={(v) => setProfile((p) => ({ ...p, name: v }))}
+          value={profile.travelerName}
+          onChangeText={(v) => setProfile((p) => ({ ...p, travelerName: v }))}
         />
         <Field
           label="Phone / contact method"
-          value={profile.phone}
-          onChangeText={(v) => setProfile((p) => ({ ...p, phone: v }))}
+          value={profile.travelerPhone}
+          onChangeText={(v) => setProfile((p) => ({ ...p, travelerPhone: v }))}
           keyboardType="phone-pad"
         />
+        <View style={{ marginTop: 24 }}>
+          <Kicker>Default Trusted Contact</Kicker>
+          <Field
+            label="Contact name"
+            value={profile.defaultTrustedContactName}
+            onChangeText={(v) => setProfile((p) => ({ ...p, defaultTrustedContactName: v }))}
+          />
+          <Field
+            label="Contact phone"
+            value={profile.defaultTrustedContactPhone}
+            onChangeText={(v) => setProfile((p) => ({ ...p, defaultTrustedContactPhone: v }))}
+            keyboardType="phone-pad"
+          />
+        </View>
       </View>
 
       <Kicker>Saved Vehicles</Kicker>

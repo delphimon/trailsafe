@@ -4,7 +4,14 @@ import { Platform } from "react-native";
 
 if (typeof window !== 'undefined' && Platform.OS !== 'web') {
   const Bugsnag = require('@bugsnag/expo').default || require('@bugsnag/expo');
-  Bugsnag.start();
+  Bugsnag.start({
+    onError: function (event: any) {
+      // Redact sensitive data from Bugsnag reports
+      event.context = "redacted";
+      event.user = {};
+      event.addMetadata('device', 'id', 'redacted');
+    }
+  });
 }
 import { Stack } from "expo-router/stack";
 import { StatusBar } from "expo-status-bar";
@@ -21,6 +28,7 @@ import {
 } from "@expo-google-fonts/public-sans";
 import { StoreProvider } from "@/state/store";
 import { AppProvider } from "@/state/app";
+import { LocationProvider } from "@/hooks/use-location";
 import {
   AppOverlays,
   BottomBar,
@@ -56,6 +64,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StoreProvider>
+        <LocationProvider>
         <AppProvider>
           <StatusBar style="light" />
           <View
@@ -82,6 +91,7 @@ export default function RootLayout() {
             </View>
           </View>
         </AppProvider>
+        </LocationProvider>
       </StoreProvider>
     </SafeAreaProvider>
   );

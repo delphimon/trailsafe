@@ -40,7 +40,7 @@ import {
   T,
   useThemeStyles,
 } from "@/components/trailsafe/ui";
-import { useAutomaticLocation } from "@/hooks/use-location";
+import { useLocation } from "@/hooks/use-location";
 import {
   calculateSolarTimes,
   formatDurationMinutes,
@@ -74,16 +74,19 @@ import {
   type MoistureCondition,
 } from "@/lib/hypothermia";
 
-type ToolTab = "solar" | "signaling" | "hazards" | "backcountry";
+type ToolTab = "solar" | "signaling" | "hazards" | "planning";
 
 export default function ToolsScreen() {
   const { C, s } = useThemeStyles();
   const [activeTab, setActiveTab] = useState<ToolTab>("solar");
 
   // GPS & Location
-  const { fix } = useAutomaticLocation(
-    activeTab === "solar" || activeTab === "hazards" || activeTab === "backcountry",
-  );
+  const { fix, requestLocation } = useLocation();
+  useEffect(() => {
+    if (activeTab === "solar" || activeTab === "hazards" || activeTab === "planning") {
+      return requestLocation();
+    }
+  }, [activeTab, requestLocation]);
   const [selectedPresetId, setSelectedPresetId] = useState<string>("gps");
   const [canopy, setCanopy] = useState<CanopyType>("moderate");
 
@@ -199,7 +202,7 @@ export default function ToolsScreen() {
     if (beaconMode !== "strobe") return;
     const interval = setInterval(() => {
       setStrobeState((prev) => !prev);
-    }, 140);
+    }, 500);
     return () => clearInterval(interval);
   }, [beaconMode]);
 
@@ -225,7 +228,7 @@ export default function ToolsScreen() {
   // BACKCOUNTRY UTILITIES STATE
   // --------------------------------------------------------------------------
   // Inclinometer
-  const [deviceTilt, setDeviceTilt] = useState<number>(34); // Default 34° to showcase danger zone
+  const [deviceTilt, setDeviceTilt] = useState<number | null>(null);
   const [isMeasuringTilt, setIsMeasuringTilt] = useState(false);
 
   useEffect(() => {
@@ -249,7 +252,13 @@ export default function ToolsScreen() {
   }, [isMeasuringTilt]);
 
   const slopeRisk = useMemo(
-    () => getSlopeAvalancheRisk(deviceTilt),
+    () => deviceTilt !== null ? getSlopeAvalancheRisk(deviceTilt) : {
+      degrees: 0,
+      level: "low" as const,
+      title: "Ready to Measure",
+      description: "Activate sensor or adjust manually to measure slope angle.",
+      color: "#5C6A64",
+    },
     [deviceTilt],
   );
 
@@ -260,6 +269,7 @@ export default function ToolsScreen() {
 
   // Hypothermia & Wind Chill Index (Cascade Concrete Hazard)
   const [hypoTempF, setHypoTempF] = useState<number>(38);
+  const [hypoDetailsExpanded, setHypoDetailsExpanded] = useState<boolean>(false);
   const [hypoWindMph, setHypoWindMph] = useState<number>(25);
   const [hypoMoisture, setHypoMoisture] = useState<MoistureCondition>("soaked");
   const [selectedHypoPreset, setSelectedHypoPreset] = useState<string>("cascade-concrete");
@@ -278,7 +288,6 @@ export default function ToolsScreen() {
   // Naismith Estimator
   const [hikingMiles, setHikingMiles] = useState(5);
   const [hikingGainFt, setHikingGainFt] = useState(2400);
-  const [hikingLossFt, setHikingLossFt] = useState(2400);
   const [hikingPace, setHikingPace] = useState<PaceLevel>("casual");
   const [hikingPack, setHikingPack] = useState<PackWeight>("light");
   const [hikingBreaks, setHikingBreaks] = useState<BreakStyle>("standard");
@@ -287,12 +296,12 @@ export default function ToolsScreen() {
     return calculateHikingTime(
       hikingMiles,
       hikingGainFt,
-      hikingLossFt,
+      hikingGainFt, // Out-and-back assumption: descent matches ascent
       hikingPace,
       hikingPack,
       hikingBreaks,
     );
-  }, [hikingMiles, hikingGainFt, hikingLossFt, hikingPace, hikingPack, hikingBreaks]);
+  }, [hikingMiles, hikingGainFt, hikingPace, hikingPack, hikingBreaks]);
 
   // Water Treatment Timer
   const [selectedWaterPreset, setSelectedWaterPreset] = useState(
@@ -342,12 +351,12 @@ export default function ToolsScreen() {
       {/* Tab Switcher */}
       <View style={[s.wrap, { marginBottom: 16 }]}>
         <Chip
-          label="Solar & Dusk"
+          label="Light"
           selected={activeTab === "solar"}
           onPress={() => setActiveTab("solar")}
         />
         <Chip
-          label="Signaling"
+          label="Signal"
           selected={activeTab === "signaling"}
           onPress={() => setActiveTab("signaling")}
         />
@@ -357,9 +366,9 @@ export default function ToolsScreen() {
           onPress={() => setActiveTab("hazards")}
         />
         <Chip
-          label="Backcountry"
-          selected={activeTab === "backcountry"}
-          onPress={() => setActiveTab("backcountry")}
+          label="Planning"
+          selected={activeTab === "planning"}
+          onPress={() => setActiveTab("planning")}
         />
       </View>
 
@@ -443,7 +452,7 @@ export default function ToolsScreen() {
                     }}
                   >
                     {solar.headlampNeededNow
-                      ? "TRAIL DARKNESS · HEADLAMP REQUIRED"
+                      ? "TRAIL DARKNESS · Plan to need a headlamp by"
                       : "TRAIL LIGHT REMAINING"}
                   </T>
                   <T
@@ -747,17 +756,17 @@ export default function ToolsScreen() {
                 />
               </View>
               <Button
-                label={audioToneEnabled ? "Audio ON" : "Audio OFF"}
+                label={audioToneEnabled ? "Cadence Aid ON" : "Cadence Aid OFF"}
                 variant="outline"
                 icon={audioToneEnabled ? Volume2 : VolumeX}
                 onPress={() => setAudioToneEnabled((v) => !v)}
               />
             </View>
 
-            <Callout title="SAR Responder Reply Doctrine">
-              Search &amp; Rescue ground teams reply with 2 blasts. If you hear 2
-              blasts, stay completely stationary and blast 3 times in return to
-              triangulate your position.
+            <Callout title="Listening for Responders">
+              After your 3-blast signal, remain completely silent for 60 seconds
+              and listen carefully for any reply. If you hear a response, stay
+              stationary and repeat your 3-blast signal.
             </Callout>
           </Card>
 
@@ -796,7 +805,7 @@ export default function ToolsScreen() {
                 }}
               />
               <Button
-                label="Daylight Signal Mirror Sight"
+                label="Signal Mirror Aiming Guide"
                 variant="outline"
                 icon={Sun}
                 onPress={() => {
@@ -848,52 +857,10 @@ export default function ToolsScreen() {
               <View style={{ flex: 1, gap: 2, paddingRight: 8 }}>
                 <Heading>Hypothermia &amp; Wind Chill</Heading>
                 <T style={s.note}>
-                  Wet cold (35°F–50°F with rain and wind) strips body heat 25x faster than air
+                  Wet cold (35°F–50°F with rain and wind) strips body heat 25× faster than air. Watch your hiking partners for stumbling, mumbling, fumbling, or grumbling — these are early signs of dangerous cooling.
                 </T>
               </View>
               <Thermometer size={28} color={hypoAssessment.color} />
-            </View>
-
-            {/* Core Life-Safety Principles Callout */}
-            <View
-              style={{
-                backgroundColor: C.checkBg,
-                borderColor: C.orange,
-                borderWidth: 1.5,
-                borderRadius: 10,
-                padding: 14,
-                gap: 10,
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <AlertTriangle size={20} color={C.orange} />
-                <T
-                  style={{
-                    fontFamily: fonts.bold,
-                    fontSize: 14,
-                    color: C.heading,
-                  }}
-                >
-                  Why Wet Cold Kills: 4 Life-Safety Principles
-                </T>
-              </View>
-
-              {HYPOTHERMIA_CORE_PRINCIPLES.map((principle) => (
-                <View key={principle.number} style={{ gap: 2 }}>
-                  <T
-                    style={{
-                      fontFamily: fonts.bold,
-                      fontSize: 13,
-                      color: C.orange,
-                    }}
-                  >
-                    {principle.number}. {principle.title} ({principle.shortKicker})
-                  </T>
-                  <T style={{ fontSize: 12, lineHeight: 18, color: C.ink }}>
-                    {principle.explanation}
-                  </T>
-                </View>
-              ))}
             </View>
 
             {/* Presets */}
@@ -982,18 +949,15 @@ export default function ToolsScreen() {
                     color: C.heading,
                   }}
                 >
-                  {hypoAssessment.effectiveTempF}°F
+                  {hypoAssessment.windChillF}°F
                 </T>
                 <T style={{ fontSize: 13, color: C.ink, fontFamily: fonts.bold }}>
-                  Core Chill Equivalent (Feels Like)
+                  Wind chill — exposed skin estimate
                 </T>
               </View>
 
               <T style={{ fontSize: 12, color: C.muted }}>
-                Air: {hypoAssessment.airTempF}°F · Wind Chill: {hypoAssessment.windChillF}°F
-                {hypoAssessment.wetChillPenaltyF > 0
-                  ? ` · Wet Clothing Penalty: -${hypoAssessment.wetChillPenaltyF}°F`
-                  : " · Dry Clothing (0°F penalty)"}
+                Air: {hypoAssessment.airTempF}°F · Moisture: {hypoAssessment.moisture}
               </T>
 
               <View
@@ -1004,14 +968,8 @@ export default function ToolsScreen() {
                   gap: 4,
                 }}
               >
-                <T
-                  style={{
-                    fontSize: 13,
-                    fontFamily: fonts.bold,
-                    color: hypoAssessment.color,
-                  }}
-                >
-                  Danger Window: {hypoAssessment.timeToExhaustion}
+                <T style={{ fontSize: 12, color: C.muted }}>
+                  Note: Wind chill does not estimate core body temperature or the effect of wet clothing.
                 </T>
                 <T style={{ fontSize: 12, lineHeight: 18, color: C.ink }}>
                   {hypoAssessment.plainExplanation}
@@ -1167,7 +1125,7 @@ export default function ToolsScreen() {
                 </View>
                 <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
                   <Chip
-                    label="Dry (0°F penalty)"
+                    label="Dry"
                     selected={hypoMoisture === "dry"}
                     onPress={() => {
                       setSelectedHypoPreset("");
@@ -1175,7 +1133,7 @@ export default function ToolsScreen() {
                     }}
                   />
                   <Chip
-                    label="Damp / Sweat (-12°F)"
+                    label="Damp / Sweat"
                     selected={hypoMoisture === "damp"}
                     onPress={() => {
                       setSelectedHypoPreset("");
@@ -1183,7 +1141,7 @@ export default function ToolsScreen() {
                     }}
                   />
                   <Chip
-                    label="Soaked / Rain (-22°F)"
+                    label="Soaked / Rain"
                     selected={hypoMoisture === "soaked"}
                     onPress={() => {
                       setSelectedHypoPreset("");
@@ -1194,61 +1152,114 @@ export default function ToolsScreen() {
               </View>
             </View>
 
-            {/* The Umbles Diagnostic Card */}
+            {/* Critical Shivering Warning (Always Visible) */}
             <View
               style={{
-                backgroundColor: C.stone,
-                padding: 14,
-                borderRadius: 10,
-                gap: 8,
+                backgroundColor: C.criticalBg,
+                borderColor: C.criticalBorder,
+                borderWidth: 1,
+                padding: 10,
+                borderRadius: 6,
+                marginTop: 4,
               }}
             >
-              <T style={{ fontFamily: fonts.bold, fontSize: 14, color: C.ink }}>
-                Early Warning: The &quot;Umbles&quot; Checklist (Partner Check)
+              <T style={{ fontSize: 12, color: C.criticalText, lineHeight: 16 }}>
+                {SHIVERING_CESSATION_WARNING}
               </T>
-              <T style={{ fontSize: 12, color: C.muted, lineHeight: 18 }}>
-                Brain cooling triggers coordination and speech decline before the hiker realizes they are in danger. Watch your hiking partners for:
-              </T>
-              {HYPOTHERMIA_UMBLES_MARKERS.map((m) => (
-                <View key={m.name} style={{ gap: 2 }}>
-                  <T style={{ fontSize: 13, color: C.ink }}>
-                    • <T style={{ fontFamily: fonts.bold }}>{m.name}</T> ({m.system}): {m.symptom}
-                  </T>
-                </View>
-              ))}
+            </View>
 
-              <View
-                style={{
-                  backgroundColor: C.criticalBg,
-                  borderColor: C.criticalBorder,
-                  borderWidth: 1,
-                  padding: 10,
-                  borderRadius: 6,
-                  marginTop: 4,
-                }}
-              >
-                <T style={{ fontSize: 12, color: C.criticalText, lineHeight: 16 }}>
-                  {SHIVERING_CESSATION_WARNING}
-                </T>
+            <Button
+              label={hypoDetailsExpanded ? "Hide details ▴" : "Learn critical signs & field response ▾"}
+              variant="outline"
+              onPress={() => setHypoDetailsExpanded(!hypoDetailsExpanded)}
+            />
+
+            {hypoDetailsExpanded && (
+              <View style={{ gap: 16 }}>
+                {/* Core Life-Safety Principles Callout */}
+                <View
+                  style={{
+                    backgroundColor: C.checkBg,
+                    borderColor: C.orange,
+                    borderWidth: 1.5,
+                    borderRadius: 10,
+                    padding: 14,
+                    gap: 10,
+                  }}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <AlertTriangle size={20} color={C.orange} />
+                    <T
+                      style={{
+                        fontFamily: fonts.bold,
+                        fontSize: 14,
+                        color: C.heading,
+                      }}
+                    >
+                      Why Wet Cold Kills: 4 Life-Safety Principles
+                    </T>
+                  </View>
+
+                  {HYPOTHERMIA_CORE_PRINCIPLES.map((principle) => (
+                    <View key={principle.number} style={{ gap: 2 }}>
+                      <T
+                        style={{
+                          fontFamily: fonts.bold,
+                          fontSize: 13,
+                          color: C.orange,
+                        }}
+                      >
+                        {principle.number}. {principle.title} ({principle.shortKicker})
+                      </T>
+                      <T style={{ fontSize: 12, lineHeight: 18, color: C.ink }}>
+                        {principle.explanation}
+                      </T>
+                    </View>
+                  ))}
+                </View>
+
+                {/* The Umbles Diagnostic Card */}
+                <View
+                  style={{
+                    backgroundColor: C.stone,
+                    padding: 14,
+                    borderRadius: 10,
+                    gap: 8,
+                  }}
+                >
+                  <T style={{ fontFamily: fonts.bold, fontSize: 14, color: C.ink }}>
+                    Early Warning: The &quot;Umbles&quot; Checklist (Partner Check)
+                  </T>
+                  <T style={{ fontSize: 12, color: C.muted, lineHeight: 18 }}>
+                    Brain cooling triggers coordination and speech decline before the hiker realizes they are in danger. Watch your hiking partners for:
+                  </T>
+                  {HYPOTHERMIA_UMBLES_MARKERS.map((m) => (
+                    <View key={m.name} style={{ gap: 2 }}>
+                      <T style={{ fontSize: 13, color: C.ink }}>
+                        • <T style={{ fontFamily: fonts.bold }}>{m.name}</T> ({m.system}): {m.symptom}
+                      </T>
+                    </View>
+                  ))}
+                </View>
+
+                {/* Field Action Steps */}
+                <View style={{ gap: 8 }}>
+                  <T style={{ fontFamily: fonts.bold, fontSize: 14 }}>
+                    Search &amp; Rescue Field Protocol (The Hypo Burrito):
+                  </T>
+                  {HYPOTHERMIA_FIELD_STEPS.map((step) => (
+                    <View key={step.step} style={{ flexDirection: "row", gap: 8 }}>
+                      <T style={{ fontFamily: fonts.bold, fontSize: 13, color: C.green }}>
+                        {step.step}.
+                      </T>
+                      <T style={{ flex: 1, fontSize: 12, lineHeight: 17, color: C.ink }}>
+                        <T style={{ fontFamily: fonts.bold }}>{step.title}</T>: {step.text}
+                      </T>
+                    </View>
+                  ))}
+                </View>
               </View>
-            </View>
-
-            {/* Field Action Steps */}
-            <View style={{ gap: 8 }}>
-              <T style={{ fontFamily: fonts.bold, fontSize: 14 }}>
-                Search &amp; Rescue Field Protocol (The Hypo Burrito):
-              </T>
-              {HYPOTHERMIA_FIELD_STEPS.map((step) => (
-                <View key={step.step} style={{ flexDirection: "row", gap: 8 }}>
-                  <T style={{ fontFamily: fonts.bold, fontSize: 13, color: C.green }}>
-                    {step.step}.
-                  </T>
-                  <T style={{ flex: 1, fontSize: 12, lineHeight: 17, color: C.ink }}>
-                    <T style={{ fontFamily: fonts.bold }}>{step.title}</T>: {step.text}
-                  </T>
-                </View>
-              ))}
-            </View>
+            )}
           </Card>
 
           {/* Avalanche Inclinometer */}
@@ -1289,7 +1300,7 @@ export default function ToolsScreen() {
                   color: slopeRisk.color,
                 }}
               >
-                {deviceTilt}°
+                {deviceTilt !== null ? `${deviceTilt}°` : "—"}
               </T>
               <T
                 style={{
@@ -1325,13 +1336,13 @@ export default function ToolsScreen() {
                 label="-5°"
                 variant="outline"
                 small
-                onPress={() => setDeviceTilt((v) => Math.max(0, v - 5))}
+                onPress={() => setDeviceTilt((v) => Math.max(0, (v ?? 0) - 5))}
               />
               <Button
                 label="-1°"
                 variant="outline"
                 small
-                onPress={() => setDeviceTilt((v) => Math.max(0, v - 1))}
+                onPress={() => setDeviceTilt((v) => Math.max(0, (v ?? 0) - 1))}
               />
               <View style={{ flex: 1 }}>
                 <Button
@@ -1345,13 +1356,13 @@ export default function ToolsScreen() {
                 label="+1°"
                 variant="outline"
                 small
-                onPress={() => setDeviceTilt((v) => Math.min(90, v + 1))}
+                onPress={() => setDeviceTilt((v) => Math.min(90, (v ?? 0) + 1))}
               />
               <Button
                 label="+5°"
                 variant="outline"
                 small
-                onPress={() => setDeviceTilt((v) => Math.min(90, v + 5))}
+                onPress={() => setDeviceTilt((v) => Math.min(90, (v ?? 0) + 5))}
               />
             </View>
           </Card>
@@ -1361,7 +1372,7 @@ export default function ToolsScreen() {
       {/* ====================================================================
           TAB 4: BACKCOUNTRY UTILITIES SUITE
          ==================================================================== */}
-      {activeTab === "backcountry" && (
+      {activeTab === "planning" && (
         <View style={{ gap: 16 }}>
           {/* Compass Magnetic Declination */}
           <Kicker>Compass Navigation</Kicker>
@@ -1422,6 +1433,9 @@ export default function ToolsScreen() {
             <T style={s.note}>
               Calculates mountain travel time with elevation and pack weight.
             </T>
+            <Note>
+              Planning estimate only. Trail surface, snow, route finding, technical terrain, fitness, weather, and group pace can change travel time substantially.
+            </Note>
 
             {/* Controls */}
             <View style={{ gap: 10 }}>
@@ -1485,32 +1499,6 @@ export default function ToolsScreen() {
                 </View>
               </View>
 
-              {/* Elevation Loss */}
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <T style={{ fontFamily: fonts.bold }}>
-                  Descent: -{hikingLossFt} ft
-                </T>
-                <View style={{ flexDirection: "row", gap: 6 }}>
-                  <Button
-                    label="-500"
-                    variant="outline"
-                    small
-                    onPress={() => setHikingLossFt((l) => Math.max(0, l - 500))}
-                  />
-                  <Button
-                    label="+500"
-                    variant="outline"
-                    small
-                    onPress={() => setHikingLossFt((l) => l + 500)}
-                  />
-                </View>
-              </View>
 
               {/* Pace & Pack */}
               <View style={{ flexDirection: "row", gap: 6 }}>
@@ -1679,7 +1667,7 @@ export default function ToolsScreen() {
               </T>
               {waterSecondsLeft === 0 && (
                 <T style={{ fontFamily: fonts.bold, color: C.green }}>
-                  ✓ TREATMENT COMPLETE — SAFE TO DRINK
+                  ✓ Timer complete — follow your product's instructions
                 </T>
               )}
             </View>
@@ -1835,7 +1823,7 @@ export default function ToolsScreen() {
             <View style={styles.beaconOverlay}>
               <Sun size={48} color="#000" />
               <T style={[styles.beaconText, { color: "#000" }]}>
-                DAYLIGHT SIGNAL MIRROR
+                SIGNAL MIRROR AIMING GUIDE
               </T>
               <T style={[styles.beaconSubtext, { color: "#222" }]}>
                 Hold two fingers in a &apos;V&apos; over aircraft. Flash light

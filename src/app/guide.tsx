@@ -2,7 +2,7 @@ import { useState } from "react";
 import { View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { BookOpen, ExternalLink } from "lucide-react-native";
-import { articles, topics } from "@/content";
+import { articles, topics, topicGroups } from "@/content";
 import {
   Card,
   Field,
@@ -49,22 +49,46 @@ export default function Guide() {
         autoCorrect={false}
       />
       <Note>{results.length} topics · Available offline</Note>
-      <Card style={{ marginTop: 14, paddingVertical: 0 }}>
-        {results.map((t) => (
-          <Row
-            key={t.target}
-            title={t.title}
-            subtitle={t.sub}
-            icon={BookOpen}
-            onPress={() =>
-              router.push({
-                pathname: "/article/[id]",
-                params: { id: t.target },
-              })
-            }
-          />
-        ))}
-      </Card>
+      {!query ? (
+        topicGroups.map((group) => (
+          <View key={group.label}>
+            <Kicker>{group.label}</Kicker>
+            <Card style={{ paddingVertical: 0 }}>
+              {group.topics.map((t) => (
+                <Row
+                  key={t.target}
+                  title={t.title}
+                  subtitle={t.sub}
+                  icon={BookOpen}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/article/[id]",
+                      params: { id: t.target },
+                    })
+                  }
+                />
+              ))}
+            </Card>
+          </View>
+        ))
+      ) : (
+        <Card style={{ marginTop: 14, paddingVertical: 0 }}>
+          {results.map((t) => (
+            <Row
+              key={t.target}
+              title={t.title}
+              subtitle={t.sub}
+              icon={BookOpen}
+              onPress={() =>
+                router.push({
+                  pathname: "/article/[id]",
+                  params: { id: t.target },
+                })
+              }
+            />
+          ))}
+        </Card>
+      )}
       {!results.length && (
         <View style={{ padding: 24 }}>
           <T>No topics match that search. Try “lost”, “phone”, or “winter”.</T>

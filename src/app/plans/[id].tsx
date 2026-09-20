@@ -11,6 +11,7 @@ import {
 } from "lucide-react-native";
 import * as SMS from "expo-sms";
 import { useStore } from "@/state/store";
+import { scheduleTripReminders, cancelTripReminders } from "@/lib/notifications";
 import { useApp } from "@/state/app";
 import {
   TripPlan,
@@ -97,7 +98,7 @@ function PlanEditor({
     [busy, setBusy] = useState(false);
   const sendSafeReturn = async () => {
     const text = buildSafeReturnDraft(plan);
-    const targetPhone = plan.phone ? [plan.phone] : [];
+    const targetPhone = plan.trustedContactPhone ? [plan.trustedContactPhone] : [];
     if (await SMS.isAvailableAsync()) {
       await SMS.sendSMSAsync(targetPhone, text);
       notify("Check Messages to send. TrailSafe cannot verify delivery.");
@@ -109,7 +110,7 @@ function PlanEditor({
     setPlan((p) => ({ ...p, [key]: value }));
     setErrors([]);
   };
-  const save = async (status = plan.status) => {
+const save = async (status = plan.status) => {
     let saved = plan;
     await update((d) => {
       const previous = d.plans.find((p) => p.id === plan.id);
@@ -119,12 +120,28 @@ function PlanEditor({
         updatedAt: Date.now(),
         revision: previous ? previous.revision + 1 : 1,
       };
+      const newPlans = d.plans.map((p) => {
+        if (p.id === saved.id) return saved;
+        // Enforce exactly one Current trip plan
+        if (status === "current" && p.status === "current") {
+          return { ...p, status: "draft" as const };
+        }
+        return p;
+      });
+      if (!newPlans.some((p) => p.id === saved.id)) {
+        newPlans.push(saved);
+      }
       return {
         ...d,
-        plans: [...d.plans.filter((p) => p.id !== saved.id), saved],
+        plans: newPlans,
       };
     });
     setPlan(saved);
+    if (status === "current") {
+      void scheduleTripReminders(saved);
+    } else {
+      void cancelTripReminders();
+    }
     return saved;
   };
   const action = (fn: () => Promise<unknown>) =>
@@ -154,7 +171,7 @@ function PlanEditor({
       keyboardType={
         key === "partySize"
           ? "number-pad"
-          : key === "phone"
+          : key.includes("Phone")
             ? "phone-pad"
             : "default"
       }
@@ -322,10 +339,26 @@ function PlanEditor({
                     setEditing(true);
                     return;
                   }
-                  action(async () => {
-                    await save("current");
-                    notify("Current plan saved. Share it with your contact.");
-                  });
+                  const existingCurrent = data.plans.find((p) => p.status === "current" && p.id !== plan.id);
+                  const performSave = () => {
+                    action(async () => {
+                      await save("current");
+                      notify("Current plan saved. Share it with your contact.");
+                    });
+                  };
+                  if (existingCurrent) {
+                    setDialog({
+                      title: "Replace current trip?",
+                      message: `${existingCurrent.title || "Another trip"} is currently marked Current. Starting ${plan.title || "this trip"} will make it a Draft again. No one will be notified automatically.`,
+                      confirmLabel: `Make ${plan.title || "Current"}`,
+                      onConfirm: () => {
+                        setDialog(null);
+                        performSave();
+                      },
+                    });
+                  } else {
+                    performSave();
+                  }
                 }}
               />
             </View>
@@ -343,17 +376,23 @@ function PlanEditor({
           {field("title", "Trip title / destination", "Granite Mountain")}
           <View style={s.flexRow}>
             <View style={{ flex: 1.4 }}>
-              {field("name", "Your name", "Name")}
+              {field("travelerName", "Your name", "Name")}
             </View>
             <View style={{ flex: 1 }}>
               {field("partySize", "Party size", "2")}
             </View>
           </View>
           {field(
-            "phone",
+            "travelerPhone",
             "Phone / contact method",
             "Include country or area code",
           )}
+          <View style={{ marginTop: 24, marginBottom: 8 }}>
+            <Kicker>Trusted Contact</Kicker>
+            <Note>This is the person receiving your trip plan and expecting you to check in.</Note>
+          </View>
+          {field("trustedContactName", "Contact name", "Name")}
+          {field("trustedContactPhone", "Contact phone", "Include country or area code")}
           {field(
             "trailhead",
             "Starting location / trailhead",
