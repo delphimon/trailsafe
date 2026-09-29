@@ -22,7 +22,8 @@ This guide gives developers and AI agents the full context needed to build, test
 3. **No Unmonitored Safety Illusion**:
    - TrailSafe never claims or implies background dispatch monitoring, cloud synchronization, or automatic emergency signaling. If a user is overdue, the app relies on the hiker's chosen emergency contact to notify 911.
 4. **Offline & Client-Side Privacy**:
-   - There are zero accounts, analytics, advertising SDKs, or telemetry trackers (with the exception of Bugsnag for anonymized crash reporting). All user data is stored strictly on-device in `AsyncStorage`.
+   - There are zero accounts, behavioral analytics, or advertising SDKs. All user data is stored strictly on-device in `AsyncStorage`.
+   - Bugsnag crash diagnostics are a **pre-release-only** exception: enable them for developer, internal/pre-release, and TestFlight builds so crashes can be diagnosed before launch. Final production App Store / Play Store artifacts must disable Bugsnag initialization and crash transmission. Production privacy/disclaimer text should describe the production artifact, not pre-release diagnostics.
 
 ---
 
@@ -98,7 +99,7 @@ trailsafe/
 │   │   ├── store.tsx             # Queued serialized storage store (StoreProvider, useStore)
 │   │   └── app.tsx               # UI dialogs, toasts, practice mode, emergency actions (useApp)
 │   └── content/
-│       ├── library.json          # 20 bundled offline emergency & survival articles
+│       ├── library.json          # Bundled offline emergency & survival articles
 │       └── index.ts              # Typed search and retrieval interface for library articles
 ├── tests/
 │   ├── coordinates.test.ts       # Unit tests for coordinate math & format edge cases
@@ -160,7 +161,7 @@ trailsafe/
 ### E. Voice Assistant, App Intents & Device Search Subsystem (`modules/device-search`, `plugins/with-app-intents.cjs`, `plugins/ios/TrailSafeIntents.swift`, `src/lib/search-indexing.ts`, `src/app/plan/current/[action].tsx`)
 - **Emergency / Panic Trigger**: Siri ("Open Emergency in TrailSafe", "I need help in TrailSafe") or Action Button / Lock Screen controls open `trailsafe://emergency` for immediate GPS acquisition and 911 SMS prep without live dispatch risk.
 - **Hands-Free Trip Management**: Assistant commands ("Mark my trip complete in TrailSafe", "Start my trip in TrailSafe") invoke `trailsafe://plan/current/complete` or `start`. It updates persistent storage and alerts hikers to confirm safe return with emergency contacts, preventing false SAR callouts.
-- **Safety Guide Voice Search**: "Search in TrailSafe" deep-links to `trailsafe://guide?search=<query>` for instant filtering across all 20 offline survival articles.
+- **Safety Guide Voice Search**: "Search in TrailSafe" deep-links to `trailsafe://guide?search=<query>` for instant filtering across the bundled offline guide articles.
 - **On-Device Search Indexing**:
   - `modules/device-search`: Local Expo module interfacing with CoreSpotlight (`CSSearchableIndex`) on iOS and `ShortcutManagerCompat` on Android.
   - `TrailSafeSceneDelegate.swift`: Intercepts `CSSearchableItemActionType` to route directly to `trailsafe://article/[id]`.
@@ -191,7 +192,7 @@ The Tools screen (`/tools`) is organized into four distinct, focused tabs:
 
 ### Standard Checks
 ```sh
-# 1. Run all 68 unit & contrast tests
+# 1. Run the current unit & contrast test suite
 npm test
 
 # 2. Strict TypeScript type check
@@ -233,3 +234,13 @@ bash scripts/install-iphone.sh YOUR_IPHONE_UDID YOUR_APPLE_TEAM_ID
 6. **Preserve User Rules**: Always keep the user rule `# Expo HAS CHANGED` at the very top of `AGENTS.md`.
 
 
+
+
+## 7. Release Diagnostics Policy
+
+- Bugsnag is expected in developer, internal/pre-release, and TestFlight builds.
+- The final production App Store / Play Store build must not initialize or transmit to Bugsnag.
+- Release automation should make this an explicit artifact-level configuration rather than relying only on `__DEV__`.
+- Before store submission, verify the actual production artifact has crash diagnostics disabled.
+- Do not weaken eventual production privacy/disclaimer language merely because pre-release builds use Bugsnag.
+- Track implementation and release verification in GitHub issue #11.
