@@ -1,15 +1,39 @@
-import React, { useEffect, useMemo, useState } from "react";
 import {
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-  Platform,
-  Vibration,
-} from "react-native";
-import { DeviceMotion } from "expo-sensors";
+  Button,
+  Callout,
+  Card,
+  Chip,
+  fonts,
+  Heading,
+  Kicker,
+  Note,
+  Screen,
+  T,
+  useThemeStyles,
+} from "@/components/trailsafe/ui";
+import { useLocation } from "@/hooks/use-location";
+import {
+  calculateHikingTime,
+  getSlopeAvalancheRisk,
+  WATER_TREATMENT_PRESETS,
+  type BreakStyle,
+  type PaceLevel,
+  type PackWeight,
+  type WaterTreatmentPreset,
+} from "@/lib/hiking-tools";
+import {
+  getMorseSOSElements,
+  playWebWhistleTone,
+  WHISTLE_CADENCE_STEPS,
+} from "@/lib/signaling";
+import {
+  calculateSolarTimes,
+  formatDurationMinutes,
+  PNW_TRAILHEAD_PRESETS,
+  type CanopyType,
+} from "@/lib/solar";
 import { useAudioPlayer } from "expo-audio";
+import { DeviceMotion } from "expo-sensors";
 import {
   AlertTriangle,
   Cloud,
@@ -27,40 +51,16 @@ import {
   VolumeX,
   Wind,
 } from "lucide-react-native";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Button,
-  Callout,
-  Card,
-  Chip,
-  fonts,
-  Heading,
-  Kicker,
-  Note,
-  Screen,
-  T,
-  useThemeStyles,
-} from "@/components/trailsafe/ui";
-import { useLocation } from "@/hooks/use-location";
-import {
-  calculateSolarTimes,
-  formatDurationMinutes,
-  PNW_TRAILHEAD_PRESETS,
-  type CanopyType,
-} from "@/lib/solar";
-import {
-  getMorseSOSElements,
-  playWebWhistleTone,
-  WHISTLE_CADENCE_STEPS,
-} from "@/lib/signaling";
-import {
-  calculateHikingTime,
-  getSlopeAvalancheRisk,
-  WATER_TREATMENT_PRESETS,
-  type PaceLevel,
-  type PackWeight,
-  type BreakStyle,
-  type WaterTreatmentPreset,
-} from "@/lib/hiking-tools";
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Vibration,
+  View,
+} from "react-native";
 
 import { getMagneticDeclination } from "@/lib/coordinates";
 import {
@@ -83,7 +83,11 @@ export default function ToolsScreen() {
   // GPS & Location
   const { fix, requestLocation } = useLocation();
   useEffect(() => {
-    if (activeTab === "solar" || activeTab === "hazards" || activeTab === "planning") {
+    if (
+      activeTab === "solar" ||
+      activeTab === "hazards" ||
+      activeTab === "planning"
+    ) {
       return requestLocation();
     }
   }, [activeTab, requestLocation]);
@@ -132,7 +136,7 @@ export default function ToolsScreen() {
   );
   const [audioToneEnabled, setAudioToneEnabled] = useState(true);
   const nativePlayer = useAudioPlayer(
-    Platform.OS !== "web" ? require("../../assets/audio/whistle.wav") : null
+    Platform.OS !== "web" ? require("../../assets/audio/whistle.wav") : null,
   );
 
   // Audio tone and vibration effect for active blast
@@ -252,13 +256,17 @@ export default function ToolsScreen() {
   }, [isMeasuringTilt]);
 
   const slopeRisk = useMemo(
-    () => deviceTilt !== null ? getSlopeAvalancheRisk(deviceTilt) : {
-      degrees: 0,
-      level: "low" as const,
-      title: "Ready to Measure",
-      description: "Activate sensor or adjust manually to measure slope angle.",
-      color: "#5C6A64",
-    },
+    () =>
+      deviceTilt !== null
+        ? getSlopeAvalancheRisk(deviceTilt)
+        : {
+            degrees: 0,
+            level: "low" as const,
+            title: "Ready to Measure",
+            description:
+              "Activate sensor or adjust manually to measure slope angle.",
+            color: "#5C6A64",
+          },
     [deviceTilt],
   );
 
@@ -269,10 +277,12 @@ export default function ToolsScreen() {
 
   // Hypothermia & Wind Chill Index (Cascade Concrete Hazard)
   const [hypoTempF, setHypoTempF] = useState<number>(38);
-  const [hypoDetailsExpanded, setHypoDetailsExpanded] = useState<boolean>(false);
+  const [hypoDetailsExpanded, setHypoDetailsExpanded] =
+    useState<boolean>(false);
   const [hypoWindMph, setHypoWindMph] = useState<number>(25);
   const [hypoMoisture, setHypoMoisture] = useState<MoistureCondition>("soaked");
-  const [selectedHypoPreset, setSelectedHypoPreset] = useState<string>("cascade-concrete");
+  const [selectedHypoPreset, setSelectedHypoPreset] =
+    useState<string>("cascade-concrete");
 
   const hypoAssessment = useMemo(() => {
     return assessHypothermiaRisk(hypoTempF, hypoWindMph, hypoMoisture);
@@ -287,7 +297,7 @@ export default function ToolsScreen() {
 
   // Naismith Estimator
   const [hikingMiles, setHikingMiles] = useState(5);
-  const [hikingGainFt, setHikingGainFt] = useState(2400);
+  const [hikingGainFt, setHikingGainFt] = useState(2000);
   const [hikingPace, setHikingPace] = useState<PaceLevel>("casual");
   const [hikingPack, setHikingPack] = useState<PackWeight>("light");
   const [hikingBreaks, setHikingBreaks] = useState<BreakStyle>("standard");
@@ -420,9 +430,9 @@ export default function ToolsScreen() {
           </View>
           <Note>
             In dense Pacific Northwest coniferous forests (hemlock, cedar, fir)
-            and steep valleys, usable trail light ends 45–60 minutes earlier than
-            civil twilight. Estimates are based on a clear sky — clouds or poor
-            weather can make it darker even earlier.
+            and steep valleys, usable trail light ends 45–60 minutes earlier
+            than civil twilight. Estimates are based on a clear sky — clouds or
+            poor weather can make it darker even earlier.
           </Note>
 
           {/* Primary Countdown / Status Banner */}
@@ -488,7 +498,14 @@ export default function ToolsScreen() {
                 }}
               >
                 <Cloud size={14} color={C.muted} style={{ marginTop: 2 }} />
-                <T style={{ flex: 1, fontSize: 12, color: C.muted, lineHeight: 16 }}>
+                <T
+                  style={{
+                    flex: 1,
+                    fontSize: 12,
+                    color: C.muted,
+                    lineHeight: 16,
+                  }}
+                >
                   {solar.weatherDisclaimer}
                 </T>
               </View>
@@ -625,7 +642,8 @@ export default function ToolsScreen() {
               }}
             >
               <T style={{ fontSize: 12, color: C.muted, lineHeight: 16 }}>
-                Table calculations assume clear skies. Clouds, smoke, or poor weather make darkness fall earlier.
+                Table calculations assume clear skies. Clouds, smoke, or poor
+                weather make darkness fall earlier.
               </T>
             </View>
           </Card>
@@ -673,9 +691,7 @@ export default function ToolsScreen() {
             >
               <View style={{ gap: 2 }}>
                 <Heading>Universal 3-Blast Signal</Heading>
-                <T style={s.note}>
-                  3 sharp blasts · 1 minute silence · Repeat
-                </T>
+                <T style={s.note}>3 sharp blasts · 1 minute silence · Repeat</T>
               </View>
               <Megaphone size={28} color={C.orange} />
             </View>
@@ -684,10 +700,10 @@ export default function ToolsScreen() {
             {whistleActive && (
               <View
                 style={{
-                  backgroundColor:
-                    WHISTLE_CADENCE_STEPS[whistleStepIdx].isBlasting
-                      ? C.orange
-                      : C.checkBg,
+                  backgroundColor: WHISTLE_CADENCE_STEPS[whistleStepIdx]
+                    .isBlasting
+                    ? C.orange
+                    : C.checkBg,
                   padding: 16,
                   borderRadius: 12,
                   alignItems: "center",
@@ -822,8 +838,11 @@ export default function ToolsScreen() {
               Body Signals for Aircraft:
             </T>
             <T style={{ fontSize: 13, lineHeight: 20 }}>
-              • <T style={{ fontFamily: fonts.bold }}>Both arms up in &apos;V&apos;</T> =
-              &quot;Require assistance (YES)&quot;
+              •{" "}
+              <T style={{ fontFamily: fonts.bold }}>
+                Both arms up in &apos;V&apos;
+              </T>{" "}
+              = &quot;Require assistance (YES)&quot;
             </T>
             <T style={{ fontSize: 13, lineHeight: 20 }}>
               • <T style={{ fontFamily: fonts.bold }}>One arm up, one down</T> =
@@ -857,7 +876,10 @@ export default function ToolsScreen() {
               <View style={{ flex: 1, gap: 2, paddingRight: 8 }}>
                 <Heading>Hypothermia &amp; Wind Chill</Heading>
                 <T style={s.note}>
-                  Wet cold (35°F–50°F with rain and wind) strips body heat 25× faster than air. Watch your hiking partners for stumbling, mumbling, fumbling, or grumbling — these are early signs of dangerous cooling.
+                  Wet cold (35°F–50°F with rain and wind) strips body heat 25×
+                  faster than air. Watch your hiking partners for stumbling,
+                  mumbling, fumbling, or grumbling — these are early signs of
+                  dangerous cooling.
                 </T>
               </View>
               <Thermometer size={28} color={hypoAssessment.color} />
@@ -951,13 +973,16 @@ export default function ToolsScreen() {
                 >
                   {hypoAssessment.windChillF}°F
                 </T>
-                <T style={{ fontSize: 13, color: C.ink, fontFamily: fonts.bold }}>
+                <T
+                  style={{ fontSize: 13, color: C.ink, fontFamily: fonts.bold }}
+                >
                   Wind chill — exposed skin estimate
                 </T>
               </View>
 
               <T style={{ fontSize: 12, color: C.muted }}>
-                Air: {hypoAssessment.airTempF}°F · Moisture: {hypoAssessment.moisture}
+                Air: {hypoAssessment.airTempF}°F · Moisture:{" "}
+                {hypoAssessment.moisture}
               </T>
 
               <View
@@ -969,7 +994,8 @@ export default function ToolsScreen() {
                 }}
               >
                 <T style={{ fontSize: 12, color: C.muted }}>
-                  Note: Wind chill does not estimate core body temperature or the effect of wet clothing.
+                  Note: Wind chill does not estimate core body temperature or
+                  the effect of wet clothing.
                 </T>
                 <T style={{ fontSize: 12, lineHeight: 18, color: C.ink }}>
                   {hypoAssessment.plainExplanation}
@@ -1030,7 +1056,9 @@ export default function ToolsScreen() {
                     />
                   </View>
                 </View>
-                <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
+                <View
+                  style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}
+                >
                   {[
                     { label: "Freezing (30°F)", temp: 30 },
                     { label: "Cold Rain (38°F)", temp: 38 },
@@ -1059,7 +1087,13 @@ export default function ToolsScreen() {
                     alignItems: "center",
                   }}
                 >
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
                     <Wind size={16} color={C.muted} />
                     <T style={{ fontFamily: fonts.bold }}>
                       Wind Speed: {hypoWindMph} mph
@@ -1095,7 +1129,9 @@ export default function ToolsScreen() {
                     />
                   </View>
                 </View>
-                <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
+                <View
+                  style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}
+                >
                   {[
                     { label: "Calm (5 mph)", wind: 5 },
                     { label: "Breeze (15 mph)", wind: 15 },
@@ -1117,13 +1153,17 @@ export default function ToolsScreen() {
 
               {/* Clothing & Moisture */}
               <View style={{ gap: 6 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <View
+                  style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+                >
                   <Droplets size={16} color={C.muted} />
                   <T style={{ fontFamily: fonts.bold, fontSize: 13 }}>
                     Clothing &amp; Moisture Condition:
                   </T>
                 </View>
-                <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
+                <View
+                  style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}
+                >
                   <Chip
                     label="Dry"
                     selected={hypoMoisture === "dry"}
@@ -1163,13 +1203,19 @@ export default function ToolsScreen() {
                 marginTop: 4,
               }}
             >
-              <T style={{ fontSize: 12, color: C.criticalText, lineHeight: 16 }}>
+              <T
+                style={{ fontSize: 12, color: C.criticalText, lineHeight: 16 }}
+              >
                 {SHIVERING_CESSATION_WARNING}
               </T>
             </View>
 
             <Button
-              label={hypoDetailsExpanded ? "Hide details ▴" : "Learn critical signs & field response ▾"}
+              label={
+                hypoDetailsExpanded
+                  ? "Hide details ▴"
+                  : "Learn critical signs & field response ▾"
+              }
               variant="outline"
               onPress={() => setHypoDetailsExpanded(!hypoDetailsExpanded)}
             />
@@ -1187,7 +1233,13 @@ export default function ToolsScreen() {
                     gap: 10,
                   }}
                 >
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
                     <AlertTriangle size={20} color={C.orange} />
                     <T
                       style={{
@@ -1209,7 +1261,8 @@ export default function ToolsScreen() {
                           color: C.orange,
                         }}
                       >
-                        {principle.number}. {principle.title} ({principle.shortKicker})
+                        {principle.number}. {principle.title} (
+                        {principle.shortKicker})
                       </T>
                       <T style={{ fontSize: 12, lineHeight: 18, color: C.ink }}>
                         {principle.explanation}
@@ -1227,16 +1280,26 @@ export default function ToolsScreen() {
                     gap: 8,
                   }}
                 >
-                  <T style={{ fontFamily: fonts.bold, fontSize: 14, color: C.ink }}>
-                    Early Warning: The &quot;Umbles&quot; Checklist (Partner Check)
+                  <T
+                    style={{
+                      fontFamily: fonts.bold,
+                      fontSize: 14,
+                      color: C.ink,
+                    }}
+                  >
+                    Early Warning: The &quot;Umbles&quot; Checklist (Partner
+                    Check)
                   </T>
                   <T style={{ fontSize: 12, color: C.muted, lineHeight: 18 }}>
-                    Brain cooling triggers coordination and speech decline before the hiker realizes they are in danger. Watch your hiking partners for:
+                    Brain cooling triggers coordination and speech decline
+                    before the hiker realizes they are in danger. Watch your
+                    hiking partners for:
                   </T>
                   {HYPOTHERMIA_UMBLES_MARKERS.map((m) => (
                     <View key={m.name} style={{ gap: 2 }}>
                       <T style={{ fontSize: 13, color: C.ink }}>
-                        • <T style={{ fontFamily: fonts.bold }}>{m.name}</T> ({m.system}): {m.symptom}
+                        • <T style={{ fontFamily: fonts.bold }}>{m.name}</T> (
+                        {m.system}): {m.symptom}
                       </T>
                     </View>
                   ))}
@@ -1248,12 +1311,29 @@ export default function ToolsScreen() {
                     Search &amp; Rescue Field Protocol (The Hypo Burrito):
                   </T>
                   {HYPOTHERMIA_FIELD_STEPS.map((step) => (
-                    <View key={step.step} style={{ flexDirection: "row", gap: 8 }}>
-                      <T style={{ fontFamily: fonts.bold, fontSize: 13, color: C.green }}>
+                    <View
+                      key={step.step}
+                      style={{ flexDirection: "row", gap: 8 }}
+                    >
+                      <T
+                        style={{
+                          fontFamily: fonts.bold,
+                          fontSize: 13,
+                          color: C.green,
+                        }}
+                      >
                         {step.step}.
                       </T>
-                      <T style={{ flex: 1, fontSize: 12, lineHeight: 17, color: C.ink }}>
-                        <T style={{ fontFamily: fonts.bold }}>{step.title}</T>: {step.text}
+                      <T
+                        style={{
+                          flex: 1,
+                          fontSize: 12,
+                          lineHeight: 17,
+                          color: C.ink,
+                        }}
+                      >
+                        <T style={{ fontFamily: fonts.bold }}>{step.title}</T>:{" "}
+                        {step.text}
                       </T>
                     </View>
                   ))}
@@ -1410,31 +1490,41 @@ export default function ToolsScreen() {
                       color: C.heading,
                     }}
                   >
-                    {Math.abs(magneticDeclination).toFixed(1)}° {magneticDeclination >= 0 ? "East" : "West"}
+                    {Math.abs(magneticDeclination).toFixed(1)}°{" "}
+                    {magneticDeclination >= 0 ? "East" : "West"}
                   </T>
-                  <T style={{ fontSize: 13, color: C.ink, textAlign: "center" }}>
+                  <T
+                    style={{ fontSize: 13, color: C.ink, textAlign: "center" }}
+                  >
                     {magneticDeclination >= 0
                       ? "Rotate compass bezel counter-clockwise (East)."
                       : "Rotate compass bezel clockwise (West)."}
                   </T>
                 </>
               ) : (
-                <T style={{ fontSize: 13, color: C.muted, textAlign: "center" }}>
-                  Waiting for GPS location to calculate World Magnetic Model variation...
+                <T
+                  style={{ fontSize: 13, color: C.muted, textAlign: "center" }}
+                >
+                  Waiting for GPS location to calculate World Magnetic Model
+                  variation...
                 </T>
               )}
             </View>
           </Card>
 
           {/* Naismith Hiking Time Estimator */}
-          <Kicker>Pace &amp; mountain hiking time (Naismith&apos;s Rule)</Kicker>
+          <Kicker>
+            Pace &amp; mountain hiking time (Naismith&apos;s Rule)
+          </Kicker>
           <Card style={{ padding: 16, gap: 12 }}>
             <Heading>Hiking Time Estimator</Heading>
             <T style={s.note}>
               Calculates mountain travel time with elevation and pack weight.
             </T>
             <Note>
-              Planning estimate only. Trail surface, snow, route finding, technical terrain, fitness, weather, and group pace can change travel time substantially.
+              Planning estimate only. Trail surface, snow, route finding,
+              technical terrain, fitness, weather, and group pace can change
+              travel time substantially.
             </Note>
 
             {/* Controls */}
@@ -1485,20 +1575,19 @@ export default function ToolsScreen() {
                 </T>
                 <View style={{ flexDirection: "row", gap: 6 }}>
                   <Button
-                    label="-500"
+                    label="-200"
                     variant="outline"
                     small
-                    onPress={() => setHikingGainFt((g) => Math.max(0, g - 500))}
+                    onPress={() => setHikingGainFt((g) => Math.max(0, g - 200))}
                   />
                   <Button
-                    label="+500"
+                    label="+200"
                     variant="outline"
                     small
-                    onPress={() => setHikingGainFt((g) => g + 500)}
+                    onPress={() => setHikingGainFt((g) => g + 200)}
                   />
                 </View>
               </View>
-
 
               {/* Pace & Pack */}
               <View style={{ flexDirection: "row", gap: 6 }}>
@@ -1712,19 +1801,29 @@ export default function ToolsScreen() {
               Planned Wilderness Tools Roadmap:
             </T>
             <T style={{ fontSize: 13, lineHeight: 20 }}>
-              ✓ <T style={{ fontFamily: fonts.bold, color: C.green }}>Wind Chill &amp; Wet Cold Matrix (Active Above)</T>:
-              Calculates &quot;Cascade Concrete&quot; hypothermia risk when rain is combined
-              with 35°F–50°F wind.
+              ✓{" "}
+              <T style={{ fontFamily: fonts.bold, color: C.green }}>
+                Wind Chill &amp; Wet Cold Matrix (Active Above)
+              </T>
+              : Calculates &quot;Cascade Concrete&quot; hypothermia risk when
+              rain is combined with 35°F–50°F wind.
             </T>
             <T style={{ fontSize: 13, lineHeight: 20 }}>
-              • <T style={{ fontFamily: fonts.bold }}>Backcountry SOAP Handover</T>:
-              Standard emergency field scratchpad for recording pulse, respiration,
-              and Glasgow Coma Scale (GCS) for incoming SAR paramedics.
+              •{" "}
+              <T style={{ fontFamily: fonts.bold }}>
+                Backcountry SOAP Handover
+              </T>
+              : Standard emergency field scratchpad for recording pulse,
+              respiration, and Glasgow Coma Scale (GCS) for incoming SAR
+              paramedics.
             </T>
             <T style={{ fontSize: 13, lineHeight: 20 }}>
-              • <T style={{ fontFamily: fonts.bold }}>Satellite 160-Char Formatter</T>:
-              Optimizes coordinates and injury codes into a compact text string
-              under Garmin inReach and ZOLEO byte budgets.
+              •{" "}
+              <T style={{ fontFamily: fonts.bold }}>
+                Satellite 160-Char Formatter
+              </T>
+              : Optimizes coordinates and injury codes into a compact text
+              string under Garmin inReach and ZOLEO byte budgets.
             </T>
           </Card>
         </View>
@@ -1783,10 +1882,7 @@ export default function ToolsScreen() {
 
           {beaconMode === "sos" && (
             <View style={styles.beaconOverlay}>
-              <Radio
-                size={32}
-                color={isBeaconLightActive ? "#000" : "#FFF"}
-              />
+              <Radio size={32} color={isBeaconLightActive ? "#000" : "#FFF"} />
               <T
                 style={[
                   styles.beaconText,
