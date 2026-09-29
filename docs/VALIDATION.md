@@ -1,5 +1,7 @@
 # Validation — September 15, 2026
 
+> **Historical validation snapshot.** This file records what was exercised on September 15, 2026. Safety-relevant code changed after this date, so these results must not be treated as validation of current `main`. Re-run and refresh the evidence before release; see GitHub issue #9.
+
 ## Completed
 
 - **TypeScript Strict Typecheck**: Passed with 0 errors (`npm run typecheck`).
@@ -63,6 +65,10 @@ This validates native compilation and the exercised simulator flows, not physica
   bash scripts/install-iphone.sh 00008150-000E5D110247801C 65Q2FMW3ZX
   ```
 
+## Crash diagnostics policy
+
+Bugsnag is intentionally enabled for developer, internal/pre-release, and TestFlight builds to diagnose failures before public release. The final production App Store / Play Store artifact must disable Bugsnag initialization and crash transmission. Production privacy/disclaimer language should describe the production artifact; pre-release diagnostics do not require weakening those eventual production statements. Release verification for this policy is tracked in GitHub issue #11.
+
 ## Remaining physical and release checks
 
 - Real iPhone and Android: location permission combinations, approximate/precise location, disabled services, cold GPS fix under tree cover, background/resume and battery behavior.
@@ -71,6 +77,7 @@ This validates native compilation and the exercised simulator flows, not physica
 - VoiceOver, TalkBack, maximum Dynamic Type, high-contrast visibility outdoors, and hardware keyboard/focus behavior.
 - Organizational endorsement, medical review, dispatch wording, publisher identity, store privacy disclosures, distribution signing/provisioning, and field beta.
 - No App Store / Play Store release, deployment, or remote publication was performed.
+- Before production submission, verify the built artifact has Bugsnag disabled; pre-release/TestFlight validation may keep it enabled.
 
 ## Screenshots
 
