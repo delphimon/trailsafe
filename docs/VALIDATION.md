@@ -63,6 +63,10 @@ This validates native compilation and the exercised simulator flows, not physica
   bash scripts/install-iphone.sh 00008150-000E5D110247801C 65Q2FMW3ZX
   ```
 
+## Release diagnostics policy
+
+Bugsnag is a pre-release engineering diagnostic. It is expected to be enabled for developer, internal/pre-release, and TestFlight builds, and disabled for the final production App Store / Play Store release. Production release validation must verify the distributed artifact does not initialize or transmit Bugsnag diagnostics. See [Release Diagnostics Policy](RELEASE-DIAGNOSTICS.md) and GitHub issue #11.
+
 ## Remaining physical and release checks
 
 - Real iPhone and Android: location permission combinations, approximate/precise location, disabled services, cold GPS fix under tree cover, background/resume and battery behavior.

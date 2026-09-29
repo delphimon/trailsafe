@@ -76,7 +76,7 @@ The preview server supports dynamic routes for device-local trip plans and bundl
 - **On-device search indexing:** Local Expo module (`modules/device-search`) indexing all 20 offline survival guides into iOS CoreSpotlight (`CSSearchableIndex`) and Android shortcuts (`ShortcutManagerCompat`) with deterministic content hashing (`getGuideContentVersion`) that triggers automated re-indexing across OTA updates.
 - **About:** organization distinctions, privacy, content version/review status, source directory, native build metadata, OTA update status (`expo-updates`), check for updates flow, profile management, and local data deletion.
 
-There is no account, backend, analytics, automatic emergency notification, or background tracking. Plans are not monitored. Copy, share, Maps, and phone/message actions are explicit. Device backups may include saved local app data.
+There is no account, backend, behavioral analytics, automatic emergency notification, or background tracking. Plans are not monitored. Copy, share, Maps, and phone/message actions are explicit. Device backups may include saved local app data. Bugsnag crash diagnostics are enabled only in developer, pre-release/internal, and TestFlight builds and are disabled for the final production App Store / Play Store release; see [Release Diagnostics Policy](docs/RELEASE-DIAGNOSTICS.md).
 
 ## Validate
 
@@ -102,6 +102,7 @@ Set `TRAILSAFE_BROWSER` to an existing Chromium executable if needed. See [valid
 - [Architecture & Technical Reference](docs/ARCHITECTURE.md): Full technical specifications, data flows, and subsystem deep dive.
 - [Agent & Developer Guide](AGENTS.md): Essential rules, conventions, and file guide for developers and AI agents.
 - [Implementation Decisions](docs/IMPLEMENTATION.md): Scope reconciliation, design, technical limits, and content corrections.
+- [Release Diagnostics Policy](docs/RELEASE-DIAGNOSTICS.md): Bugsnag build-channel policy and production verification requirements.
 - `modules/device-search/`: local Expo module interfacing with CoreSpotlight (`CSSearchableIndex`) and Android shortcuts (`ShortcutManagerCompat`).
 - `plugins/with-app-intents.cjs`: CNG config plugin generating Swift App Intents and Android shortcuts.
 - `src/app/`: Expo Router screens.

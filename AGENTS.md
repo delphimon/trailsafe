@@ -22,7 +22,7 @@ This guide gives developers and AI agents the full context needed to build, test
 3. **No Unmonitored Safety Illusion**:
    - TrailSafe never claims or implies background dispatch monitoring, cloud synchronization, or automatic emergency signaling. If a user is overdue, the app relies on the hiker's chosen emergency contact to notify 911.
 4. **Offline & Client-Side Privacy**:
-   - There are zero accounts, analytics, advertising SDKs, or telemetry trackers (with the exception of Bugsnag for anonymized crash reporting). All user data is stored strictly on-device in `AsyncStorage`.
+   - There are zero accounts, behavioral analytics, or advertising SDKs. User data is stored strictly on-device in `AsyncStorage`. Bugsnag is a pre-release engineering diagnostic: it is enabled for developer, internal/pre-release, and TestFlight builds, and MUST be disabled for the final production App Store / Play Store release. Production privacy language describes the production artifact; see `docs/RELEASE-DIAGNOSTICS.md` and issue #11.
 
 ---
 
