@@ -71,12 +71,16 @@ The preview server supports dynamic routes for device-local trip plans and bundl
 - **Trip plans:** create, edit, save draft, mark current, complete, duplicate, delete, text preview, copy, share, safe return check-in draft, and PDF/print. Explicit start/return/overdue dates support overnight trips. One-tap quick vehicle selection from saved profile cars. Updated plans are labeled. Optional SAR details stay collapsed initially.
 - **Reusable profile:** local name/contact, dual vehicle management (Car 1 and Car 2), equipment, and optional medical considerations prefill new plans. Existing plans retain their original details.
 - **Prepare:** persistent Ten Essentials and phone checklists, trip-type add-ons, an explicit food reminder, reset, and external condition resources.
-- **Guide:** 20 bundled articles, missing-versus-overdue branching, full-text search, and source references.
+- **Guide:** bundled offline articles, missing-versus-overdue branching, full-text search, and source references.
 - **Voice assistant & system integration:** Siri App Intents (`OpenEmergencyIntent`, `CompleteCurrentTripIntent`, `SearchGuideIntent`) and Google Assistant shortcuts (`shortcuts.xml`). Action Button & Lock Screen shortcut trigger. Instant emergency screen launch (`trailsafe://emergency`), hands-free trip completion and start (`trailsafe://plan/current/complete`), and voice search (`trailsafe://guide?search=...`).
-- **On-device search indexing:** Local Expo module (`modules/device-search`) indexing all 20 offline survival guides into iOS CoreSpotlight (`CSSearchableIndex`) and Android shortcuts (`ShortcutManagerCompat`) with deterministic content hashing (`getGuideContentVersion`) that triggers automated re-indexing across OTA updates.
+- **On-device search indexing:** Local Expo module (`modules/device-search`) indexing the bundled offline guide into iOS CoreSpotlight (`CSSearchableIndex`) and Android shortcuts (`ShortcutManagerCompat`) with deterministic content hashing (`getGuideContentVersion`) that triggers automated re-indexing across OTA updates.
 - **About:** organization distinctions, privacy, content version/review status, source directory, native build metadata, OTA update status (`expo-updates`), check for updates flow, profile management, and local data deletion.
 
-There is no account, backend, analytics, automatic emergency notification, or background tracking. Plans are not monitored. Copy, share, Maps, and phone/message actions are explicit. Device backups may include saved local app data.
+There is no account, backend, behavioral analytics, automatic emergency notification, or background tracking. Plans are not monitored. Copy, share, Maps, and phone/message actions are explicit. Device backups may include saved local app data.
+
+### Crash diagnostics policy
+
+Bugsnag crash diagnostics are intentionally enabled in developer, internal/pre-release, and TestFlight builds so failures can be diagnosed before public release. Final production App Store / Play Store builds must disable Bugsnag initialization and crash transmission. Production privacy/disclaimer text should describe that production configuration; it does not need to account for diagnostics used only in pre-release builds. See issue #11 for the release-gating implementation work.
 
 ## Validate
 
@@ -87,7 +91,7 @@ npm test
 npm run export
 ```
 
-Runs 48 automated unit and contrast tests (`npm test`), strict TypeScript type checking, and linter. Browser tests use **synthetic locations and intercepted handoffs**, never live 911:
+Runs the current automated unit and contrast test suite (`npm test`), strict TypeScript type checking, and linter. Browser tests use **synthetic locations and intercepted handoffs**, never live 911:
 
 ```sh
 npx playwright install chromium
@@ -116,6 +120,6 @@ Content changes should normally edit `src/content/library.json` directly. `npm r
 
 ## Release status
 
-This is a development implementation, not an official KCESAR release. Medical guidance, dispatch-facing wording, organizational endorsement, accessibility on physical devices, and real phone/SMS handoffs need their respective validation before public release. Do not send uncoordinated test calls or texts to 911.
+This is a development implementation, not an official KCESAR release. Medical guidance, dispatch-facing wording, organizational endorsement, accessibility on physical devices, and real phone/SMS handoffs need their respective validation before public release. Bugsnag may be active in developer, pre-release, and TestFlight builds for crash diagnosis, but must be disabled in the final production store build. Do not send uncoordinated test calls or texts to 911.
 
 The existing Expo owner and EAS project association were preserved. The provisional native identifier is `com.appliedinteractions.trailsafe`; no App Store / Play Store upload or deployment was performed.
