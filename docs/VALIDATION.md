@@ -1,5 +1,7 @@
 # Validation — September 15, 2026
 
+> **Historical validation snapshot.** This file records what was exercised on September 15, 2026. Safety-relevant code changed after this date, so these results must not be treated as validation of current `main`. Re-run and refresh the evidence before release; see GitHub issue #9.
+
 ## Completed
 
 - **TypeScript Strict Typecheck**: Passed with 0 errors (`npm run typecheck`).
@@ -75,6 +77,7 @@ Bugsnag is a pre-release engineering diagnostic. It is expected to be enabled fo
 - VoiceOver, TalkBack, maximum Dynamic Type, high-contrast visibility outdoors, and hardware keyboard/focus behavior.
 - Organizational endorsement, medical review, dispatch wording, publisher identity, store privacy disclosures, distribution signing/provisioning, and field beta.
 - No App Store / Play Store release, deployment, or remote publication was performed.
+- Before production submission, verify the built artifact has Bugsnag disabled; pre-release/TestFlight validation may keep it enabled.
 
 ## Screenshots
 

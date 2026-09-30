@@ -15,10 +15,11 @@ This guide gives developers and AI agents the full context needed to build, test
 **TrailSafe** is an offline-first wilderness safety companion for hikers and outdoor recreationists in the Pacific Northwest (PNW) and Washington State. It provides instant emergency coordinate translation, safety checklists, offline first-aid/survival guides, and verifiable trip plans structured for Search and Rescue (SAR) incident commanders and 911 dispatchers.
 
 ### Core Safety Invariants
+
 1. **Never Make Live 911 Calls or Texts in Tests or Practice**:
    - In `Practice Mode` (the default toggle state on Emergency screens), all emergency triggers run simulated handlers (`src/lib/emergency.ts` and `src/state/app.tsx`). Native phone and SMS handoffs MUST NEVER execute.
 2. **Never Insert Caller GPS for Missing/Overdue Persons**:
-   - In `buildEmergencyDraft()`, if the situation is overdue or missing person, the draft prompts for the subject's *last known location* rather than inserting the caller's current GPS position.
+   - In `buildEmergencyDraft()`, if the situation is overdue or missing person, the draft prompts for the subject's _last known location_ rather than inserting the caller's current GPS position.
 3. **No Unmonitored Safety Illusion**:
    - TrailSafe never claims or implies background dispatch monitoring, cloud synchronization, or automatic emergency signaling. If a user is overdue, the app relies on the hiker's chosen emergency contact to notify 911.
 4. **Offline & Client-Side Privacy**:
@@ -98,7 +99,7 @@ trailsafe/
 │   │   ├── store.tsx             # Queued serialized storage store (StoreProvider, useStore)
 │   │   └── app.tsx               # UI dialogs, toasts, practice mode, emergency actions (useApp)
 │   └── content/
-│       ├── library.json          # 20 bundled offline emergency & survival articles
+│       ├── library.json          # Bundled offline emergency & survival articles
 │       └── index.ts              # Typed search and retrieval interface for library articles
 ├── tests/
 │   ├── coordinates.test.ts       # Unit tests for coordinate math & format edge cases
@@ -125,6 +126,7 @@ trailsafe/
 ## 4. Core Subsystems
 
 ### A. Location & Coordinate Subsystem (`src/lib/coordinates.ts`, `src/hooks/use-location.ts`)
+
 - **Automatic Lifecycle**: `useAutomaticLocation` starts watching position automatically when mounted on `/emergency` or `/location`. When the user switches tabs or backgrounds the app (`AppState !== "active"`), hardware GPS watches are immediately torn down.
 - **Three Supported Formats**:
   1. **DD**: Decimal Degrees (`47.42537° N, 121.41382° W`) — standard for digital mapping and 911 dispatch.
@@ -136,6 +138,7 @@ trailsafe/
   - Fix flagged with `mocked: true` -> **SIMULATED LOCATION** label.
 
 ### B. Trip Planning & Dual Vehicles (`src/lib/plans.ts`, `src/app/profile.tsx`, `src/app/plans/[id].tsx`)
+
 - **Trip Plan Lifecycle**: Plans transition between `draft` -> `current` -> `completed`.
 - **Reusable Profile & Dual Vehicles**:
   - `Profile` supports two vehicles: Car 1 (`vehicle`, `plate`) and Car 2 (`vehicle2`, `plate2`).
@@ -144,11 +147,13 @@ trailsafe/
 - **Safe Return Notification**: One-tap SMS check-in draft (`buildSafeReturnDraft`) confirms safe completion to emergency contacts.
 
 ### C. Storage & Persistence Layer (`src/lib/persistence.ts`, `src/state/store.tsx`)
+
 - **Storage Key**: `trailsafe.local.v1` in `AsyncStorage`.
 - **Concurrency & Integrity**: All updates are serialized through a promise queue (`queue.current`). If AsyncStorage contains unparseable data, the loader throws and sets `writable = false`, blocking any overwrite to guarantee zero data loss.
 - **Migration**: `parseStoredData` normalizes legacy single-vehicle profiles by initializing `vehicle2: ""` and `plate2: ""` seamlessly.
 
 ### D. Design System & WCAG Contrast Standards (`src/components/trailsafe/theme.ts`, `ui.tsx`)
+
 - **Token Architecture**: `theme.ts` is pure TypeScript (no React Native runtime dependencies) so it can be tested directly in Node via `tsx`.
 - **Semantic Tokens**: Avoid raw color references. Use semantic tokens:
   - Surfaces: `paper`, `cardBg`, `headerBg`, `locationCardBg`, `checkBg` (elevated slate for checked items and active tabs).
@@ -158,9 +163,10 @@ trailsafe/
 - **Automated Verification**: `tests/theme.test.ts` calculates relative luminance and asserts WCAG AA compliance (>= 4.5:1 for body/subtext, >= 3.0:1 for large bold text) across all light and dark combinations.
 
 ### E. Voice Assistant, App Intents & Device Search Subsystem (`modules/device-search`, `plugins/with-app-intents.cjs`, `plugins/ios/TrailSafeIntents.swift`, `src/lib/search-indexing.ts`, `src/app/plan/current/[action].tsx`)
+
 - **Emergency / Panic Trigger**: Siri ("Open Emergency in TrailSafe", "I need help in TrailSafe") or Action Button / Lock Screen controls open `trailsafe://emergency` for immediate GPS acquisition and 911 SMS prep without live dispatch risk.
 - **Hands-Free Trip Management**: Assistant commands ("Mark my trip complete in TrailSafe", "Start my trip in TrailSafe") invoke `trailsafe://plan/current/complete` or `start`. It updates persistent storage and alerts hikers to confirm safe return with emergency contacts, preventing false SAR callouts.
-- **Safety Guide Voice Search**: "Search in TrailSafe" deep-links to `trailsafe://guide?search=<query>` for instant filtering across all 20 offline survival articles.
+- **Safety Guide Voice Search**: "Search in TrailSafe" deep-links to `trailsafe://guide?search=<query>` for instant filtering across the bundled offline guide articles.
 - **On-Device Search Indexing**:
   - `modules/device-search`: Local Expo module interfacing with CoreSpotlight (`CSSearchableIndex`) on iOS and `ShortcutManagerCompat` on Android.
   - `TrailSafeSceneDelegate.swift`: Intercepts `CSSearchableItemActionType` to route directly to `trailsafe://article/[id]`.
@@ -168,7 +174,9 @@ trailsafe/
 - **Continuous Native Generation (CNG)**: `plugins/with-app-intents.cjs` injects `TrailSafeIntents.swift`, `Info.plist` activity types, and Android `shortcuts.xml` dynamically during `npx expo prebuild --clean`.
 
 ### F. Wilderness Tools, Solar / Forest Dusk, Signaling & Hazards Subsystem (`src/lib/solar.ts`, `src/lib/signaling.ts`, `src/lib/hypothermia.ts`, `src/lib/hiking-tools.ts`, `src/app/tools.tsx`)
+
 The Tools screen (`/tools`) is organized into four distinct, focused tabs:
+
 1. **Solar & Forest Dusk (`src/lib/solar.ts`)**:
    - Pure TypeScript NOAA ephemeris calculations (zero network API calls).
    - Calculates Sunrise, Solar Noon, Horizon Sunset, Civil Dusk (sun 6° below horizon), and Nautical Dusk.
@@ -190,8 +198,9 @@ The Tools screen (`/tools`) is organized into four distinct, focused tabs:
 ## 5. Development & Testing Commands
 
 ### Standard Checks
+
 ```sh
-# 1. Run all 68 unit & contrast tests
+# 1. Run the current unit & contrast test suite
 npm test
 
 # 2. Strict TypeScript type check
@@ -202,6 +211,7 @@ npx eslint .
 ```
 
 ### Static Web Export & Playwright E2E Tests
+
 Playwright tests run against the production web export served locally by `scripts/serve-preview.cjs`:
 
 ```sh
@@ -216,7 +226,9 @@ TRAILSAFE_BROWSER="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 ```
 
 ### Physical iOS Device Deployment
+
 To build and install a signed Release build directly on a connected iPhone:
+
 ```sh
 bash scripts/install-iphone.sh YOUR_IPHONE_UDID YOUR_APPLE_TEAM_ID
 ```
@@ -232,4 +244,11 @@ bash scripts/install-iphone.sh YOUR_IPHONE_UDID YOUR_APPLE_TEAM_ID
 5. **AppIntents Phrase Parameter Restrictions**: In Swift `AppShortcutsProvider.appShortcuts`, trigger phrases cannot interpolate open-ended primitive `String` parameters (e.g. `\(\.$query)`). Only `AppEntity` or `AppEnum` types are permitted. Use static phrases (e.g., `"Search in \(.applicationName)"`) so Apple's `appintentsmetadataprocessor` compiles successfully.
 6. **Preserve User Rules**: Always keep the user rule `# Expo HAS CHANGED` at the very top of `AGENTS.md`.
 
+## 7. Release Diagnostics Policy
 
+- Bugsnag is expected in developer, internal/pre-release, and TestFlight builds.
+- The final production App Store / Play Store build must not initialize or transmit to Bugsnag.
+- Release automation should make this an explicit artifact-level configuration rather than relying only on `__DEV__`.
+- Before store submission, verify the actual production artifact has crash diagnostics disabled.
+- Do not weaken eventual production privacy/disclaimer language merely because pre-release builds use Bugsnag.
+- Track implementation and release verification in GitHub issue #11.
