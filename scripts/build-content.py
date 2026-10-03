@@ -66,11 +66,16 @@ for b in articles['signaling']['blocks']:
     if 'items' in b: b['items']=[x.replace('Three of anything is a recognized distress signal — three whistle blasts, three fires, three flashes.','Use repeated whistle blasts or a light to attract attention. Never start a signal fire where it could create a wildfire or another hazard.') for x in b['items']]
 common=['https://kingcountysar.org/wilderness-safety/','https://kingcountysar.org/when-how-to-call-for-help/']
 for key,a in articles.items():
-    a.update(id=key,contentVersion='2026.09.06',reviewStatus='Draft — organizational review pending',sources=common.copy())
+    a.update(id=key,contentVersion='2026.09.06',sources=common.copy())
     if key in ['heat','cold-hypothermia']: a['sources'].append('https://www.cdc.gov/niosh/heat-stress/about/illnesses.html' if key=='heat' else 'https://www.cdc.gov/winter-weather/prevention/index.html')
     if key in ['calling-help','g-overdue','g-other']: a['sources'].append('https://kingcounty.gov/en/dept/kcit/data-information-services/911-program-office/911-the-basics')
 raw['ARTICLES']=articles
 raw['GUIDE_TOPICS']=[t for t in raw['GUIDE_TOPICS'] if t['kind']!='soon']
+# Cited organizations are sources, not authors or sponsors; avoid wording that implies otherwise.
+for r in raw['RESOURCES']:
+    if r.get('note')=='The core guidance this app draws from': r['note']='Wilderness-safety guidance cited in this app'
 # This checklist intentionally follows the prototype’s ten systems; food is an explicit extra prompt.
-Path('src/content/library.json').write_text(json.dumps(raw,ensure_ascii=False,indent=2)+'\n')
+Path('src/content/library.json').write_text(
+    json.dumps(raw,ensure_ascii=False,indent=2)
+    .replace('Patterns KCESAR volunteers see','Patterns search-and-rescue volunteers see')+'\n')
 print(f'Extracted {len(articles)} articles and {len(raw["RESOURCES"])} resources.')

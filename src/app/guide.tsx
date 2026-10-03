@@ -38,8 +38,8 @@ export default function Guide() {
   return (
     <Screen title="Safety Guide" subtitle="Short, offline reference articles">
       <T style={{ marginBottom: 18 }}>
-        The things KCESAR volunteers wish people knew before they needed
-        rescuing.
+        The things search-and-rescue volunteers wish people knew before they
+        needed rescuing.
       </T>
       <Field
         label="Search safety topics"

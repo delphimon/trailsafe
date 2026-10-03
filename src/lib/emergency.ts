@@ -33,11 +33,11 @@ export function buildEmergencyDraft(
   const where = missing
     ? "Missing person’s last known location: [enter trail, area, and time last seen]"
     : fix
-      ? locationText(fix, "DD")
+      ? `${locationText(fix, "DD")}\n(Note: If reporting someone else, replace with their last known location)`
       : null;
   return [
     where ||
-      "Location: unknown — describe trailhead, trail, landmarks, and area to 911.",
+      "Location: unknown — describe trailhead, trail, landmarks, and area to 911 (if reporting someone else, provide their last known location).",
     `Emergency: ${situation || "Describe what happened."}`,
     partySize ? `Party size: ${partySize}` : "Party size: [enter number]",
     phone ? `Callback: ${phone}` : "Callback number: [enter number]",

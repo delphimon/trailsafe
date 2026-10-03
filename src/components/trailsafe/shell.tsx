@@ -1,6 +1,6 @@
 import { Modal, Platform, Pressable, StyleSheet, View } from "react-native";
 import { router, usePathname } from "expo-router";
-import { Backpack, BookOpen, Compass, House, Info, Siren } from "lucide-react-native";
+import { Backpack, BookOpen, Compass, House, Siren } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useApp } from "@/state/app";
 import { Button, useThemeStyles, fonts, T } from "./ui";

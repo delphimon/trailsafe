@@ -81,9 +81,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(t);
   }, [practice]);
 
+  const requestLocation = location.requestLocation;
   useEffect(() => {
-    if (path === "/emergency") return location.requestLocation();
-  }, [path, location]);
+    if (path === "/emergency") return requestLocation();
+  }, [path, requestLocation]);
   const notify = (text: string) => setToast(text);
   React.useEffect(() => {
     if (!toast) return;
@@ -108,7 +109,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       );
     notify("Copied to clipboard");
   };
-  const share = async (text: string, title = "KCESAR TrailSafe") => {
+  const share = async (text: string, title = "TrailSafe") => {
     if (Platform.OS === "web" && !globalThis.navigator?.share) {
       await copy(text);
       notify("Sharing is unavailable here. Text copied to clipboard.");

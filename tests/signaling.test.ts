@@ -7,8 +7,11 @@ import {
 } from "../src/lib/signaling";
 import {
   calculateHikingTime,
-  getSlopeAvalancheRisk,
   WATER_TREATMENT_PRESETS,
+  getSlopeAvalancheRisk,
+  AVALANCHE_SLOPE_METADATA,
+  WATER_TREATMENT_METADATA,
+  HIKING_TIME_METADATA,
 } from "../src/lib/hiking-tools";
 
 test("optical Morse SOS sequence complies with ITU-R ratio standard", () => {
@@ -100,4 +103,32 @@ test("water treatment presets contain essential cold-water and boil variations",
   const steripen = WATER_TREATMENT_PRESETS.find((p) => p.id === "steripen");
   assert.ok(steripen);
   assert.equal(steripen.durationSeconds, 90);
+});
+
+test("slope angle tool provides objective start-zone classifications and overhead warnings", () => {
+  const lowAngle = getSlopeAvalancheRisk(25);
+  assert.equal(lowAngle.level, "low");
+  assert.match(lowAngle.title, /Below Prime Start Zone/i);
+  assert.match(lowAngle.description, /steeper connected terrain above you/i);
+
+  const primeAngle = getSlopeAvalancheRisk(38);
+  assert.equal(primeAngle.level, "prime");
+  assert.match(primeAngle.title, /Prime Slab Start Zone/i);
+  assert.match(primeAngle.description, /30°–45°/);
+
+  const steepAngle = getSlopeAvalancheRisk(52);
+  assert.equal(steepAngle.level, "extreme");
+  assert.match(steepAngle.title, /Steep Terrain/i);
+  assert.match(steepAngle.description, /sluffs/i);
+});
+
+test("wilderness tools include authoritative source and review metadata", () => {
+  assert.equal(AVALANCHE_SLOPE_METADATA.authoritativeOrganization, "Center for Adventure Leadership");
+  assert.ok(AVALANCHE_SLOPE_METADATA.sources.length >= 2);
+
+  assert.equal(WATER_TREATMENT_METADATA.authoritativeOrganization, "Center for Adventure Leadership");
+  assert.ok(WATER_TREATMENT_METADATA.sources.length >= 2);
+
+  assert.equal(HIKING_TIME_METADATA.authoritativeOrganization, "Center for Adventure Leadership");
+  assert.ok(HIKING_TIME_METADATA.sources.length >= 2);
 });

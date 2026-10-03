@@ -13,7 +13,8 @@ import { router, useLocalSearchParams } from "expo-router";
 import { Screen, T } from "@/components/trailsafe/ui";
 import { useStore } from "@/state/store";
 import { useApp } from "@/state/app";
-import { cancelTripReminders } from "@/lib/notifications";
+import { activateTrip, completeTrip } from "@/lib/plans";
+import { cancelTripReminders, scheduleTripReminders } from "@/lib/notifications";
 
 export default function CurrentPlanActionScreen() {
   const { action } = useLocalSearchParams<{ action: string }>();
@@ -21,7 +22,7 @@ export default function CurrentPlanActionScreen() {
   const { notify, setDialog } = useApp();
   const processedRef = useRef(false);
 
-useEffect(() => {
+  useEffect(() => {
     if (!ready || processedRef.current) return;
     processedRef.current = true;
 
@@ -30,30 +31,27 @@ useEffect(() => {
       if (currentPlan) {
         setDialog({
           title: "Complete Trip Plan",
-          message: `Are you sure you want to mark "${currentPlan.title || 'your trip'}" as complete?`,
+          message: `Are you sure you want to mark "${currentPlan.title || 'your trip'}" as complete locally? Completing a plan does not notify your contacts.`,
           confirmLabel: "Mark Complete",
           onConfirm: () => {
-            void cancelTripReminders();
+            const res = completeTrip(currentPlan.id, data.plans);
+            if (!res.ok) {
+              notify(res.errors[0]);
+              router.replace("/plans");
+              return;
+            }
+            void cancelTripReminders(currentPlan.id);
             void update((s) => ({
               ...s,
-              plans: s.plans.map((p) =>
-                p.id === currentPlan.id
-                  ? {
-                      ...p,
-                      status: "completed",
-                      updatedAt: Date.now(),
-                      revision: p.revision + 1,
-                    }
-                  : p,
-              ),
+              plans: res.plans,
             }));
             setDialog(null);
-            notify(`Trip "${currentPlan.title || 'plan'}" marked complete! Remember to confirm safe return with your emergency contacts.`);
+            notify(`Trip "${res.plan.title || 'plan'}" marked complete locally. Confirm safe return directly with your emergency contacts.`);
             router.replace({
               pathname: "/plans/[id]",
               params: { id: currentPlan.id },
             });
-          }
+          },
         });
       } else {
         notify("No active trip plan was found to mark complete.");
@@ -70,25 +68,34 @@ useEffect(() => {
           message: `Are you sure you want to start "${latestDraft.title || 'this trip'}"?`,
           confirmLabel: "Start Trip",
           onConfirm: () => {
+            const res = activateTrip(latestDraft.id, data.plans);
+            if (!res.ok) {
+              setDialog(null);
+              notify(`Cannot start trip: ${res.errors[0]}`);
+              router.replace({
+                pathname: "/plans/[id]",
+                params: { id: latestDraft.id, edit: "1" },
+              });
+              return;
+            }
+            const previousCurrent = data.plans.find((p) => p.status === "current");
+            if (previousCurrent) {
+              void cancelTripReminders(previousCurrent.id);
+            }
+            if (res.plan.remind) {
+              void scheduleTripReminders(res.plan);
+            }
             void update((s) => ({
               ...s,
-              plans: s.plans.map((p) => {
-                if (p.id === latestDraft.id) {
-                  return { ...p, status: "current", updatedAt: Date.now(), revision: p.revision + 1 };
-                }
-                if (p.status === "current") {
-                  return { ...p, status: "draft" };
-                }
-                return p;
-              }),
+              plans: res.plans,
             }));
             setDialog(null);
-            notify(`Trip "${latestDraft.title || 'plan'}" is now active! Stay safe out there.`);
+            notify(`Trip "${res.plan.title || 'plan'}" is now active! Stay safe out there.`);
             router.replace({
               pathname: "/plans/[id]",
-              params: { id: latestDraft.id },
+              params: { id: res.plan.id },
             });
-          }
+          },
         });
       } else {
         notify("No draft trip plan found to start.");

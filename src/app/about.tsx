@@ -102,72 +102,44 @@ export default function About() {
     }
   };
   return (
-    <Screen back={true} title="About" subtitle="KCESAR, KCSARA, and this app">
+    <Screen
+      back={true}
+      title="About"
+      subtitle="Center for Adventure Leadership and this app"
+    >
       <Kicker>Organization</Kicker>
       <Card>
-        <Heading>About KCESAR</Heading>
+        <Heading>About TrailSafe</Heading>
         <T>
-          King County Explorer Search & Rescue (KCESAR) is an operational
-          search-and-rescue unit and a separate 501(c)(3) nonprofit. It
-          describes itself as the largest member unit of King County Search &
-          Rescue and King County’s primary ground search-and-rescue team.
+          TrailSafe is an offline wilderness-safety companion released by the
+          Center for Adventure Leadership, whose mission is to train adults to
+          be safe and effective adventure leaders for youth.
         </T>
         <Row
-          title="kcesar.org"
+          title="adventureleader.org"
+          subtitle="Training, Wilderness First Aid classes, and contact"
           icon={ExternalLink}
           onPress={() =>
-            void run(() => Linking.openURL("https://www.kcesar.org/"))
+            void run(() => Linking.openURL("https://adventureleader.org/"))
           }
         />
-      </Card>
-      <Card>
-        <Heading>About King County Search & Rescue</Heading>
-        <T>
-          The King County Search & Rescue Association (KCSARA, often shortened
-          to KCSAR) is the non-operational umbrella association that represents
-          and supports King County’s specialized SAR member units, including
-          KCESAR. Member units keep their own identities.
-        </T>
-        <Row
-          title="kingcountysar.org"
-          icon={ExternalLink}
-          onPress={() =>
-            void run(() => Linking.openURL("https://kingcountysar.org/"))
-          }
-        />
-      </Card>
-      <Kicker>Important</Kicker>
-      <Callout critical title="This app is not monitored">
-        Nobody at KCESAR, KCSARA, or anywhere else is watching your location or
-        trip plans. TrailSafe doesn’t alert anyone automatically. In an
-        emergency, call or text 911.
-      </Callout>
-      <Callout title="Search and rescue is free">
-        Don't delay calling 911 because of cost. In Washington State, search-and-rescue response does not bill rescued persons.
-      </Callout>
-      <Kicker>Connect</Kicker>
-      <Card>
-        {[
-          { title: "Follow KCESAR", url: "https://linktr.ee/kingcounty_esar" },
-          { title: "Donate or volunteer", url: "https://www.kcesar.org/" },
-          { title: "Send feedback", url: "https://www.kcesar.org/contact-us" },
-        ].map((r) => (
-          <Row
-            key={r.title}
-            title={r.title}
-            icon={ExternalLink}
-            onPress={() => void run(() => Linking.openURL(r.url))}
-          />
-        ))}
       </Card>
       <Note>
-        External links require Internet. Feedback channels are not emergency
-        services.
+        External links require Internet. The Center for Adventure Leadership
+        is not an emergency service — in an emergency, call or text 911.
       </Note>
+      <Kicker>Important</Kicker>
+      <Callout critical title="This app is not monitored">
+        Nobody is watching your location or trip plans. TrailSafe doesn’t
+        alert anyone automatically. In an emergency, call or text 911.
+      </Callout>
+      <Callout title="Search and rescue is free">
+        Don’t delay calling 911 because of cost. In Washington State, search-and-rescue response does not bill rescued persons.
+      </Callout>
       <Kicker>Privacy</Kicker>
       <Card>
         <T>
-          Your trip plans, profile, and checklists are stored locally. No accounts, advertising, or behavioral analytics. Anonymous crash diagnostics are collected to fix bugs (Bugsnag). No cloud database or background location tracking. KCESAR does not receive your location or trip
+          Your trip plans, profile, and checklists are stored locally. No accounts, advertising, or behavioral analytics. Anonymous crash diagnostics are collected to fix bugs (Bugsnag). No cloud database or background location tracking. The Center for Adventure Leadership does not receive your location or trip
           information.
         </T>
         <T style={{ marginTop: 12 }}>
@@ -208,19 +180,23 @@ export default function About() {
       <Card>
         <Heading>TrailSafe · Development build</Heading>
         <T>
-          Based on the supplied TrailSafe prototype and product definition.
           Safety guidance is bundled with the app for offline use. Content
           version: {getGuideContentVersion()}.
         </T>
         <T style={{ marginTop: 12 }}>
-          Organizational endorsement, medical review, and dispatch-facing
-          wording remain pending. This is not an official KCESAR release. This
-          app is an educational aid, not a substitute for training or
+          Guidance draws on and cites public material from authoritative
+          sources, including King County Search & Rescue, King County 911, the
+          Northwest Avalanche Center, the CDC, and the National Weather
+          Service. Cited organizations did not create, sponsor, or endorse
+          TrailSafe.
+        </T>
+        <T style={{ marginTop: 12 }}>
+          This app is an educational aid, not a substitute for training or
           instructions from 911 and rescuers.
         </T>
         <Row
           title="Source directory"
-          subtitle="Local SAR, King County 911, and specialist resources"
+          subtitle="Local SAR, 911, conditions, and specialist resources"
           icon={ExternalLink}
           onPress={() => router.push("/resources")}
         />

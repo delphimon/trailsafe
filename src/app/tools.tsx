@@ -53,6 +53,7 @@ import {
 } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
 import {
+  AppState,
   Modal,
   Platform,
   Pressable,
@@ -327,31 +328,54 @@ export default function ToolsScreen() {
     currentWaterPreset.durationSeconds,
   );
   const [waterTimerRunning, setWaterTimerRunning] = useState(false);
+  const [waterTargetTimestamp, setWaterTargetTimestamp] = useState<number | null>(null);
+
+  const startWaterTimer = (seconds: number) => {
+    const target = Date.now() + seconds * 1000;
+    setWaterTargetTimestamp(target);
+    setWaterTimerRunning(true);
+  };
+
+  const stopWaterTimer = () => {
+    setWaterTimerRunning(false);
+    setWaterTargetTimestamp(null);
+  };
 
   const handleSelectWaterPreset = (p: WaterTreatmentPreset) => {
     setSelectedWaterPreset(p.id);
     setWaterSecondsLeft(p.durationSeconds);
-    setWaterTimerRunning(false);
+    stopWaterTimer();
   };
 
   useEffect(() => {
-    if (!waterTimerRunning) return;
-    const interval = setInterval(() => {
-      setWaterSecondsLeft((prev) => {
-        if (prev <= 1) {
-          setWaterTimerRunning(false);
-          try {
-            Vibration.vibrate([0, 500, 200, 500]);
-          } catch {
-            // Ignore
-          }
-          return 0;
+    if (!waterTimerRunning || !waterTargetTimestamp) return;
+
+    const tick = () => {
+      const remainingMs = waterTargetTimestamp - Date.now();
+      const remainingSec = Math.max(0, Math.ceil(remainingMs / 1000));
+      setWaterSecondsLeft(remainingSec);
+      if (remainingSec <= 0) {
+        stopWaterTimer();
+        try {
+          Vibration.vibrate([0, 500, 200, 500]);
+        } catch {
+          // Ignore
         }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [waterTimerRunning]);
+      }
+    };
+
+    tick();
+    const interval = setInterval(tick, 500);
+
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") tick();
+    });
+
+    return () => {
+      clearInterval(interval);
+      sub.remove();
+    };
+  }, [waterTimerRunning, waterTargetTimestamp]);
 
   return (
     <Screen
@@ -994,8 +1018,7 @@ export default function ToolsScreen() {
                 }}
               >
                 <T style={{ fontSize: 12, color: C.muted }}>
-                  Note: Wind chill does not estimate core body temperature or
-                  the effect of wet clothing.
+                  Environmental conditions only. Wind chill and weather inputs do not estimate core body temperature or diagnose hypothermia — assess the person for physical symptoms (The Umbles).
                 </T>
                 <T style={{ fontSize: 12, lineHeight: 18, color: C.ink }}>
                   {hypoAssessment.plainExplanation}
@@ -1338,6 +1361,11 @@ export default function ToolsScreen() {
                     </View>
                   ))}
                 </View>
+                <View style={{ marginTop: 10 }}>
+                  <Note>
+                    Guidance compiled by the Center for Adventure Leadership from NWS Windchill equations, Wilderness Medical Society (WMS) Accidental Hypothermia guidelines, and Alaska Cold Injury protocols. Environmental calculators cannot diagnose hypothermia; always assess the person.
+                  </Note>
+                </View>
               </View>
             )}
           </Card>
@@ -1353,8 +1381,8 @@ export default function ToolsScreen() {
               }}
             >
               <View style={{ gap: 2 }}>
-                <Heading>Slope Angle Meter</Heading>
-                <T style={s.note}>Place phone edge along slope or ski pole</T>
+                <Heading>Slope Inclinometer</Heading>
+                <T style={s.note}>Measure terrain slope angle with phone edge or ski pole</T>
               </View>
               <Compass size={28} color={C.green} />
             </View>
@@ -1445,6 +1473,11 @@ export default function ToolsScreen() {
                 onPress={() => setDeviceTilt((v) => Math.min(90, (v ?? 0) + 5))}
               />
             </View>
+            <View style={{ marginTop: 8 }}>
+              <Note>
+                Inclinometer measures surface slope angle only. Low-angle slopes (&lt;30°) are NOT safe if connected to steeper avalanche start zones overhead or situated in avalanche runout paths. Always consult your regional avalanche center (e.g. nwac.us or avalanche.ca) for current hazard ratings.
+              </Note>
+            </View>
           </Card>
         </View>
       )}
@@ -1496,9 +1529,10 @@ export default function ToolsScreen() {
                   <T
                     style={{ fontSize: 13, color: C.ink, textAlign: "center" }}
                   >
-                    {magneticDeclination >= 0
-                      ? "Rotate compass bezel counter-clockwise (East)."
-                      : "Rotate compass bezel clockwise (West)."}
+                    True North is {Math.abs(magneticDeclination).toFixed(1)}° {magneticDeclination >= 0 ? "East" : "West"} of Magnetic North.
+                  </T>
+                  <T style={{ fontSize: 12, color: C.muted, textAlign: "center" }}>
+                    Refer to your compass manufacturer’s instructions to adjust your declination screw or set manual grid-to-magnetic offset.
                   </T>
                 </>
               ) : (
@@ -1756,7 +1790,7 @@ export default function ToolsScreen() {
               </T>
               {waterSecondsLeft === 0 && (
                 <T style={{ fontFamily: fonts.bold, color: C.green }}>
-                  ✓ Timer complete — follow your product's instructions
+                  ✓ Timer complete — follow your product’s instructions
                 </T>
               )}
             </View>
@@ -1776,9 +1810,11 @@ export default function ToolsScreen() {
                   onPress={() => {
                     if (waterSecondsLeft === 0) {
                       setWaterSecondsLeft(currentWaterPreset.durationSeconds);
-                      setWaterTimerRunning(true);
+                      startWaterTimer(currentWaterPreset.durationSeconds);
+                    } else if (waterTimerRunning) {
+                      stopWaterTimer();
                     } else {
-                      setWaterTimerRunning((v) => !v);
+                      startWaterTimer(waterSecondsLeft);
                     }
                   }}
                 />
@@ -1787,10 +1823,15 @@ export default function ToolsScreen() {
                 label="Reset"
                 variant="outline"
                 onPress={() => {
-                  setWaterTimerRunning(false);
+                  stopWaterTimer();
                   setWaterSecondsLeft(currentWaterPreset.durationSeconds);
                 }}
               />
+            </View>
+            <View style={{ marginTop: 6 }}>
+              <Note>
+                Guidelines compiled from CDC and manufacturer product labels. Timing varies by water temperature, turbidity, container volume, and target organism. In icy or turbid water, filtering and extended contact time are required.
+              </Note>
             </View>
           </Card>
 

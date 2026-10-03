@@ -29,7 +29,7 @@ export default function Home() {
   return (
     <Screen 
       title="TrailSafe" 
-      subtitle="King County Explorer Search & Rescue"
+      subtitle="Center for Adventure Leadership"
       rightAction={
         <Pressable
           accessibilityRole="button"
@@ -73,17 +73,6 @@ export default function Home() {
             />
           ))}
         </Svg>
-        <T
-          style={{
-            fontFamily: fonts.display,
-            fontSize: 16,
-            color: "#BFD3C6",
-            letterSpacing: 2,
-            marginBottom: 3,
-          }}
-        >
-          KCESAR
-        </T>
         <T
           style={{
             fontFamily: fonts.display,

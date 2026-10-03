@@ -1,4 +1,6 @@
-# KCESAR TrailSafe
+# TrailSafe
+
+Released by the Center for Adventure Leadership.
 
 An offline-first wilderness safety companion built with React Native 0.86, TypeScript, and Expo SDK 57. It follows the supplied **TrailSafe** HTML prototype’s design and content, adapting the older TrailReady product definition to Expo for iOS and Android. Features instant coordinate translation (DD/DDM/UTM), verifiable SAR trip plans, offline emergency guides, Siri & Google Assistant voice shortcuts, on-device CoreSpotlight search indexing, and Action Button integration. Web is available for development and workflow review.
 
@@ -74,7 +76,7 @@ The preview server supports dynamic routes for device-local trip plans and bundl
 - **Guide:** bundled offline articles, missing-versus-overdue branching, full-text search, and source references.
 - **Voice assistant & system integration:** Siri App Intents (`OpenEmergencyIntent`, `CompleteCurrentTripIntent`, `SearchGuideIntent`) and Google Assistant shortcuts (`shortcuts.xml`). Action Button & Lock Screen shortcut trigger. Instant emergency screen launch (`trailsafe://emergency`), hands-free trip completion and start (`trailsafe://plan/current/complete`), and voice search (`trailsafe://guide?search=...`).
 - **On-device search indexing:** Local Expo module (`modules/device-search`) indexing the bundled offline guide into iOS CoreSpotlight (`CSSearchableIndex`) and Android shortcuts (`ShortcutManagerCompat`) with deterministic content hashing (`getGuideContentVersion`) that triggers automated re-indexing across OTA updates.
-- **About:** organization distinctions, privacy, content version/review status, source directory, native build metadata, OTA update status (`expo-updates`), check for updates flow, profile management, and local data deletion.
+- **About:** publisher, privacy, content version, source directory, native build metadata, OTA update status (`expo-updates`), check for updates flow, profile management, and local data deletion.
 
 There is no account, backend, behavioral analytics, automatic emergency notification, or background tracking. Plans are not monitored. Copy, share, Maps, and phone/message actions are explicit. Device backups may include saved local app data. Bugsnag crash diagnostics are enabled only in developer, pre-release/internal, and TestFlight builds and are disabled for the final production App Store / Play Store release; see [Release Diagnostics Policy](docs/RELEASE-DIAGNOSTICS.md).
 
@@ -117,6 +119,6 @@ Content changes should normally edit `src/content/library.json` directly. `npm r
 
 ## Release status
 
-This is a development implementation, not an official KCESAR release. Medical guidance, dispatch-facing wording, organizational endorsement, accessibility on physical devices, and real phone/SMS handoffs need their respective validation before public release. Bugsnag may be active in developer, pre-release, and TestFlight builds for crash diagnosis, but must be disabled in the final production store build. Do not send uncoordinated test calls or texts to 911.
+This is a development implementation. Accessibility on physical devices and real phone/SMS handoffs need validation before public release. Bugsnag may be active in developer, pre-release, and TestFlight builds for crash diagnosis, but must be disabled in the final production store build. Do not send uncoordinated test calls or texts to 911.
 
 The existing Expo owner and EAS project association were preserved. The provisional native identifier is `com.appliedinteractions.trailsafe`; no App Store / Play Store upload or deployment was performed.

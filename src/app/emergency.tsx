@@ -49,11 +49,11 @@ export default function Emergency() {
         Call if you can, text if you can’t.
       </T>
       <Note>
-        Don't delay calling 911 because of cost. In Washington State, search-and-rescue response does not bill rescued persons.
+        Don’t delay calling 911 because of cost. In Washington State, search-and-rescue response does not bill rescued persons.
       </Note>
       <Note>
         These buttons open your phone’s calling and messaging apps. TrailSafe
-        does not contact KCESAR directly.
+        does not contact anyone directly.
       </Note>
       <LocationCard />
       <Callout title="If a text bounces back">
@@ -128,8 +128,8 @@ export default function Emergency() {
           marginTop: 20,
         }}
       >
-        King County SAR resources are requested through 911 and King County
-        dispatch — not through this app.
+        Search-and-rescue resources are requested through 911 dispatch — not
+        through this app.
       </T>
     </Screen>
   );

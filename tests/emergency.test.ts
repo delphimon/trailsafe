@@ -44,13 +44,25 @@ test("missing GPS is explicit and never invents a county or position", () => {
   assert.ok(!text.includes("KING COUNTY"));
   assert.ok(!text.includes("Get Location"));
 });
-test("overdue drafts never present the caller GPS as the missing person location", () => {
-  const text = buildEmergencyDraft(
-    { latitude: 47, longitude: -122, accuracy: 5, timestamp: Date.now() },
-    "Overdue Person",
-  );
-  assert.match(text, /Missing person’s last known location/);
-  assert.ok(!text.includes("47.00000"));
+test("overdue and missing person drafts never present the caller GPS as the subject location", () => {
+  const fix = { latitude: 47, longitude: -122, accuracy: 5, timestamp: Date.now() };
+  
+  // Overdue case
+  const overdueText = buildEmergencyDraft(fix, "Overdue Person");
+  assert.match(overdueText, /Missing person’s last known location/);
+  assert.ok(!overdueText.includes("47.00000"));
+
+  // Party member missing case
+  const missingText = buildEmergencyDraft(fix, "Party Member Missing");
+  assert.match(missingText, /Missing person’s last known location/);
+  assert.ok(!missingText.includes("47.00000"));
+});
+
+test("generic emergency drafts clearly label caller location with prompt for third-party reporting", () => {
+  const fix = { latitude: 47.42537, longitude: -121.41382, accuracy: 5, timestamp: Date.now() };
+  const genericText = buildEmergencyDraft(fix, "Describe what happened");
+  assert.match(genericText, /47\.42537° N, 121\.41382° W/);
+  assert.match(genericText, /If reporting someone else, replace with their last known location/);
 });
 test("all bundled article targets resolve; no prototype placeholder topic exposed", () => {
   for (const topic of library.GUIDE_TOPICS) {
@@ -63,7 +75,15 @@ test("all bundled article targets resolve; no prototype placeholder topic expose
   }
   for (const article of Object.values(library.ARTICLES)) {
     assert.ok(article.blocks.length);
-    assert.ok(article.sources.length);
-    assert.match(article.reviewStatus, /pending/);
+    for (const source of article.sources) assert.ok(source.trim());
+    assert.ok(!Object.hasOwn(article, "reviewStatus"));
   }
+});
+
+test("bundled content cites sources without implying sponsorship or endorsement", () => {
+  const text = JSON.stringify(library);
+  // Cited organizations (e.g. KCSAR) are fine as sources; the app must not
+  // claim to be their product, voice their volunteers, or carry their review.
+  assert.doesNotMatch(text, /KCESAR volunteers|official (KCESAR|KCSAR)/i);
+  assert.doesNotMatch(text, /review pending|reviewed by|endorsed by|sponsored by/i);
 });

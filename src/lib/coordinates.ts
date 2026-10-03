@@ -199,7 +199,11 @@ export function locationText(
     `Location (${format}, WGS84): ${formatted.replace("\n", ", ")}`,
     ...(fix.altitude != null
       ? [
-          `Device elevation: ~${Math.round(fix.altitude * 3.28084)} ft`,
+          `Device elevation: ~${Math.round(fix.altitude * 3.28084)} ft${
+            fix.altitudeAccuracy != null && fix.altitudeAccuracy >= 0
+              ? ` (±${Math.round(fix.altitudeAccuracy * 3.28084)} ft)`
+              : ""
+          }`,
         ]
       : []),
     `Accuracy: ${fix.accuracy != null && fix.accuracy >= 0 ? `±${Math.round(fix.accuracy * 3.28084)} ft` : "unknown"}`,
@@ -217,7 +221,7 @@ export function getMagneticDeclination(latitude: number, longitude: number): num
     const geo = require("geomagnetism");
     const result = geo.model().point([latitude, longitude]);
     return result ? result.decl : null;
-  } catch (error) {
+  } catch {
     return null;
   }
 }

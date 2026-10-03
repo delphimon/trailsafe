@@ -369,7 +369,7 @@ export function FooterNote() {
   const { s } = useThemeStyles();
   return (
     <T style={s.footer}>
-      King County Explorer Search & Rescue{"\n"}This app is not monitored.
+      Center for Adventure Leadership{"\n"}This app is not monitored.
       Emergencies: call 911.
     </T>
   );

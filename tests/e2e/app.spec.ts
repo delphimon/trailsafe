@@ -104,25 +104,9 @@ test("prototype home, automatic coordinates, dropdown persistence, and watcher c
   await expect(
     page.getByRole("button", { name: "Get Location", exact: true }),
   ).toHaveCount(0);
-  await page
-    .getByRole("button", { name: "Coordinate format", exact: true })
-    .click();
-  await page
-    .getByRole("radio", {
-      name: "Degrees & decimal minutes (DDM)",
-      exact: true,
-    })
-    .click();
+  await page.getByRole("button", { name: "DDM", exact: true }).click();
   await expect(page.getByTestId("coordinates")).toContainText("47° 25.522′ N");
-  await page
-    .getByRole("button", { name: "Coordinate format", exact: true })
-    .click();
-  await page
-    .getByRole("radio", {
-      name: "Universal Transverse Mercator (UTM)",
-      exact: true,
-    })
-    .click();
+  await page.getByRole("button", { name: "UTM", exact: true }).click();
   await expect(page.getByTestId("coordinates")).toContainText("10T");
   await page.getByRole("button", { name: "Copy", exact: true }).click();
   await expect
@@ -185,10 +169,10 @@ test("practice actions across emergency and guide screens never open a handoff",
     .click();
   await page.getByRole("button", { name: "CALL 911", exact: true }).click();
   await expect(page.getByText(/Nothing was contacted/)).toBeVisible();
-  await page.getByRole("button", { name: "Got it", exact: true }).click();
+  await page.getByRole("button", { name: "Continue Practice", exact: true }).click();
   await page.getByRole("button", { name: "TEXT 911", exact: true }).click();
   await expect(page.getByText(/Nothing was contacted/)).toBeVisible();
-  await page.getByRole("button", { name: "Got it", exact: true }).click();
+  await page.getByRole("button", { name: "Continue Practice", exact: true }).click();
   await page
     .getByRole("button", { name: "Lost / off route", exact: true })
     .click();
@@ -206,9 +190,9 @@ test("checklist, search, and articles work offline after launch", async ({
   await ready(page);
   await context.setOffline(true);
   await page.getByRole("tab", { name: "Prepare", exact: true }).click();
-  await page.getByRole("checkbox", { name: "Hydration", exact: true }).click();
+  await page.getByRole("checkbox", { name: "Water", exact: true }).click();
   await expect(
-    page.getByRole("checkbox", { name: "Hydration", exact: true }),
+    page.getByRole("checkbox", { name: "Water", exact: true }),
   ).toBeChecked();
   await page.getByRole("tab", { name: "Guide", exact: true }).click();
   await page
@@ -221,7 +205,7 @@ test("checklist, search, and articles work offline after launch", async ({
   await context.setOffline(false);
   await page.goto("/prepare");
   await expect(
-    page.getByRole("checkbox", { name: "Hydration", exact: true }),
+    page.getByRole("checkbox", { name: "Water", exact: true }),
   ).toBeChecked();
   await page.screenshot({ path: "docs/screenshots/prepare.png" });
 });
@@ -237,6 +221,8 @@ test("trip creation, midnight buffer, persistence, editing, and deletion", async
     "Your name": "Test Hiker",
     "Party size": "2",
     "Phone / contact method": "206 555 0100",
+    "Contact name": "Home Contact",
+    "Contact phone": "206 555 0199",
     "Starting location / trailhead": "Granite Mountain Trailhead, King County",
     "Planned route": "Summit\nReturn on same trail",
     "Start date": "2026-09-06",
@@ -440,7 +426,7 @@ test("wilderness tools screen navigates, calculates forest dusk, runs signaling 
 
   // Verify Solar & Forest Dusk
   await expect(
-    page.getByText(/TRAIL LIGHT REMAINING|HEADLAMP REQUIRED/),
+    page.getByText(/TRAIL LIGHT|TRAIL DARKNESS/),
   ).toBeVisible();
   await expect(page.getByText(/Headlamp needed/i)).toBeVisible();
   await expect(
@@ -453,8 +439,8 @@ test("wilderness tools screen navigates, calculates forest dusk, runs signaling 
   await page.getByRole("button", { name: "Dense Timber (-60m)" }).click();
   await page.screenshot({ path: "docs/screenshots/tools-solar.png" });
 
-  // Switch to Signaling tab
-  await page.getByRole("button", { name: "Signaling" }).click();
+  // Switch to Signal tab
+  await page.getByRole("button", { name: "Signal", exact: true }).click();
   await expect(page.getByText("Alpine distress whistle cadence")).toBeVisible();
   await expect(page.getByText("Universal 3-Blast Signal")).toBeVisible();
   await page.screenshot({ path: "docs/screenshots/tools-signaling.png" });
@@ -473,25 +459,26 @@ test("wilderness tools screen navigates, calculates forest dusk, runs signaling 
   await expect(page.getByText("EMERGENCY STROBE ACTIVE")).not.toBeVisible();
 
   // Switch to Hazards tab
-  await page.getByRole("button", { name: "Hazards" }).click();
+  await page.getByRole("button", { name: "Hazards", exact: true }).click();
   await expect(page.getByText("Avalanche slope inclinometer")).toBeVisible();
-  await expect(page.getByText("PRIME AVALANCHE ZONE (30°–45°)")).toBeVisible();
+  await expect(page.getByText(/Ready to Measure|Prime Slab Start Zone/i)).toBeVisible();
 
   // Verify Hypothermia & Wind Chill Index (Cascade Concrete Hazard)
   await expect(page.getByRole("heading", { name: "Hypothermia & Wind Chill", exact: true })).toBeVisible();
   await expect(page.getByText("CASCADE CONCRETE ZONE")).toBeVisible();
+  await page.getByRole("button", { name: /Learn critical signs/i }).click();
   await expect(page.getByText("Why Wet Cold Kills: 4 Life-Safety Principles")).toBeVisible();
-  await expect(page.getByText("Core Chill Equivalent (Feels Like)")).toBeVisible();
+  await expect(page.getByText(/Wind chill — exposed skin estimate/i)).toBeVisible();
   await expect(page.getByText(/Early Warning: The "Umbles" Checklist/)).toBeVisible();
   await expect(page.getByText(/Search & Rescue Field Protocol/i)).toBeVisible();
   await page.screenshot({ path: "docs/screenshots/tools-hazards.png" });
 
   // Switch preset to Crisp Alpine Ridge (Dry)
   await page.getByRole("button", { name: "Crisp Alpine Ridge (Dry)" }).click();
-  await expect(page.getByText(/Dry Clothing \(0°F penalty\)/).first()).toBeVisible();
+  await expect(page.getByText(/Moisture: dry/i).first()).toBeVisible();
 
-  // Switch to Backcountry tab
-  await page.getByRole("button", { name: "Backcountry" }).click();
+  // Switch to Planning tab
+  await page.getByRole("button", { name: "Planning", exact: true }).click();
   await expect(page.getByText("Compass Navigation")).toBeVisible();
   await expect(page.getByText("Magnetic Declination")).toBeVisible();
   await expect(page.getByText("Hiking Time Estimator")).toBeVisible();

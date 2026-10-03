@@ -1,18 +1,8 @@
 import { useEffect, useState } from "react";
 import * as SplashScreen from "expo-splash-screen";
-import { Platform } from "react-native";
+import { initializeDiagnostics } from "@/lib/diagnostics";
 
-if (typeof window !== 'undefined' && Platform.OS !== 'web') {
-  const Bugsnag = require('@bugsnag/expo').default || require('@bugsnag/expo');
-  Bugsnag.start({
-    onError: function (event: any) {
-      // Redact sensitive data from Bugsnag reports
-      event.context = "redacted";
-      event.user = {};
-      event.addMetadata('device', 'id', 'redacted');
-    }
-  });
-}
+initializeDiagnostics();
 import { Stack } from "expo-router/stack";
 import { StatusBar } from "expo-status-bar";
 import { View } from "react-native";

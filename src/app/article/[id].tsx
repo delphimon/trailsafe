@@ -73,10 +73,11 @@ export default function ArticleScreen() {
         </View>
       )}
 
-      {id === "g-overdue" && (
+      {(id === "g-overdue" || id === "g-party-missing") && (
         <Note>
-          The location in a text draft is your phone’s location, not the missing
-          person’s. Give 911 the person’s last known location and trip plan.
+          Emergency text drafts for missing or overdue parties ask for the
+          subject’s last known location and time rather than your phone’s GPS.
+          Give 911 the person’s last known location and trip plan.
         </Note>
       )}
       <ArticleBody blocks={article.blocks} />
@@ -85,18 +86,21 @@ export default function ArticleScreen() {
         <Note>
           Bundled content · {article.contentVersion}
           {"\n"}
-          {article.reviewStatus}. Follow dispatcher or rescuer instructions over
-          this app.
+          Follow dispatcher or rescuer instructions over this app.
         </Note>
-        {article.sources.map((url) => (
-          <Row
-            key={url}
-            title={new URL(url).hostname.replace("www.", "")}
-            subtitle="Source reference · Internet required"
-            icon={ExternalLink}
-            onPress={() => void run(() => Linking.openURL(url))}
-          />
-        ))}
+        {article.sources.map((source) =>
+          /^https?:\/\//.test(source) ? (
+            <Row
+              key={source}
+              title={new URL(source).hostname.replace("www.", "")}
+              subtitle="Cited source · Internet required"
+              icon={ExternalLink}
+              onPress={() => void run(() => Linking.openURL(source))}
+            />
+          ) : (
+            <Note key={source}>Cited source: {source}</Note>
+          ),
+        )}
       </Card>
     </Screen>
   );

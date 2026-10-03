@@ -18,9 +18,12 @@ import {
   addDays,
   buildPlanText,
   buildSafeReturnDraft,
+  completeTrip,
   currentTimeRounded,
   localDate,
   newPlan,
+  saveCurrentTrip,
+  saveTripDraft,
   suggestOverdue,
   validatePlan,
 } from "@/lib/plans";
@@ -100,48 +103,72 @@ function PlanEditor({
     const text = buildSafeReturnDraft(plan);
     const targetPhone = plan.trustedContactPhone ? [plan.trustedContactPhone] : [];
     if (await SMS.isAvailableAsync()) {
-      await SMS.sendSMSAsync(targetPhone, text);
-      notify("Check Messages to send. TrailSafe cannot verify delivery.");
+      const res = await SMS.sendSMSAsync(targetPhone, text);
+      if (res.result === "sent") {
+        notify("Safe-return draft handed to Messages. Verify sending; TrailSafe cannot verify delivery.");
+      } else {
+        notify("Safe-return text was not sent. Be sure to reach out to your contact.");
+      }
     } else {
       await share(text, "Safe return check-in");
+      notify("Safe-return draft opened in share sheet. Verify sending; TrailSafe cannot verify delivery.");
     }
   };
   const change = <K extends keyof TripPlan>(key: K, value: TripPlan[K]) => {
     setPlan((p) => ({ ...p, [key]: value }));
     setErrors([]);
   };
-const save = async (status = plan.status) => {
-    let saved = plan;
+  const save = async (status = plan.status): Promise<TripPlan | null> => {
+    let saved: TripPlan | null = null;
+    let oldCurrentId: string | null = null;
+    let saveErrors: string[] = [];
+
     await update((d) => {
-      const previous = d.plans.find((p) => p.id === plan.id);
-      saved = {
-        ...plan,
-        status,
-        updatedAt: Date.now(),
-        revision: previous ? previous.revision + 1 : 1,
-      };
-      const newPlans = d.plans.map((p) => {
-        if (p.id === saved.id) return saved;
-        // Enforce exactly one Current trip plan
-        if (status === "current" && p.status === "current") {
-          return { ...p, status: "draft" as const };
-        }
-        return p;
-      });
-      if (!newPlans.some((p) => p.id === saved.id)) {
-        newPlans.push(saved);
+      const prevCurrent = d.plans.find((p) => p.status === "current" && p.id !== plan.id);
+      if (prevCurrent && status === "current") {
+        oldCurrentId = prevCurrent.id;
       }
-      return {
-        ...d,
-        plans: newPlans,
-      };
+
+      if (status === "current") {
+        const res = saveCurrentTrip(plan, d.plans);
+        if (!res.ok) {
+          saveErrors = res.errors;
+          return d;
+        }
+        saved = res.plan;
+        return { ...d, plans: res.plans };
+      } else if (status === "completed") {
+        const res = completeTrip(plan.id, d.plans);
+        if (!res.ok) {
+          saveErrors = res.errors;
+          return d;
+        }
+        saved = res.plan;
+        return { ...d, plans: res.plans };
+      } else {
+        const res = saveTripDraft(plan, d.plans);
+        saved = res.plan;
+        return { ...d, plans: res.plans };
+      }
     });
-    setPlan(saved);
-    if (status === "current") {
-      void scheduleTripReminders(saved);
-    } else {
-      void cancelTripReminders();
+
+    if (saveErrors.length > 0) {
+      setErrors(saveErrors);
+      return null;
     }
+
+    if (saved) {
+      setPlan(saved);
+      if (status === "current") {
+        if (oldCurrentId) {
+          void cancelTripReminders(oldCurrentId);
+        }
+        void scheduleTripReminders(saved);
+      } else {
+        void cancelTripReminders((saved as TripPlan).id);
+      }
+    }
+
     return saved;
   };
   const action = (fn: () => Promise<unknown>) =>
@@ -238,7 +265,9 @@ const save = async (status = plan.status) => {
             onPress={() =>
               action(async () => {
                 const saved = await save();
-                await share(buildPlanText(saved), saved.title);
+                if (saved) {
+                  await share(buildPlanText(saved), saved.title);
+                }
               })
             }
           />
@@ -261,8 +290,10 @@ const save = async (status = plan.status) => {
                 disabled={busy}
                 onPress={() =>
                   action(async () => {
-                    await save();
-                    notify("Plan saved on this device");
+                    const saved = await save();
+                    if (saved) {
+                      notify("Plan saved on this device");
+                    }
                   })
                 }
               />
@@ -287,7 +318,7 @@ const save = async (status = plan.status) => {
             <>
               <View style={{ marginTop: 10 }}>
                 <Button
-                  label="Text Contact: I’m Safe"
+                  label="Open Safe-Return Text"
                   icon={MessageSquare}
                   variant="orange"
                   disabled={busy}
@@ -301,14 +332,18 @@ const save = async (status = plan.status) => {
                   disabled={busy}
                   onPress={() =>
                     action(async () => {
-                      await save("completed");
-                      notify("Plan completed locally.");
+                      const saved = await save("completed");
+                      if (!saved) return;
+                      notify("Plan marked complete locally.");
                       setDialog({
-                        title: "Trip completed!",
+                        title: "Trip completed locally",
                         message:
-                          "Notify your trusted contact that you’ve returned safely so they don’t worry or treat you as overdue.",
-                        confirmLabel: "Text Contact: I’m Safe",
-                        onConfirm: () => void sendSafeReturn(),
+                          "This marks your trip complete on your phone, but it does not contact anyone. Open a safe-return text to let your trusted contact know you returned safely.",
+                        confirmLabel: "Open Safe-Return Text",
+                        onConfirm: () => {
+                          setDialog(null);
+                          void sendSafeReturn();
+                        },
                       });
                     })
                   }
@@ -319,7 +354,7 @@ const save = async (status = plan.status) => {
           {plan.status === "completed" && (
             <View style={{ marginTop: 10 }}>
               <Button
-                label="Text Contact: I’m Safe"
+                label="Open Safe-Return Text"
                 icon={MessageSquare}
                 variant="primary"
                 disabled={busy}
@@ -333,7 +368,7 @@ const save = async (status = plan.status) => {
                 label="Mark as Current"
                 disabled={busy}
                 onPress={() => {
-                  const issues = validatePlan(plan);
+                  const issues = validatePlan({ ...plan, status: "current" });
                   if (issues.length) {
                     setErrors(issues);
                     setEditing(true);
@@ -342,8 +377,10 @@ const save = async (status = plan.status) => {
                   const existingCurrent = data.plans.find((p) => p.status === "current" && p.id !== plan.id);
                   const performSave = () => {
                     action(async () => {
-                      await save("current");
-                      notify("Current plan saved. Share it with your contact.");
+                      const saved = await save("current");
+                      if (saved) {
+                        notify("Current plan saved. Share it with your contact.");
+                      }
                     });
                   };
                   if (existingCurrent) {
@@ -637,8 +674,8 @@ const save = async (status = plan.status) => {
             />
           </View>
           <Checkbox
-            label="Flag this plan when my check-in time passes"
-            description="Shown in Trip Plans while this plan is Current. No background notification is sent, and nobody is contacted."
+            label="Remind me on this device when check-in time passes"
+            description="Schedules a local notification on your phone at your expected return and overdue times. This does NOT notify emergency contacts or 911."
             checked={plan.remind}
             onPress={() => change("remind", !plan.remind)}
           />
@@ -789,11 +826,13 @@ const save = async (status = plan.status) => {
                 onPress={() =>
                   action(async () => {
                     const saved = await save("draft");
-                    notify("Draft saved on this device");
-                    router.replace({
-                      pathname: "/plans/[id]",
-                      params: { id: saved.id },
-                    });
+                    if (saved) {
+                      notify("Draft saved on this device");
+                      router.replace({
+                        pathname: "/plans/[id]",
+                        params: { id: saved.id },
+                      });
+                    }
                   })
                 }
               />

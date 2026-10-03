@@ -99,6 +99,59 @@ export function calculateHikingTime(
   };
 }
 
+export const HIKING_TIME_METADATA = {
+  id: "tool:hiking-time",
+  title: "Naismith's Rule Mountain Travel Estimator",
+  category: "general-outdoor" as const,
+  owner: "Center for Adventure Leadership",
+  sources: [
+    "Naismith's Rule (Scottish Mountaineering Club)",
+    "Langmuir Mountain Corrections (1984)",
+  ],
+  contentVersion: "1.1.0",
+  lastVerified: "2026-09-30",
+  nextReview: "2027-09-30",
+  authoritativeOrganization: "Center for Adventure Leadership",
+  lastReviewed: "2026-09-30",
+  reviewCategory: "outdoor" as const,
+};
+
+export const AVALANCHE_SLOPE_METADATA = {
+  id: "tool:avalanche-slope",
+  title: "Slope Angle Inclinometer & Start Zone Indicator",
+  category: "sar-operational" as const,
+  owner: "Center for Adventure Leadership",
+  sources: [
+    "Northwest Avalanche Center (NWAC)",
+    "Avalanche Canada",
+    "American Institute for Avalanche Research and Education (AIARE)",
+  ],
+  contentVersion: "1.1.0",
+  lastVerified: "2026-09-30",
+  nextReview: "2027-09-30",
+  authoritativeOrganization: "Center for Adventure Leadership",
+  lastReviewed: "2026-09-30",
+  reviewCategory: "sar" as const,
+};
+
+export const WATER_TREATMENT_METADATA = {
+  id: "tool:water-treatment",
+  title: "Wilderness Water Disinfection Protocols",
+  category: "medical" as const,
+  owner: "Center for Adventure Leadership",
+  sources: [
+    "Centers for Disease Control and Prevention (CDC) - Making Water Safe in the Backcountry",
+    "World Health Organization (WHO) Guidelines for Drinking-water Quality",
+    "Product Manufacturer Instructions (Aquamira, Potable Aqua, SteriPEN)",
+  ],
+  contentVersion: "1.1.0",
+  lastVerified: "2026-09-30",
+  nextReview: "2027-09-30",
+  authoritativeOrganization: "Center for Adventure Leadership",
+  lastReviewed: "2026-09-30",
+  reviewCategory: "medical" as const,
+};
+
 export interface SlopeRisk {
   degrees: number;
   level: "low" | "prime" | "extreme";
@@ -108,7 +161,9 @@ export interface SlopeRisk {
 }
 
 /**
- * Categorizes a slope angle according to avalanche slab formation risk.
+ * Categorizes a measured slope angle according to objective avalanche start-zone characteristics.
+ * Slope angle alone does not determine avalanche danger: snowpack, recent weather, aspect,
+ * and connected overhead terrain are critical.
  *
  * @param degrees Slope angle in degrees (0 to 90)
  */
@@ -119,10 +174,10 @@ export function getSlopeAvalancheRisk(degrees: number): SlopeRisk {
     return {
       degrees: angle,
       level: "low",
-      title: "Angle < 30°",
+      title: "Below Prime Start Zone (<30°)",
       description:
-        "Slab avalanches rarely initiate under 30°. WARNING: You can still be hit by avalanches starting from steeper slopes above you. This tool does not evaluate snowpack, weather, or overhead hazards.",
-      color: "#5C6A64", // Neutral slate instead of green
+        "Slab avalanches rarely initiate on slopes under 30°. WARNING: You can still be hit by avalanches starting from steeper connected terrain above you or caught in runout zones. Check local avalanche forecasts (e.g. NWAC).",
+      color: "#5C6A64", // Neutral slate
     };
   }
 
@@ -130,9 +185,9 @@ export function getSlopeAvalancheRisk(degrees: number): SlopeRisk {
     return {
       degrees: angle,
       level: "prime",
-      title: "PRIME AVALANCHE ANGLE (30°–45°)",
+      title: "Prime Slab Start Zone (30°–45°)",
       description:
-        "Over 90% of human-triggered slab avalanches occur on 30°–45° slopes. This angle is prime for slab avalanches if snowpack conditions allow.",
+        "Over 90% of human-triggered slab avalanches originate on 30°–45° slopes (peak danger 36°–40°). If snowpack is unstable, this incline can release. Check local avalanche forecasts (e.g. NWAC).",
       color: "#D9534F", // Red/Warning
     };
   }
@@ -140,9 +195,9 @@ export function getSlopeAvalancheRisk(degrees: number): SlopeRisk {
   return {
     degrees: angle,
     level: "extreme",
-    title: "Steep Angle (>45°)",
+    title: "Steep Terrain (>45°)",
     description:
-      "Slopes over 45° frequently shed snow as sluffs, preventing deep slab buildup, but can still produce avalanches under certain conditions.",
+      "Slopes over 45° frequently shed snow as sluffs, preventing deep slab buildup, but loose snow or wind-slab avalanches still occur. Check local avalanche forecasts (e.g. NWAC).",
     color: "#C68228", // Orange/Caution
   };
 }
@@ -159,56 +214,56 @@ export interface WaterTreatmentPreset {
 export const WATER_TREATMENT_PRESETS: WaterTreatmentPreset[] = [
   {
     id: "aquamira-cold",
-    name: "Chlorine Dioxide (Cold / Glacial)",
+    name: "Aquamira Chlorine Dioxide (Cold Water Label)",
     type: "chemical",
     durationSeconds: 1800, // 30 minutes
     waterCondition: "Water <50°F (Snowmelt / Glacial Runoff)",
     instructions:
-      "Mix Part A & B in cap for 5 min until yellow. Add to water. Wait 30 min (4 hrs if Cryptosporidium suspected in icy water).",
+      "Per product label: Mix Part A & B in cap for 5 min until yellow. Add to water. Wait 30 min (4 hrs if Cryptosporidium suspected in cold water).",
   },
   {
     id: "aquamira-warm",
-    name: "Chlorine Dioxide (Warm / Lake)",
+    name: "Aquamira Chlorine Dioxide (Warm Water Label)",
     type: "chemical",
     durationSeconds: 900, // 15 minutes
     waterCondition: "Water >60°F (Summer Lake / Stream)",
     instructions:
-      "Mix Part A & B for 5 min. Add to water. Wait 15 min for Giardia and bacteria.",
+      "Per product label: Mix Part A & B for 5 min. Add to water. Wait 15 min for Giardia and bacteria in warm water.",
   },
   {
     id: "iodine",
-    name: "Iodine Tablets (Potable Aqua)",
+    name: "Potable Aqua Iodine Tablets (Product Label)",
     type: "chemical",
     durationSeconds: 1800, // 30 minutes
     waterCondition: "Clear Water (Warm to Moderate)",
     instructions:
-      "Add 2 tablets per quart. Cap loosely and shake. Slosh threads. Wait 30 minutes before drinking.",
+      "Per product label: Add 2 tablets per quart. Cap loosely and shake. Slosh threads. Wait 30 minutes before drinking. (Ineffective against Cryptosporidium).",
   },
   {
     id: "boil-standard",
-    name: "Rolling Boil (<6,500 ft)",
+    name: "Rolling Boil (<6,500 ft, CDC Guideline)",
     type: "boil",
     durationSeconds: 60, // 1 minute
     waterCondition: "Low to Moderate Elevation",
     instructions:
-      "Bring water to a vigorous, rolling boil for 1 full minute. Kills all pathogens (viruses, bacteria, protozoa).",
+      "Per CDC guidelines: Bring water to a vigorous, rolling boil for 1 full minute. Kills all pathogens (viruses, bacteria, protozoa).",
   },
   {
     id: "boil-high",
-    name: "Rolling Boil (>6,500 ft)",
+    name: "Rolling Boil (>6,500 ft, CDC Guideline)",
     type: "boil",
     durationSeconds: 180, // 3 minutes
-    waterCondition: "High Elevation (Muir / Passes)",
+    waterCondition: "High Elevation (Passes / Glaciers)",
     instructions:
-      "At high altitude, water boils at lower temperatures. Maintain full rolling boil for 3 full minutes.",
+      "Per CDC guidelines: At high altitude, water boils at lower temperatures. Maintain full rolling boil for 3 full minutes.",
   },
   {
     id: "steripen",
-    name: "SteriPEN UV Purifier (1 Liter)",
+    name: "SteriPEN UV Purifier (Clear Water Product Label)",
     type: "uv",
     durationSeconds: 90, // 90 seconds
     waterCondition: "Clear Water Only (Filter Turbidity First)",
     instructions:
-      "Submerge optical sensors. Stir continuously until the green indicator signals completion.",
+      "Per manufacturer label: Submerge optical sensors in clear water. Stir continuously until the green indicator signals completion.",
   },
 ];

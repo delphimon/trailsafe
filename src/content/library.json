@@ -93,7 +93,7 @@
     {
       "name": "KCSAR — Wilderness Safety",
       "url": "https://kingcountysar.org/wilderness-safety/",
-      "note": "The core guidance this app draws from",
+      "note": "Wilderness-safety guidance cited in this app",
       "cat": "local"
     },
     {
@@ -280,7 +280,7 @@
     },
     {
       "title": "Lessons from real rescues",
-      "sub": "Patterns KCESAR volunteers see again and again",
+      "sub": "Patterns search-and-rescue volunteers see again and again",
       "kind": "article",
       "target": "lessons-learned",
       "keywords": "lessons stories mistakes examples"
@@ -327,7 +327,6 @@
       ],
       "id": "calling-help",
       "contentVersion": "2026.09.06",
-      "reviewStatus": "Draft — organizational review pending",
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://kingcountysar.org/when-how-to-call-for-help/",
@@ -360,7 +359,6 @@
       ],
       "id": "ten-essentials",
       "contentVersion": "2026.09.06",
-      "reviewStatus": "Draft — organizational review pending",
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://kingcountysar.org/when-how-to-call-for-help/"
@@ -390,7 +388,6 @@
       ],
       "id": "phone-smart",
       "contentVersion": "2026.09.06",
-      "reviewStatus": "Draft — organizational review pending",
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://kingcountysar.org/when-how-to-call-for-help/"
@@ -444,7 +441,6 @@
       ],
       "id": "signaling",
       "contentVersion": "2026.09.06",
-      "reviewStatus": "Draft — organizational review pending",
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://kingcountysar.org/when-how-to-call-for-help/"
@@ -492,7 +488,6 @@
       ],
       "id": "unexpected-overnight",
       "contentVersion": "2026.09.06",
-      "reviewStatus": "Draft — organizational review pending",
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://kingcountysar.org/when-how-to-call-for-help/"
@@ -565,7 +560,6 @@
       ],
       "id": "cold-hypothermia",
       "contentVersion": "2026.09.18",
-      "reviewStatus": "Draft — organizational review pending",
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://kingcountysar.org/when-how-to-call-for-help/",
@@ -602,7 +596,6 @@
       ],
       "id": "heat",
       "contentVersion": "2026.09.06",
-      "reviewStatus": "Draft — organizational review pending",
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://kingcountysar.org/when-how-to-call-for-help/",
@@ -654,7 +647,6 @@
       ],
       "id": "winter-safety",
       "contentVersion": "2026.09.06",
-      "reviewStatus": "Draft — organizational review pending",
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://kingcountysar.org/when-how-to-call-for-help/"
@@ -705,7 +697,6 @@
       ],
       "id": "satellite-plb",
       "contentVersion": "2026.09.06",
-      "reviewStatus": "Draft — organizational review pending",
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://kingcountysar.org/when-how-to-call-for-help/"
@@ -758,7 +749,6 @@
       ],
       "id": "backcountry-radio",
       "contentVersion": "2026.09.06",
-      "reviewStatus": "Draft — organizational review pending",
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://kingcountysar.org/when-how-to-call-for-help/"
@@ -804,7 +794,6 @@
       ],
       "id": "children-family",
       "contentVersion": "2026.09.06",
-      "reviewStatus": "Draft — organizational review pending",
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://kingcountysar.org/when-how-to-call-for-help/"
@@ -891,7 +880,6 @@
       ],
       "id": "wildlife",
       "contentVersion": "2026.09.06",
-      "reviewStatus": "Draft — organizational review pending",
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://kingcountysar.org/when-how-to-call-for-help/"
@@ -899,7 +887,7 @@
     },
     "lessons-learned": {
       "title": "Lessons from Real Rescues",
-      "subtitle": "Patterns KCESAR volunteers see again and again",
+      "subtitle": "Patterns search-and-rescue volunteers see again and again",
       "blocks": [
         {
           "type": "paragraph",
@@ -964,7 +952,6 @@
       ],
       "id": "lessons-learned",
       "contentVersion": "2026.09.06",
-      "reviewStatus": "Draft — organizational review pending",
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://kingcountysar.org/when-how-to-call-for-help/"
@@ -998,7 +985,6 @@
       ],
       "id": "river-crossings",
       "contentVersion": "2026.09.13",
-      "reviewStatus": "Draft — organizational review pending",
       "sources": [
         "https://www.wta.org/"
       ]
@@ -1043,7 +1029,6 @@
       ],
       "id": "clothing-layering",
       "contentVersion": "2026.09.13",
-      "reviewStatus": "Draft — organizational review pending",
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://www.wta.org/"
@@ -1103,7 +1088,6 @@
       ],
       "id": "g-lost",
       "contentVersion": "2026.09.06",
-      "reviewStatus": "Draft — organizational review pending",
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://kingcountysar.org/when-how-to-call-for-help/"
@@ -1137,7 +1121,6 @@
       ],
       "id": "g-injured",
       "contentVersion": "2026.09.06",
-      "reviewStatus": "Draft — organizational review pending",
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://kingcountysar.org/when-how-to-call-for-help/"
@@ -1170,7 +1153,6 @@
       ],
       "id": "g-stranded",
       "contentVersion": "2026.09.06",
-      "reviewStatus": "Draft — organizational review pending",
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://kingcountysar.org/when-how-to-call-for-help/"
@@ -1223,7 +1205,6 @@
       ],
       "id": "g-party-missing",
       "contentVersion": "2026.09.06",
-      "reviewStatus": "Draft — organizational review pending",
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://kingcountysar.org/when-how-to-call-for-help/"
@@ -1256,7 +1237,6 @@
       ],
       "id": "g-overdue",
       "contentVersion": "2026.09.06",
-      "reviewStatus": "Draft — organizational review pending",
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://kingcountysar.org/when-how-to-call-for-help/",
@@ -1279,7 +1259,6 @@
       ],
       "id": "g-other",
       "contentVersion": "2026.09.06",
-      "reviewStatus": "Draft — organizational review pending",
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://kingcountysar.org/when-how-to-call-for-help/",
@@ -1349,7 +1328,6 @@
       ],
       "id": "g-waiting",
       "contentVersion": "2026.09.06",
-      "reviewStatus": "Draft — organizational review pending",
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://kingcountysar.org/when-how-to-call-for-help/"

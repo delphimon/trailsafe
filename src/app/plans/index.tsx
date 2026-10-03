@@ -4,7 +4,8 @@ import { router } from "expo-router";
 import { ClipboardList, Plus, UserRound } from "lucide-react-native";
 import { useStore } from "@/state/store";
 import { useApp } from "@/state/app";
-import { isOverdue, newPlan, buildSafeReturnDraft } from "@/lib/plans";
+import { isOverdue, completeTrip, duplicateTrip, buildSafeReturnDraft } from "@/lib/plans";
+import { cancelTripReminders } from "@/lib/notifications";
 import * as SMS from "expo-sms";
 import {
   Button,
@@ -132,24 +133,18 @@ export default function Plans() {
                   variant="ghost"
                   onPress={() =>
                     void run(async () => {
-                      const fresh = newPlan();
-                      const duplicate = {
-                        ...p,
-                        id: fresh.id,
-                        status: "draft" as const,
-                        revision: 1,
-                        createdAt: fresh.createdAt,
-                        updatedAt: fresh.updatedAt,
-                        title: `${p.title} (copy)`,
-                        remind: false,
-                      };
+                      const res = duplicateTrip(p.id, data.plans);
+                      if (!res.ok) {
+                        notify(res.errors[0]);
+                        return;
+                      }
                       await update((d) => ({
                         ...d,
-                        plans: [...d.plans, duplicate],
+                        plans: res.plans,
                       }));
                       router.push({
                         pathname: "/plans/[id]",
-                        params: { id: duplicate.id, edit: "1" },
+                        params: { id: res.plan.id, edit: "1" },
                       });
                     })
                   }
@@ -161,30 +156,51 @@ export default function Plans() {
                     variant="ghost"
                     onPress={() =>
                       setDialog({
-                        title: "Trip completed?",
-                        message: `Mark “${p.title || "Untitled trip"}” as complete and notify your contact that you’re safe?`,
-                        confirmLabel: "Complete & Text Contact",
+                        title: "Mark trip complete?",
+                        message: `Mark “${p.title || "Untitled trip"}” as complete locally? Completing a plan does not notify anyone.`,
+                        confirmLabel: "Mark Complete",
                         onConfirm: async () => {
+                          const res = completeTrip(p.id, data.plans);
+                          if (!res.ok) {
+                            notify(res.errors[0]);
+                            return;
+                          }
+                          await cancelTripReminders(p.id);
                           await update((d) => ({
                             ...d,
-                            plans: d.plans.map((x) =>
-                              x.id === p.id
-                                ? {
-                                    ...x,
-                                    status: "completed",
-                                    updatedAt: Date.now(),
-                                  }
-                                : x,
-                            ),
+                            plans: res.plans,
                           }));
-                          notify("Trip completed locally.");
-                          const text = buildSafeReturnDraft(p);
-                          const targetPhone = p.trustedContactPhone ? [p.trustedContactPhone] : [];
-                          if (await SMS.isAvailableAsync()) {
-                            await SMS.sendSMSAsync(targetPhone, text);
-                          } else {
-                            await share(text, "Safe return check-in");
-                          }
+                          notify("Trip marked complete locally.");
+                          setDialog({
+                            title: "Plan completed locally",
+                            message:
+                              "TrailSafe does not notify anyone automatically. Open a safe-return text draft for your trusted contact now?",
+                            confirmLabel: "Open Safe-Return Text",
+                            cancelLabel: "Not Now",
+                            onConfirm: async () => {
+                              const text = buildSafeReturnDraft(res.plan);
+                              const targetPhone = res.plan.trustedContactPhone
+                                ? [res.plan.trustedContactPhone]
+                                : [];
+                              if (await SMS.isAvailableAsync()) {
+                                const smsRes = await SMS.sendSMSAsync(targetPhone, text);
+                                if (smsRes.result === "sent") {
+                                  notify(
+                                    "Composer closed. Confirm sending in your messaging app — TrailSafe cannot verify delivery.",
+                                  );
+                                } else {
+                                  notify(
+                                    "Text was not sent. Be sure to reach out to your contact directly.",
+                                  );
+                                }
+                              } else {
+                                await share(text, "Safe return check-in");
+                                notify(
+                                  "Share opened. Verify your message was sent — TrailSafe cannot verify delivery.",
+                                );
+                              }
+                            },
+                          });
                         },
                       })
                     }

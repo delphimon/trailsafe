@@ -96,11 +96,28 @@ export interface SolarTimes {
   minutesUntilNextSunrise: number | null;
 }
 
+export const SOLAR_TOOL_METADATA = {
+  id: "tool:solar",
+  title: "Astronomical Solar Calculations & Canopy Dusk Planning Buffer",
+  category: "general-outdoor" as const,
+  owner: "Center for Adventure Leadership",
+  sources: [
+    "NOAA Earth System Research Laboratories (ESRL) Solar Calculation Algorithms",
+    "United States Naval Observatory (USNO) Astronomical Applications",
+  ],
+  contentVersion: "1.1.0",
+  lastVerified: "2026-09-30",
+  nextReview: "2027-09-30",
+  authoritativeOrganization: "Center for Adventure Leadership",
+  lastReviewed: "2026-09-30",
+  reviewCategory: "outdoor" as const,
+};
+
 /**
  * Standard disclaimer noting that dusk calculations are clear-sky models.
  */
 export const SOLAR_WEATHER_DISCLAIMER =
-  "Estimates are based on a clear sky. Clouds or poor weather can make it darker even earlier.";
+  "Estimates are based on a clear sky. Clouds or poor weather can make it darker even earlier. Mountain terrain shadows and dense canopy accelerate trail darkness.";
 
 /**
  * Returns canopy loss offset in minutes.
@@ -439,7 +456,7 @@ export function calculateSolarTimes(
     }
     const duskStr = formatTimeString(today.forestDusk);
     headlampStatusHeadline = `Headlamp needed in ${formatDurationMinutes(minutesUntilForestDusk)}`;
-    headlampStatusSubtext = `Headlamp required at ${duskStr} (Forest Dusk tonight)`;
+    headlampStatusSubtext = `Estimated headlamp target: ${duskStr} (Forest Dusk tonight)`;
   } else {
     // 3. Evening/night after forest dusk (e.g. 7:30 PM, 9:00 PM)
     headlampNeededNow = true;

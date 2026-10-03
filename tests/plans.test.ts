@@ -10,6 +10,12 @@ import {
   addDays,
   currentTimeRounded,
   buildSafeReturnDraft,
+  parseDateTimeInTimeZone,
+  activateTrip,
+  completeTrip,
+  duplicateTrip,
+  saveCurrentTrip,
+  saveTripDraft,
 } from "../src/lib/plans";
 import { initialData, parseStoredData } from "../src/lib/persistence";
 const p = {
@@ -54,7 +60,7 @@ test("raw multiline route and contact fields survive text output", () => {
     route: "First leg\nSecond leg",
     revision: 2,
   });
-  assert.match(text, /UPDATED KCESAR/);
+  assert.match(text, /UPDATED TRAILSAFE TRIP PLAN/);
   assert.match(text, /First leg\nSecond leg/);
   assert.match(text, /2026-09-07 01:00 \(America\/Los_Angeles\)/);
   assert.match(text, /Try to call or text me/);
@@ -153,4 +159,122 @@ test("currentTimeRounded rounds to five minutes in 24-hour format", () => {
   const d = new Date("2026-09-13T14:12:00");
   assert.equal(currentTimeRounded(d), "14:15");
 });
+
+test("parseDateTimeInTimeZone correctly parses PDT, PST, and EDT without timezone corruption", () => {
+  const pdt = parseDateTimeInTimeZone("2026-07-15", "14:30", "America/Los_Angeles");
+  assert.ok(pdt);
+  assert.equal(pdt.toISOString(), "2026-07-15T21:30:00.000Z");
+
+  const pst = parseDateTimeInTimeZone("2026-01-15", "14:30", "America/Los_Angeles");
+  assert.ok(pst);
+  assert.equal(pst.toISOString(), "2026-01-15T22:30:00.000Z");
+
+  const edt = parseDateTimeInTimeZone("2026-07-15", "14:30", "America/New_York");
+  assert.ok(edt);
+  assert.equal(edt.toISOString(), "2026-07-15T18:30:00.000Z");
+
+  assert.equal(parseDateTimeInTimeZone("invalid", "14:30", "America/Los_Angeles"), null);
+  assert.equal(parseDateTimeInTimeZone("2026-07-15", "25:30", "America/Los_Angeles"), null);
+});
+
+test("activateTrip enforces trusted contact and demotes previous current trip", () => {
+  const planA = { ...p, id: "plan-a", status: "current" as const, title: "Plan A" };
+  const planB = {
+    ...p,
+    id: "plan-b",
+    status: "draft" as const,
+    title: "Plan B",
+    trustedContactName: "Alice",
+    trustedContactPhone: "206 555 1234",
+  };
+  const planC = {
+    ...p,
+    id: "plan-c",
+    status: "draft" as const,
+    title: "Plan C",
+    trustedContactName: "",
+    trustedContactPhone: "",
+  };
+
+  // Attempt to activate planC without trusted contact fails
+  const resC = activateTrip("plan-c", [planA, planB, planC]);
+  assert.equal(resC.ok, false);
+  if (!resC.ok) {
+    assert.ok(resC.errors.some((e) => e.includes("Trusted contact")));
+  }
+
+  // Activating planB succeeds and demotes planA to draft
+  const resB = activateTrip("plan-b", [planA, planB, planC]);
+  assert.equal(resB.ok, true);
+  if (resB.ok) {
+    assert.equal(resB.plan.status, "current");
+    const updatedA = resB.plans.find((x) => x.id === "plan-a");
+    assert.equal(updatedA?.status, "draft");
+    const updatedB = resB.plans.find((x) => x.id === "plan-b");
+    assert.equal(updatedB?.status, "current");
+  }
+});
+
+test("completeTrip marks plan as completed locally and increments revision", () => {
+  const plan = { ...p, id: "plan-active", status: "current" as const, revision: 1 };
+  const res = completeTrip("plan-active", [plan]);
+  assert.equal(res.ok, true);
+  if (res.ok) {
+    assert.equal(res.plan.status, "completed");
+    assert.equal(res.plan.revision, 2);
+    assert.equal(res.plans[0].status, "completed");
+  }
+});
+
+test("duplicateTrip resets ID, status to draft, revision to 1, and disables remind", () => {
+  const original = { ...p, id: "original-id", status: "current" as const, revision: 5, remind: true };
+  const res = duplicateTrip("original-id", [original]);
+  assert.equal(res.ok, true);
+  if (res.ok) {
+    assert.notEqual(res.plan.id, "original-id");
+    assert.equal(res.plan.status, "draft");
+    assert.equal(res.plan.revision, 1);
+    assert.equal(res.plan.remind, false);
+    assert.match(res.plan.title, /\(copy\)/);
+    assert.equal(res.plans.length, 2);
+  }
+});
+
+test("saveCurrentTrip validates requirements and replaces any existing current trip", () => {
+  const existingCurrent = { ...p, id: "p1", status: "current" as const, title: "Trip 1" };
+  const invalidCandidate = {
+    ...p,
+    id: "p2",
+    title: "",
+    trustedContactName: "Bob",
+    trustedContactPhone: "555-1234",
+  };
+  const resInvalid = saveCurrentTrip(invalidCandidate, [existingCurrent]);
+  assert.equal(resInvalid.ok, false);
+
+  const validCandidate = {
+    ...p,
+    id: "p2",
+    title: "Trip 2",
+    trustedContactName: "Bob",
+    trustedContactPhone: "555-1234",
+  };
+  const resValid = saveCurrentTrip(validCandidate, [existingCurrent]);
+  assert.equal(resValid.ok, true);
+  if (resValid.ok) {
+    assert.equal(resValid.plan.status, "current");
+    const demoted = resValid.plans.find((x) => x.id === "p1");
+    assert.equal(demoted?.status, "draft");
+  }
+});
+
+test("saveTripDraft updates plan and increments revision", () => {
+  const original = { ...p, id: "p-draft", status: "draft" as const, revision: 2, title: "Draft 1" };
+  const updated = { ...original, title: "Draft 1 Updated" };
+  const res = saveTripDraft(updated, [original]);
+  assert.equal(res.plan.title, "Draft 1 Updated");
+  assert.equal(res.plan.revision, 3);
+  assert.equal(res.plan.status, "draft");
+});
+
 

@@ -102,3 +102,22 @@ test("getMagneticDeclination calculates PNW variation correctly", () => {
   // NY declination is currently around -12° to -14° West
   assert.ok(nyDeclination < -10 && nyDeclination > -15, "New York should be West declination");
 });
+
+test("locationText formats elevation and includes vertical accuracy when available", () => {
+  const fixWithAlt = {
+    ...fix,
+    altitude: 1000, // ~3281 ft
+    altitudeAccuracy: 5, // ~16 ft
+  };
+  const text = locationText(fixWithAlt, "DD", fixWithAlt.timestamp)!;
+  assert.match(text, /Device elevation: ~3281 ft \(±16 ft\)/);
+
+  const fixWithoutAltAcc = {
+    ...fix,
+    altitude: 1000,
+    altitudeAccuracy: null,
+  };
+  const textNoAcc = locationText(fixWithoutAltAcc, "DD", fixWithoutAltAcc.timestamp)!;
+  assert.match(textNoAcc, /Device elevation: ~3281 ft$/m);
+});
+

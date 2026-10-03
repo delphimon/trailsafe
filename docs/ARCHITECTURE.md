@@ -1,6 +1,6 @@
 # TrailSafe Architecture & Technical Reference
 
-This document provides a comprehensive technical reference for the architecture, subsystems, data flow, and design patterns implemented in **KCESAR TrailSafe**.
+This document provides a comprehensive technical reference for the architecture, subsystems, data flow, and design patterns implemented in **TrailSafe**, released by the Center for Adventure Leadership.
 
 ---
 
@@ -187,7 +187,7 @@ graph TD
   - `SearchGuideIntent`: Conforms to Apple's `ShowInAppSearchResultsIntent` system protocol (with `criteria: StringSearchCriteria`). Deep-links to `trailsafe://guide?search=<query>`, pre-populating the search bar and immediately filtering offline survival articles.
 - **CoreSpotlight & Native Device Indexing**:
   - Local Expo module `modules/device-search` exposes `indexItems(items)` and `clearItems()` bridging to Apple's `CSSearchableIndex` on iOS and Android's `ShortcutManagerCompat`.
-  - Indexes all 20 bundled offline emergency articles with rich extracted keywords (e.g. hypothermia, cold, shivering, rewarming).
+  - Indexes all 22 bundled offline emergency articles with rich extracted keywords (e.g. hypothermia, cold, shivering, rewarming).
   - `TrailSafeSceneDelegate.swift` captures Spotlight tap activities (`CSSearchableItemActionType`) on both cold launch and warm resume, routing to `trailsafe://article/<id>`.
 - **CNG & OTA Compatibility**:
   - `plugins/with-app-intents.cjs` automatically injects `TrailSafeIntents.swift`, `Info.plist` user activity types, and Android `shortcuts.xml` during `npx expo prebuild --clean`.
@@ -213,7 +213,7 @@ graph TD
 ## 4. Offline Content Engine
 
 - **Files**: `src/content/library.json`, `src/content/index.ts`, `src/components/trailsafe/article-body.tsx`
-- **Bundled Articles**: 20 complete, offline articles covering:
+- **Bundled Articles**: 22 complete, offline articles covering:
   - Hypothermia, heat illness, dehydration, and altitude sickness.
   - Navigation with map and compass, lost hiker protocols, and low-signal communication.
   - Ten Essentials checklists, winter layering, shelter building, and wildlife safety.
@@ -225,7 +225,7 @@ graph TD
 
 | Test Suite | Framework | Command | Scope |
 | :--- | :--- | :--- | :--- |
-| **Unit & Math Tests** | `node:test` + `tsx` | `npm test` | Coordinates, UTM projections, date wrapping, storage migration, practice guards, solar ephemeris, forest dusk, Morse SOS, whistle cadence, and backcountry tools (59 tests). |
+| **Unit & Math Tests** | `node:test` + `tsx` | `npm test` | Coordinates, UTM projections, date wrapping, storage migration, practice guards, solar ephemeris, forest dusk, Morse SOS, whistle cadence, and backcountry tools (93 tests). |
 | **Theme Contrast Tests** | `node:test` + `tsx` | `npm test` | Mathematical W3C relative luminance and contrast ratios for WCAG AA compliance. |
 | **Type Integrity** | `tsc --noEmit` | `npm run typecheck` | Strict TypeScript compilation across all app routes, modules, and components. |
 | **Linter** | `eslint` | `npx eslint .` | React Compiler, React Native, and Expo Router lint rules. |

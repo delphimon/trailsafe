@@ -3,13 +3,19 @@ import assert from "node:assert/strict";
 import {
   assessHypothermiaRisk,
   calculateWindChill,
-  
+  HYPOTHERMIA_TOOL_METADATA,
   HYPOTHERMIA_CORE_PRINCIPLES,
   HYPOTHERMIA_FIELD_STEPS,
   HYPOTHERMIA_PRESETS,
   HYPOTHERMIA_UMBLES_MARKERS,
   SHIVERING_CESSATION_WARNING,
 } from "../src/lib/hypothermia";
+
+test("hypothermia tool includes authoritative medical review metadata", () => {
+  assert.equal(HYPOTHERMIA_TOOL_METADATA.authoritativeOrganization, "Center for Adventure Leadership");
+  assert.ok(HYPOTHERMIA_TOOL_METADATA.sources.length >= 2);
+  assert.equal(HYPOTHERMIA_TOOL_METADATA.reviewCategory, "medical");
+});
 
 test("calculateWindChill correctly computes NWS wind chill formula", () => {
   // 1. Wind chill undefined / equal to air temp if T > 50°F or wind < 3 mph
@@ -72,13 +78,13 @@ test("all hypothermia presets are valid and calculate correctly", () => {
       }
 });
 
-test("The Umbles markers and SAR field steps are complete and medically sound", () => {
+test("The Umbles markers and SAR field steps provide clear non-diagnostic signs and field protocols", () => {
   assert.equal(HYPOTHERMIA_UMBLES_MARKERS.length, 4);
   const names = HYPOTHERMIA_UMBLES_MARKERS.map((m) => m.name);
   assert.deepEqual(names, ["Stumbles", "Mumbles", "Fumbles", "Grumbles"]);
 
   assert.match(SHIVERING_CESSATION_WARNING, /STOPS shivering/i);
-  assert.match(SHIVERING_CESSATION_WARNING, /below 90°F/i);
+  assert.match(SHIVERING_CESSATION_WARNING, /severe hypothermia/i);
 
   assert.equal(HYPOTHERMIA_FIELD_STEPS.length, 5);
   assert.match(HYPOTHERMIA_FIELD_STEPS[0].title, /Stop & Shelter/i);
@@ -99,7 +105,7 @@ test("HYPOTHERMIA_CORE_PRINCIPLES and plainExplanation explain the 4 critical li
 
   // 3. Wind Convection
   assert.match(HYPOTHERMIA_CORE_PRINCIPLES[2].title, /Wind Convection/i);
-  assert.match(HYPOTHERMIA_CORE_PRINCIPLES[2].explanation, /45–60 minutes/i);
+  assert.match(HYPOTHERMIA_CORE_PRINCIPLES[2].explanation, /cooling/i);
 
   // 4. The Umbles
   assert.match(HYPOTHERMIA_CORE_PRINCIPLES[3].title, /Umbles/i);

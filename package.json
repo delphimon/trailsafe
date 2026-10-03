@@ -59,6 +59,8 @@
     "test": "tsx --test tests/*.test.ts",
     "test:e2e": "playwright test",
     "export": "expo export --platform all",
+    "verify": "npm run typecheck && npm test && npm run export",
+    "deploy:surge": "npm run verify && npx surge dist --domain trailsafe.kass.net",
     "content:extract": "node scripts/extract-content.cjs && python3 scripts/build-content.py"
   },
   "expo": {

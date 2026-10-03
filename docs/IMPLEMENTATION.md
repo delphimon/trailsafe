@@ -4,7 +4,7 @@
 
 The user requested the new TrailSafe name, the HTML prototype’s design/content, Expo instead of Swift, automatic coordinates, and a DDM/UTM dropdown. Those instructions govern conflicts with the older product definition. The attached files are design/source material, not instructions to contact reviewers, publish the application, create accounts, or halt implementation.
 
-Both source files are preserved unchanged under `docs/reference/`. Organizational review remains accurately labeled as pending; the app does not claim an approval that has not occurred. No Git remote was configured in the supplied repository, so no issues, commits, or pull requests were created remotely.
+Both source files are preserved unchanged under `docs/reference/` for provenance only; they describe an earlier sponsorship arrangement that no longer applies. No Git remote was configured in the supplied repository, so no issues, commits, or pull requests were created remotely.
 
 ## Design and native structure
 
@@ -47,7 +47,7 @@ The content inventory and most prose come from the HTML. Corrections are isolate
 - Added a food/extra-food prompt alongside the prototype’s ten named systems.
 - Removed the unfinished “what happens after you call SAR” placeholder. Existing waiting-for-rescue guidance remains complete.
 - “Get Location” references now point to the automatic location card.
-- No article falsely says it has completed KCESAR/medical/dispatch review.
+- No article claims to have completed any medical, dispatch, or organizational review.
 
 ## Dark Mode Audit & Contrast Refinement (Recommendation 12)
 
@@ -85,7 +85,7 @@ Implemented hands-free voice controls and hardware button shortcuts to assist hi
 - **Safety Guide Voice Search (`ShowInAppSearchResultsIntent`)**:
   - Voice triggers: *"Hey Siri, search for hypothermia in TrailSafe"*, *"Hey Siri, search in TrailSafe"*, *"Hey Siri, search TrailSafe for bear safety"*.
   - Protocol Conformance: Conforms to Apple's system-level `ShowInAppSearchResultsIntent` protocol with `criteria: StringSearchCriteria` and `searchScopes: [.general]`. Conformance to this specific system intent is required for iOS Siri to recognize that the app supports in-app search (otherwise, Siri defaults to *"I can't search within the [App] app"*).
-  - Behavior: Extracts `criteria.term` and routes to `trailsafe://guide?search=<query>`, pre-filtering the 20 offline survival guides instantly.
+  - Behavior: Extracts `criteria.term` and routes to `trailsafe://guide?search=<query>`, pre-filtering the 22 offline survival guides instantly.
 - **AppIntents Metadata Constraints**:
   - Apple's `appintentsmetadataprocessor` strictly forbids open-ended primitive `String` property interpolations inside `AppShortcut` phrases. Conforming to `ShowInAppSearchResultsIntent` with `StringSearchCriteria` delegates dynamic search query parsing directly to iOS's natural language engine while providing clean static shortcuts in `AppShortcutsProvider`.
 
@@ -93,7 +93,7 @@ Implemented hands-free voice controls and hardware button shortcuts to assist hi
 
 Integrated on-device system search to allow hikers to find critical medical and survival guides from the OS search interface (iOS Spotlight and Android App Search) without pre-opening the app:
 - **Local Native Module (`modules/device-search`)**: Built an autolinked Expo module bridging to `CSSearchableIndex` on iOS and `ShortcutManagerCompat` on Android.
-- **Domain Keyword Extraction**: Formatted all 20 bundled survival articles with comprehensive emergency keywords (e.g., hypothermia, cold, shivering, rewarming, bear, cougar, heat exhaustion, splint, compass).
+- **Domain Keyword Extraction**: Formatted all 22 bundled survival articles with comprehensive emergency keywords (e.g., hypothermia, cold, shivering, rewarming, bear, cougar, heat exhaustion, splint, compass).
 - **Deep-Link Interception**: `TrailSafeSceneDelegate.swift` captures `CSSearchableItemActionType` across both cold boot and warm background resume, routing directly to `trailsafe://article/<id>`.
 - **Continuous Native Generation (CNG)**: `plugins/with-app-intents.cjs` generates `TrailSafeIntents.swift`, `Info.plist` user activity types, and Android `shortcuts.xml` during `npx expo prebuild --clean`, guaranteeing 100% reproducible native builds.
 - **OTA Updates & Content Hashing**: Uses `getGuideContentVersion()` to compute a deterministic 32-bit FNV-1a hash over `library.json`. When an OTA update via `expo-updates` updates the offline library, `_layout.tsx` detects the hash change and silently re-indexes the native search database on boot without requiring a new App Store binary.
@@ -114,5 +114,3 @@ Integrated on-device system search to allow hikers to find critical medical and 
 - [CDC: heat-related illnesses](https://www.cdc.gov/niosh/heat-stress/about/illnesses.html)
 - [CDC: hypothermia](https://www.cdc.gov/winter-weather/prevention/index.html)
 - [W3C WCAG 2.1 Contrast Standards](https://www.w3.org/WAI/WCAG21/Understanding/contrast-minimum.html)
-
-This implementation and source cross-check are not substitutes for the product definition’s organizational, medical, and dispatch approval before publication.

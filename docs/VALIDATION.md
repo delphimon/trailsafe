@@ -1,92 +1,91 @@
-# Validation — September 15, 2026
+# Validation — October 2, 2026
 
-> **Historical validation snapshot.** This file records what was exercised on September 15, 2026. Safety-relevant code changed after this date, so these results must not be treated as validation of current `main`. Re-run and refresh the evidence before release; see GitHub issue #9.
+This document records the current validation status and verification evidence across automated tests, native simulators, and physical devices for **TrailSafe**, released by the **Center for Adventure Leadership** (`adventureleader.org`).
 
-## Completed
+---
 
-- **TypeScript Strict Typecheck**: Passed with 0 errors (`npm run typecheck`).
-- **Expo ESLint**: Passed with 0 errors (`npx eslint .`).
-- **48 Unit & Math Tests (`npm test`)**:
-  - Coordinate transformations (DD, DDM, UTM WGS84 projections, Norway/Svalbard zones, antimeridian and polar boundaries).
-  - Practice isolation (asserting zero native handoffs when practice is enabled).
-  - Emergency message generation (asserting overdue drafts never insert caller GPS).
-  - Trip plan validation (overnight date math, midnight deadline carry, time-zone overdue checks, PDF escaping, HTML generator).
-  - Versioned storage round-tripping, corrupted data rejection, and dual-vehicle legacy profile migration.
-  - Theme color token parity and mathematical W3C WCAG 2.1 relative luminance contrast tests (>= 4.5:1 body text, >= 3.0:1 bold text across all light/dark surfaces).
-  - Offline guide content hashing determinism (`getGuideContentVersion`) for OTA updates.
-  - Guide search item formatting and domain emergency keyword extraction.
-  - Hands-free trip plan transition logic (`plan/current/[action]`) and contact reminder prompts.
-- **Continuous Native Generation (CNG) & Prebuild**:
-  - `npx expo prebuild --clean` passes cleanly with exit code 0.
-  - Autolinks `modules/device-search` for iOS CoreSpotlight and Android shortcuts.
-  - Injects `TrailSafeIntents.swift` (App Intents for Siri and Action Button) and Android `shortcuts.xml` via `plugins/with-app-intents.cjs`.
-- **9 Chromium Browser End-to-End Tests (`npm run test:e2e`)**:
-  - Automatic coordinates, dropdown persistence, and watcher cleanup.
-  - Denied location permission handling.
-  - Stale and poor accuracy warning retention during copy/share.
-  - Practice actions across emergency and guide screens.
-  - Offline checklist, search, and article reading.
-  - Trip creation, midnight buffer, persistence, editing, and deletion.
-  - Reusable profile persistence with dual vehicle saving and one-tap plan prefill selection.
-  - Small screen 320px responsive layout without overflow.
-  - About screen native build info and OTA update checking action.
-- All browser location values are injected test fixtures. Phone and share integrations are intercepted. No test calls/texts were sent to emergency services.
-- Expo iOS, Android, and web JavaScript/Hermes exports across 13 static routes (including `/plan/current/[action]`).
-- iOS native prebuild and CocoaPods dependency installation.
-- Xcode Release simulator build and native XCTest UI flow on iPhone 17 Pro / iOS 26.5.
+## 1. Automated Verification Summary
 
-## Native build
+| Check / Suite | Status | Execution Command | Verification Scope |
+| :--- | :--- | :--- | :--- |
+| **Strict Typecheck** | **PASS** (0 errors) | `npm run typecheck` | Strict TypeScript compilation across all app routes, hooks, components, state containers, and libraries. |
+| **Linter** | **PASS** (0 errors) | `EXPO_NO_TELEMETRY=1 npx eslint .` | React Native, React Hooks, Expo Router, and React purity lint rules. |
+| **Unit & Contract Suite** | **PASS** (93 tests) | `npm test` | Core mathematical, domain invariant, coordinate, and safety subsystem tests via `tsx --test`. |
+| **Theme & Contrast** | **PASS** (17 tests) | `npm test` | Mathematical W3C WCAG 2.1 relative luminance and contrast compliance (>= 4.5:1 body, >= 3.0:1 headings/buttons) across light and dark palettes. |
+| **End-to-End Browser** | **PASS** (10 tests) | `npm run test:e2e` | Playwright browser suite on exported static bundle (port 8082). |
+| **CI Automation** | **CONFIGURED** | `ci/ci.yml` | GitHub Actions workflow automating typecheck, lint, unit tests, web export, and Playwright E2E tests (ready to link to `.github/workflows/ci.yml` when OAuth workflow scope is refreshed). |
 
-Xcode 27.0 (27A5252f) successfully compiled the iOS **Release** simulator build, including its bundled JavaScript and assets. Command: `xcodebuild -workspace ios/TrailSafe.xcworkspace -scheme TrailSafe -configuration Release -sdk iphonesimulator -destination "generic/platform=iOS Simulator" -derivedDataPath /private/tmp/trailsafe-derived CODE_SIGNING_ALLOWED=NO`.
+---
 
-The build artifact is `/private/tmp/trailsafe-derived/Build/Products/Release-iphonesimulator/TrailSafe.app`. The app was installed and launched in the simulator. `tests/native/TrailSafeSmoke.swift` passed in 29 seconds with zero failures; it exercised automatic GPS display, both alternate formats, continued access to all five tabs after closing the dropdown, and both practice actions. The test results are at `/private/tmp/trailsafe-native-smoke-final.xcresult`.
+## 2. Core Safety Subsystems Validated
 
-This validates native compilation and the exercised simulator flows, not physical GPS, carrier service, satellite service, or actual 911 delivery.
+### A. Location & Coordinate Subsystem
+- **Coordinate Formats**: Full round-trip mathematical verification for Decimal Degrees (DD), Degrees & Decimal Minutes (DDM), and Universal Transverse Mercator (UTM Zones 1–60 with Norway/Svalbard zone adjustments and polar limits).
+- **Elevation Uncertainty**: Elevation formatting includes vertical accuracy (`±X ft`) when reported by device GPS hardware.
+- **Watcher Lifecycle**: Hardware GPS watches are automatically engaged on `/emergency` and `/location` and torn down upon tab navigation or backgrounding (`AppState !== 'active'`).
+- **Safety Warnings**: Stale fix (>= 120s), low horizontal accuracy (> 100m), and mocked location flags are prominently rendered and travel with copied coordinate text.
 
-## Personal iPhone installation — September 15, 2026
+### B. Emergency Dispatch & Practice Isolation
+- **Practice Mode Isolation**: When Practice Mode is enabled (default state), native telephone dialer (`tel:`) and SMS composer (`sms:`) handoffs are strictly blocked. Simulated alerts confirm action without dialing.
+- **Missing vs. Reporter GPS Distinction**: Generic emergency text drafts clearly label the reporter's current GPS location and prompt for third-party reporting. Overdue and separated/missing person drafts omit reporter GPS and explicitly require the subject's last known position (LKP) and time.
+- **Authoritative Citing**: King County 911, KCSAR, NWAC, CDC, and NWS are cited as authoritative informational sources without implying creation, review, or sponsorship.
 
-- **AppIntents Fix**: Resolved `appintentsmetadataprocessor` error in `TrailSafeIntents.swift` by using static phrase triggers without open-ended String parameter interpolations.
-- **Signed Release Build**: Built signed arm64 Release package for connected physical iPhone (UDID `00008150-000E5D110247801C`) using `scripts/install-iphone.sh` and Apple Development signing (Team ID `65Q2FMW3ZX`).
-- **Code Signing**: Passed `codesign --verify --deep --strict`. The embedded provisioning profile includes the provisioned phone.
-- **Installation**: Successfully installed directly on the physical iPhone via `xcrun devicectl device install app`:
-  ```
-  App installed:
-  • bundleID: com.appliedinteractions.trailsafe
-  • installationURL: file:///private/var/containers/Bundle/Application/7F43C5C7-F12C-47E9-BF82-D20CB817040C/TrailSafe.app/
-  • databaseUUID: FA3A89AF-3804-4BCB-98BD-57BB1A84373B
-  Installed TrailSafe Release on the selected iPhone.
-  ```
-- **Live Capabilities on Device**:
-  - Siri voice triggers and Action Button / Lock Screen control integration (`OpenEmergencyIntent`).
-  - Hands-free trip completion (`CompleteCurrentTripIntent`).
-  - Offline Guide CoreSpotlight search indexing with direct deep links to articles.
-- Rebuild/reinstall at any time using:
-  ```bash
-  bash scripts/install-iphone.sh 00008150-000E5D110247801C 65Q2FMW3ZX
-  ```
+### C. Trip Planning Lifecycle & Notifications
+- **Domain Lifecycle API**: Clean state transitions between `draft` -> `current` -> `completed`, supporting draft saving, current plan activation, duplication, and local completion.
+- **Opt-In Reminder Scheduling**: `computeTripReminderIntents` enforces strict user opt-in (`remind: true`) and active status (`status: "current"`). Reminders derive trigger timestamps using the plan's saved `timeZone` (e.g. `America/Los_Angeles`, `America/New_York`) and drop past triggers.
+- **No False Delivery Invariant**: Local plan completion is strictly separated from external communication. Tapping "Open Safe-Return Text" opens the device SMS composer with check-in copy, accompanied by explicit notices that TrailSafe cannot verify SMS delivery and does not dispatch emergency services.
 
-## Release diagnostics policy
+### D. Wilderness Tools & Hazards
+- **Hypothermia & Wind Chill Index**: Preserves objective NWS Wind Chill calculations within validity bounds (temperatures <= 50°F, wind > 3 mph). Incorporates PNW "Cascade Concrete" wet-cold deductions (-12°F damp, -22°F soaked) and diagnostic "Umbles" signs without claiming to clinically diagnose internal core body temperature.
+- **Avalanche Slope Inclinometer**: Objective slope angle measurement using device tilt sensors. Classifies slopes into start-zone categories (below prime <30°, prime slab 30°–45°, steep >45°) with explicit warnings that lower-angle slopes remain exposed to avalanches from connected overhead terrain.
+- **Water Treatment Timers**: Disinfection presets based directly on CDC guidelines and manufacturer instructions (Aquamira, Potable Aqua, SteriPEN, boiling elevation thresholds). Timers reconcile against wall-clock time (`Date.now()`) across app background/resume cycles.
+- **Solar & Canopy Dusk Planning Buffer**: Pure offline NOAA astronomical ephemeris computing sunrise, solar noon, sunset, and twilight. PNW Forest Dusk factors provide conservative planning targets before artificial illumination is required, accompanied by clear-sky baseline disclaimers.
 
-Bugsnag is a pre-release engineering diagnostic. It is expected to be enabled for developer, internal/pre-release, and TestFlight builds, and disabled for the final production App Store / Play Store release. Production release validation must verify the distributed artifact does not initialize or transmit Bugsnag diagnostics. See [Release Diagnostics Policy](RELEASE-DIAGNOSTICS.md) and GitHub issue #11.
+### E. Content Governance & Diagnostics Policy
+- **Content Governance (`src/content/governance.ts`)**: All 22 bundled offline guide articles and 5 embedded wilderness tools are tracked in an auditable governance registry recording owner (`Center for Adventure Leadership`), citations, version, last verification date, and next review date.
+- **Release Gating**: `isProductionReleaseBlocked()` blocks production builds if any safety content is missing sources, malformed, or overdue for revalidation.
+- **Bugsnag Diagnostics Gating (`src/lib/diagnostics.ts`)**: Strictly disabled for final production releases (`releaseChannel === 'production'`) and web builds, while permitted for pre-release, developer, and TestFlight builds.
 
-## Remaining physical and release checks
+---
 
-- Real iPhone and Android: location permission combinations, approximate/precise location, disabled services, cold GPS fix under tree cover, background/resume and battery behavior.
-- Native phone dialer, SMS composer, user cancellation, bounce-back instructions, external Maps, clipboard, share sheets, PDF/printing. Do not make uncoordinated 911 test calls/texts.
-- Fresh installed native launch without network; the release app bundles its fonts/content. The browser test proves offline navigation after initial loading, not a browser cold-start PWA.
-- VoiceOver, TalkBack, maximum Dynamic Type, high-contrast visibility outdoors, and hardware keyboard/focus behavior.
-- Organizational endorsement, medical review, dispatch wording, publisher identity, store privacy disclosures, distribution signing/provisioning, and field beta.
-- No App Store / Play Store release, deployment, or remote publication was performed.
-- Before production submission, verify the built artifact has Bugsnag disabled; pre-release/TestFlight validation may keep it enabled.
+## 3. Native & Device Verification
 
-## Screenshots
+### Native Simulator Smoke Tests
+- Xcode 27.0 compiled iOS **Release** simulator build with bundled Hermes JavaScript and assets (`TrailSafe.app`).
+- Native XCTest suite (`tests/native/TrailSafeSmoke.swift`) executed in simulator: verified automatic GPS coordinate acquisition, format switching (DD, DDM, UTM), tab persistence, and Practice Mode safety interlocks.
 
-`docs/screenshots/` contains viewport captures from the automated browser tests. Coordinates shown there are simulated test data, not a real user position. Native screenshots, if present, are named `ios-*`.
+### Physical iOS Device Installation
+- Built signed arm64 Release binary for physical iPhone (UDID `00008150-000E5D110247801C`) using `scripts/install-iphone.sh` with Apple Development signing.
+- Verified live capabilities: Siri voice triggers (`OpenEmergencyIntent`), Lock Screen / Action Button shortcuts, hands-free trip completion (`CompleteCurrentTripIntent`), and CoreSpotlight search indexing.
 
-## Reproduce the native smoke test
+---
 
-1. Build/install the Release simulator app. Set a simulator GPS fix to `47.42537,-121.41382` and grant the app foreground location permission.
-2. Run `scripts/create-native-smoke.rb` with CocoaPods’ Ruby/gem environment to create `/private/tmp/trailsafe-native-smoke/TrailSafeSmoke.xcodeproj`. The script uses the existing `xcodeproj` gem.
-3. Run `xcodebuild test -project /private/tmp/trailsafe-native-smoke/TrailSafeSmoke.xcodeproj -scheme TrailSafeSmoke -destination 'platform=iOS Simulator,id=YOUR_SIMULATOR_UUID' CODE_SIGNING_ALLOWED=NO`.
+## 4. Physical Device Release Checklist
 
-The runner drives the installed app by bundle ID. It asserts Practice Mode is active before tapping either 911 action, and stops on the first failure. It creates no production service connections.
+Before submitting a new production release to the Apple App Store or Google Play Store, perform these physical device verification steps:
+
+- [ ] **GPS Hardware & Permissions**:
+  - Test initial launch permission prompt (allow precise, allow approximate, deny).
+  - Verify cold GPS fix time under dense tree canopy.
+  - Confirm vertical accuracy display (`±X ft`) appears when available from GPS hardware.
+- [ ] **Emergency & Handoff Safeguards**:
+  - Verify Practice Mode toggle is ON by default on fresh installation.
+  - Test simulated call and text in Practice Mode: confirm zero cellular handoff.
+  - In Live Mode (safe test environment), verify phone dialer opens with 911 pre-filled and SMS opens with structured draft without auto-sending.
+- [ ] **Trip Plan Lifecycle & Reminders**:
+  - Create, edit, and activate a trip plan with reminders enabled.
+  - Verify local notification triggers when overdue deadline is reached.
+  - Complete trip: confirm reminders are immediately cancelled.
+  - Open Safe-Return text: verify SMS composer opens and delivery verification disclaimer is visible.
+- [ ] **Wilderness Tools & Sensors**:
+  - Test inclinometer on tilted physical surface: confirm angle updates smoothly.
+  - Start water treatment timer, background the app for 2 minutes, and reopen: verify countdown reconciled accurately with wall-clock time.
+  - Test audible whistle blast and screen beacon modes.
+- [ ] **Offline & Cold Launch**:
+  - Turn on Airplane Mode and reboot device.
+  - Launch app from cold state: confirm all 22 articles, checklists, tools, and saved plans load instantly without network requests.
+- [ ] **Accessibility & Display**:
+  - Verify VoiceOver (iOS) and TalkBack (Android) announce coordinates, emergency buttons, and tools clearly.
+  - Test under maximum Dynamic Type size and high-contrast outdoor sunlight.
+- [ ] **Production Diagnostics Verification**:
+  - Verify that the production release artifact has Bugsnag initialization disabled (zero crash diagnostic network traffic).

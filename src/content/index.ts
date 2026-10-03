@@ -13,7 +13,6 @@ export type Article = {
   subtitle: string;
   blocks: Block[];
   contentVersion: string;
-  reviewStatus: string;
   sources: string[];
 };
 export const articles = library.ARTICLES as Record<string, Article>;

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { Linking, Modal, Platform, Pressable, View } from "react-native";
+import { Linking, Platform, Pressable, View } from "react-native";
 import {
-  Check,
   Copy,
   LocateFixed,
   MapPin,
@@ -167,6 +166,9 @@ export function LocationCard() {
                 }}
               >
                 Device elevation: ~{Math.round(fix.altitude * 3.28084)} ft
+                {fix.altitudeAccuracy != null && fix.altitudeAccuracy >= 0
+                  ? ` (±${Math.round(fix.altitudeAccuracy * 3.28084)} ft)`
+                  : ""}
               </T>
             </View>
           )}

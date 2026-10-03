@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { View, Linking } from "react-native";
 import { router } from "expo-router";
 import { ClipboardList, ExternalLink } from "lucide-react-native";
@@ -20,6 +21,7 @@ import {
 } from "@/components/trailsafe/ui";
 export default function Prepare() {
   const { s } = useThemeStyles();
+  const [mountedAt] = useState(() => Date.now());
   const { data, update, ready, error } = useStore(),
     { run, setDialog } = useApp();
   const toggle = (key: string) =>
@@ -43,7 +45,7 @@ export default function Prepare() {
 
   const isStale = data.checklist.checks.length > 0 && (
     (currentPlan && data.checklist.planId !== currentPlan.id) ||
-    (!currentPlan && Date.now() - data.checklist.updatedAt > 7 * 24 * 60 * 60 * 1000)
+    (!currentPlan && mountedAt - data.checklist.updatedAt > 7 * 24 * 60 * 60 * 1000)
   );
   
   return (
@@ -188,7 +190,7 @@ export default function Prepare() {
         <Heading>Share your plan before you go</Heading>
         <T style={s.note}>
           Your trip plan spells out exactly when to worry and when to call 911.
-          Whoever holds it shouldn't need this app.
+          Whoever holds it shouldn’t need this app.
         </T>
         {currentPlan ? (
           <Button

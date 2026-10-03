@@ -39,6 +39,24 @@ export interface HypothermiaPrinciple {
   explanation: string;
 }
 
+export const HYPOTHERMIA_TOOL_METADATA = {
+  id: "tool:hypothermia",
+  title: "Cold Exposure & Hypothermia Assessment",
+  category: "medical" as const,
+  owner: "Center for Adventure Leadership",
+  sources: [
+    "National Weather Service (NWS) Windchill Formula",
+    "Wilderness Medical Society (WMS) Clinical Practice Guidelines for Out-of-Hospital Evaluation and Treatment of Accidental Hypothermia",
+    "State of Alaska Cold Injuries Guidelines",
+  ],
+  contentVersion: "1.1.0",
+  lastVerified: "2026-09-30",
+  nextReview: "2027-09-30",
+  authoritativeOrganization: "Center for Adventure Leadership",
+  lastReviewed: "2026-09-30",
+  reviewCategory: "medical" as const,
+};
+
 export const HYPOTHERMIA_CORE_PRINCIPLES: HypothermiaPrinciple[] = [
   {
     number: 1,
@@ -58,11 +76,11 @@ export const HYPOTHERMIA_CORE_PRINCIPLES: HypothermiaPrinciple[] = [
   },
   {
     number: 3,
-    title: "Wind Convection & The 45-Minute Drop",
-    shortKicker: "<45-Min Onset",
-    summary: "Wind strips your heat layer; hypothermia onset in under 45–60 minutes.",
+    title: "Wind Convection & Rapid Cooling",
+    shortKicker: "Rapid Heat Loss",
+    summary: "Wind strips your heat layer; cooling accelerates rapidly once movement stops.",
     explanation:
-      "Wind continuously strips the thin insulating boundary layer of warm air trapped near the skin. When combined with wet fabrics, core body temperature can drop from normal to moderate hypothermia in under 45–60 minutes once movement stops.",
+      "Wind continuously strips the thin insulating boundary layer of warm air trapped near the skin. When combined with wet fabrics, cooling accelerates rapidly once physical exertion stops.",
   },
   {
     number: 4,
@@ -104,11 +122,9 @@ export function calculateWindChill(tempF: number, windMph: number): number {
   return Math.round(wc);
 }
 
-
-
-
 /**
- * Assesses hypothermia and wet cold exposure risk according to temperature, wind, and clothing saturation.
+ * Assesses environmental cold exposure and wet-chill conditions according to temperature, wind, and clothing saturation.
+ * Note: This models environmental exposure conditions, not clinical hypothermia diagnosis of a patient.
  *
  * @param airTempF Air temperature in Fahrenheit
  * @param windMph Wind speed in miles per hour
@@ -129,7 +145,7 @@ export function assessHypothermiaRisk(
     windMph >= 12;
 
   let riskLevel: HypothermiaRiskLevel = "low";
-  let riskTitle = "LOW HYPOTHERMIA HAZARD";
+  let riskTitle = "MILD / COOL EXPOSURE CONDITIONS";
   let riskDescription =
     "Standard cool weather. Normal hiking movement produces adequate body heat. Keep layers handy if stopping.";
   let color = "#2D6A4F"; // Forest green
@@ -137,11 +153,11 @@ export function assessHypothermiaRisk(
   if (windChillF <= 15 || isCascadeConcreteHazard) {
     riskLevel = "critical";
     riskTitle = isCascadeConcreteHazard
-      ? "CRITICAL 'CASCADE CONCRETE' HAZARD"
-      : "CRITICAL FREEZING EXPOSURE";
+      ? "EXTREME COLD EXPOSURE HAZARD ('CASCADE CONCRETE')"
+      : "EXTREME FREEZING EXPOSURE HAZARD";
     riskDescription = isCascadeConcreteHazard
-      ? "DEADLY PNW COMBINATION: Soaked clothing + wind strips body heat much faster than dry air. Mild-to-moderate hypothermia can incapacitate a hiker very quickly once movement stops."
-      : "EXTREME CORE HEAT LOSS: Severe hypothermia and frostbite hazard. Shivering will rapidly deplete glycogen reserves without immediate waterproof wind shelter.";
+      ? "DANGEROUS PNW COMBINATION: Soaked clothing + wind strips body heat much faster than dry air. Rapid core cooling occurs once movement stops."
+      : "EXTREME ENVIRONMENTAL HEAT LOSS: High wind chill and freezing temperatures accelerate core cooling. Requires immediate windproof shelter and insulation.";
     color = "#E4572E"; // Safety Orange / Critical Red
   } else if (
     windChillF <= 32 ||
@@ -149,15 +165,15 @@ export function assessHypothermiaRisk(
     (moisture === "damp" && airTempF <= 42 && windMph >= 10)
   ) {
     riskLevel = "high";
-    riskTitle = "HIGH HYPOTHERMIA RISK";
+    riskTitle = "RAPID HEAT LOSS CONDITIONS";
     riskDescription =
-      "RAPID HEAT LOSS: Body must shiver continuously to balance heat loss. Wet clothing rapidly exhausts energy reserves without windproof shelter and high-calorie food.";
+      "ELEVATED EXPOSURE HAZARD: Continuous shivering required to maintain heat. Wet clothing drains energy quickly without windproof shelter and high-calorie food.";
     color = "#D9531E"; // Orange
   } else if (windChillF <= 48 || moisture !== "dry") {
     riskLevel = "moderate";
-    riskTitle = "MODERATE CHILL / MONITOR CLOSELY";
+    riskTitle = "MODERATE CHILL CONDITIONS";
     riskDescription =
-      "ELEVATED RISK WHEN STOPPED: Body cools quickly during breaks or summit stops. Put on wind/rain shell before sweat chills. Watch trail partners for early coordination loss.";
+      "ELEVATED EXPOSURE WHEN STOPPED: Body cools quickly during rest breaks or summit stops. Put on wind/rain shell before sweat chills. Watch partners for coordination changes.";
     color = "#C98A2C"; // Amber
   }
 
@@ -190,32 +206,33 @@ export function assessHypothermiaRisk(
 }
 
 /**
- * Diagnostic indicators of progressive core hypothermia ("The Umbles").
+ * Observable field indicators of progressive hypothermia ("The Umbles").
+ * Note: These are clinical observations to evaluate in a person; do not rely solely on thermometers or environmental formulas.
  */
 export const HYPOTHERMIA_UMBLES_MARKERS = [
   {
     name: "Stumbles",
     system: "Gross Motor (Ataxia)",
     symptom: "Tripping, loss of trail footing, unsteady gait, lagging behind party.",
-    severity: "Mild (95°F–98°F / 35°C–37°C)",
+    severity: "Early / Mild signs (observable motor decline)",
   },
   {
     name: "Mumbles",
     system: "Speech & Cognition (Dysarthria)",
     symptom: "Slurred words, slow response to questions, difficulty counting backwards.",
-    severity: "Mild to Moderate (93°F–95°F / 34°C–35°C)",
+    severity: "Mild to Moderate signs (speech & cognitive slowing)",
   },
   {
     name: "Fumbles",
     system: "Fine Motor Skills",
     symptom: "Unable to zip jackets, tie boot laces, operate headlamp switches, or open snack packs.",
-    severity: "Moderate (90°F–93°F / 32°C–34°C)",
+    severity: "Moderate signs (loss of dexterity)",
   },
   {
     name: "Grumbles",
     system: "Behavior & Affect",
     symptom: "Uncharacteristic apathy, irritability, irrational withdrawal, stubborn refusal to add layers.",
-    severity: "Moderate (90°F–93°F / 32°C–34°C)",
+    severity: "Moderate signs (personality & judgment changes)",
   },
 ];
 
@@ -223,7 +240,7 @@ export const HYPOTHERMIA_UMBLES_MARKERS = [
  * Critical warning regarding shivering cessation.
  */
 export const SHIVERING_CESSATION_WARNING =
-  "CRITICAL RED FLAG: If a cold, wet hiker STOPS shivering while still exposed and unrewarmed, their core temperature has dropped below 90°F (32°C). This indicates metabolic exhaustion and life-threatening severe hypothermia requiring immediate SAR evacuation.";
+  "CRITICAL RED FLAG: If a cold, wet hiker STOPS shivering while still exposed, unrewarmed, and lethargic or confused, this indicates severe hypothermia and metabolic exhaustion. Shivering ceases as the body can no longer generate heat. Seek immediate SAR evacuation (call 911).";
 
 /**
  * Search & Rescue and Wilderness First Responder field treatment protocols.
@@ -266,7 +283,7 @@ export const HYPOTHERMIA_PRESETS: HypothermiaPreset[] = [
     airTempF: 38,
     windMph: 25,
     moisture: "soaked",
-    description: "Classic PNW hazard: 38°F driving rain with ridge wind. Hypothermia risk within 45 minutes.",
+    description: "Classic PNW hazard: 38°F driving rain with ridge wind. Rapid heat loss hazard when stationary.",
   },
   {
     id: "rainy-trail-slog",
