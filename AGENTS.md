@@ -2,253 +2,53 @@
 
 Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before writing any code.
 
----
+# TrailSafe developer guide
 
-# TrailSafe — Developer & Agent Architecture Guide
+TrailSafe is a fully offline hiking preparation and emergency-information companion, initially focused on Washington and the PNW. Core features are preparation checklists, local shareable trip plans, emergency coordinates, a bundled guide, and simple hiking tools.
 
-This guide gives developers and AI agents the full context needed to build, test, debug, and extend **TrailSafe** without having to read through every line of source code.
+## Product rules
 
----
+- Four primary destinations: Prepare, Help, Guide, Tools. `/` redirects to Prepare; existing emergency/article/plan deep links remain valid.
+- No consumer Practice Mode. Tests inject inert handoff handlers or intercept browser APIs. Never initiate real 911 calls or texts during tests. Native smoke tests must not tap transport controls.
+- Calls open the phone handoff. Text 911 opens an editable draft after choosing the subject location, then the system composer. The user sends it; composer/share results never establish delivery.
+- Never use the reporter's GPS for someone elsewhere. Use the subject's last known location and time instead.
+- TrailSafe does not monitor trips, notify contacts or dispatch help automatically. Completing a trip updates local data only.
+- Water treatment is guidance only. Use the device's Clock timer; do not implement another app timer, notification alarm or countdown.
+- No content-governance registry, ownership/review schedule, expiry machinery or automated release-content approval gate. Review content in the app before releasing it. Ordinary citations and content indexing remain useful.
+- No accounts, advertising, behavioral analytics, backend or background location. Preserve all saved plans, profiles, preferences and checklist progress.
+- Bugsnag is permitted in developer/internal/TestFlight builds, disabled in production store builds and on web. `eas.json` selects an explicit build channel; local signed installs default to preview. Verify the actual store artifact before distribution.
 
-## 1. Project Mission & Non-Negotiable Safety Principles
+## Architecture
 
-**TrailSafe** is an offline-first wilderness safety companion for hikers and outdoor recreationists in the Pacific Northwest (PNW) and Washington State. It provides instant emergency coordinate translation, safety checklists, offline first-aid/survival guides, and verifiable trip plans structured for Search and Rescue (SAR) incident commanders and 911 dispatchers.
+- Expo SDK 57, React Native 0.86, TypeScript. Expo Router routes in `src/app`.
+- `src/state/store.tsx`: serialized AsyncStorage writes. Damaged data blocks overwriting. `changeTrip` computes against the latest stored snapshot and returns after a successful write.
+- `src/lib/plans.ts`: plan schema, lifecycle, date/time validation, text/PDF formatting. Plans have explicit IANA time zones. Reject skipped and repeated DST wall times instead of guessing.
+- `src/lib/trip-commands.ts`: shared asynchronous persistence boundary for lifecycle commands.
+- `src/lib/reminder-reconciliation.ts`: pure desired-vs-pending local-reminder reconciliation. `src/lib/notifications.ts` supplies the Expo adapter. Reconcile after persisted plan changes/reset and at startup; report permission/failure separately from saving. Never cancel unrelated notifications.
+- `src/hooks/use-location.tsx`: shared foreground GPS watcher. Consumers request only while focused; last-known fixes retain age/accuracy warnings.
+- `src/lib/coordinates.ts`: DD/DDM/UTM and WMM declination. Positive declination means magnetic north lies east of true north. Grid north is map-specific.
+- `src/lib/solar.ts`: offline sunrise/sunset/twilight estimates; 0/30/60-minute headlamp planning buffers. No silent location fallback or invented polar sunrise.
+- `src/lib/hiking-tools.ts`: rough hiking-time estimate. No cold-risk calculator, avalanche slope classification, audio whistle, screen strobe or water timer.
+- `src/content/library.json`: editable bundled content and source links. `src/content/regions.ts`: bundled region/preset data for future expansion.
+- Checklist IDs use stable names. `parseStoredData` preserves legacy index-based check meanings when mapping to these names.
+- `modules/device-search`: optional on-device indexing. Do not record a successful version if indexing failed. Bound Android dynamic shortcuts by capacity after static shortcuts. Hash the actual indexed payload.
+- `plugins/ios/TrailSafeIntents.swift`: preserve shipped intent identifiers and phrases. Intent descriptions must describe local actions, not automatic contact notification.
 
-### Core Safety Invariants
-
-1. **Never Make Live 911 Calls or Texts in Tests or Practice**:
-   - In `Practice Mode` (the default toggle state on Emergency screens), all emergency triggers run simulated handlers (`src/lib/emergency.ts` and `src/state/app.tsx`). Native phone and SMS handoffs MUST NEVER execute.
-2. **Never Insert Caller GPS for Missing/Overdue Persons**:
-   - In `buildEmergencyDraft()`, if the situation is overdue or missing person, the draft prompts for the subject's _last known location_ rather than inserting the caller's current GPS position.
-3. **No Unmonitored Safety Illusion**:
-   - TrailSafe never claims or implies background dispatch monitoring, cloud synchronization, or automatic emergency signaling. If a user is overdue, the app relies on the hiker's chosen emergency contact to notify 911.
-4. **Offline & Client-Side Privacy**:
-   - There are zero accounts, behavioral analytics, or advertising SDKs. User data is stored strictly on-device in `AsyncStorage`. Bugsnag is a pre-release engineering diagnostic: it is enabled for developer, internal/pre-release, and TestFlight builds, and MUST be disabled for the final production App Store / Play Store release. Production privacy language describes the production artifact; see `docs/RELEASE-DIAGNOSTICS.md` and issue #11.
-
----
-
-## 2. Tech Stack & Environment
-
-- **Framework**: React Native 0.86.3 with Expo SDK 57 (SDK version 57.0.20)
-- **Routing**: Expo Router 57 (`src/app/` file-system routing)
-- **Language**: TypeScript 6 (strict mode enabled)
-- **State & Storage**: React Context + `@react-native-async-storage/async-storage`
-- **Native Modules**: `expo-sensors` (inclinometer), `expo-av` (audio whistle), `@bugsnag/expo` (crash reporting)
-- **Coordinate Transformations**: `proj4` (WGS84 projection to UTM zones 1–60)
-- **Typography**: `@expo-google-fonts/public-sans` (body) & `@expo-google-fonts/barlow-condensed` (headings)
-- **Icons**: `lucide-react-native`
-- **Unit Testing**: Node.js test runner (`node:test`) executed via `tsx`
-- **End-to-End Testing**: Playwright (`@playwright/test`) running against an exported static web build served by `scripts/serve-preview.cjs` on port `8082`
-
----
-
-## 3. Directory & File Structure
-
-```
-trailsafe/
-├── modules/
-│   └── device-search/            # Local Expo module for CoreSpotlight (iOS) & shortcuts (Android)
-│       ├── ios/                  # Swift CoreSpotlight indexing implementation
-│       ├── android/              # Kotlin ShortcutManagerCompat implementation
-│       ├── index.ts              # Universal TypeScript module interface
-│       └── expo-module.config.json
-├── plugins/
-│   ├── with-ios-scenes.cjs       # Scene lifecycle configuration for iOS 27
-│   ├── with-app-intents.cjs      # CNG plugin injecting App Intents & Android shortcuts.xml
-│   └── ios/
-│       ├── TrailSafeIntents.swift # Siri AppIntents, AppShortcutsProvider, Action Button hooks
-│       └── TrailSafeSceneDelegate.swift # Intercepts CoreSpotlight item selection
-├── src/
-│   ├── app/                      # Expo Router screens (routes map 1:1 to URL paths)
-│   │   ├── _layout.tsx           # App root: font loading, splash, StoreProvider, AppProvider, Shell, Search Indexing
-│   │   ├── index.tsx             # Home screen (Emergency hero, quick links, current plan banner)
-│   │   ├── emergency.tsx         # Emergency screen (LocationCard, Call/Text 911, Practice toggle)
-│   │   ├── tools.tsx             # Wilderness tools (Solar & Forest Dusk, Signaling, Backcountry utilities)
-│   │   ├── prepare.tsx           # Checklists (Ten Essentials, phone prep, trip presets)
-│   │   ├── guide.tsx             # Offline survival & first-aid library search (supports ?search= query)
-│   │   ├── article/[id].tsx      # Dynamic article reader for library topics
-│   │   ├── plans/
-│   │   │   ├── index.tsx         # List of saved trip plans (Drafts, Current, Completed)
-│   │   │   └── [id].tsx          # Trip plan editor & reader (new plan, edit, share, PDF)
-│   │   ├── plan/
-│   │   │   └── current/
-│   │   │       └── [action].tsx  # Hands-free trip completion/start route (/plan/current/complete)
-│   │   ├── profile.tsx           # Hiker reusable profile (Name, Phone, Car 1, Car 2, Comms)
-│   │   ├── about.tsx             # SAR info, privacy, Native Build & OTA Update details
-│   │   └── resources.tsx         # Directory of verified PNW SAR and 911 links
-│   ├── components/trailsafe/     # Reusable UI library
-│   │   ├── theme.ts              # Pure TypeScript color tokens, typography, and contrast specs
-│   │   ├── ui.tsx                # Re-exports theme; Screen, Card, Button, Field, Chip, etc.
-│   │   ├── location-card.tsx     # GPS display card with DD/DDM/UTM format selector
-│   │   ├── emergency-actions.tsx # Call 911, Text 911 buttons and Practice Mode toggle
-│   │   ├── shell.tsx             # Global bottom tab bar, modal dialogs, and toast banners
-│   │   └── article-body.tsx      # Rich content renderer for offline library articles
-│   ├── hooks/
-│   │   └── use-location.ts       # Automatic foreground GPS tracking with lifecycle management
-│   ├── lib/                      # Pure domain logic (no React dependencies)
-│   │   ├── coordinates.ts        # DD, DDM, UTM math, WGS84 projection, fix warnings
-│   │   ├── emergency.ts          # Emergency message drafts and practice interlock
-│   │   ├── plans.ts              # TripPlan schema, validation, overdue calculations, HTML export
-│   │   ├── persistence.ts        # Storage schema, parseStoredData validation, profile migration
-│   │   ├── export-plan.ts        # PDF generation (expo-print) and share sheet (expo-sharing)
-│   │   ├── search-indexing.ts    # Guide content hashing and CoreSpotlight/Android indexing
-│   │   ├── solar.ts              # Offline astronomical solar calculations & PNW forest dusk factor
-│   │   ├── signaling.ts          # Optical Morse SOS and alpine distress whistle cadence
-│   │   └── hiking-tools.ts       # Naismith hiking time, avalanche slope risk, water treatment
-│   ├── state/
-│   │   ├── store.tsx             # Queued serialized storage store (StoreProvider, useStore)
-│   │   └── app.tsx               # UI dialogs, toasts, practice mode, emergency actions (useApp)
-│   └── content/
-│       ├── library.json          # Bundled offline emergency & survival articles
-│       └── index.ts              # Typed search and retrieval interface for library articles
-├── tests/
-│   ├── coordinates.test.ts       # Unit tests for coordinate math & format edge cases
-│   ├── emergency.test.ts         # Unit tests for practice isolation and draft creation
-│   ├── plans.test.ts             # Unit tests for plan validation, storage, and dual vehicle migration
-│   ├── theme.test.ts             # Automated WCAG AA/AAA relative luminance contrast suite
-│   ├── search-indexing.test.ts   # Unit tests for content hashing, keyword extraction, and hands-free actions
-│   ├── solar.test.ts             # Unit tests for astronomical solar equations and forest dusk penalties
-│   ├── signaling.test.ts         # Unit tests for Morse SOS, whistle cadence, and backcountry tools
-│   ├── e2e/
-│   │   └── app.spec.ts           # 10 Playwright end-to-end browser tests
-│   └── native/                   # Native iOS smoke tests (XCTest)
-├── scripts/
-│   ├── serve-preview.cjs         # Static HTTP server for web export preview on port 8082
-│   ├── install-iphone.sh         # Fast local build & install script for physical iOS device
-│   └── build-content.py          # Offline content processing utility
-├── docs/                         # Extended documentation (ARCHITECTURE.md, IMPLEMENTATION.md, VALIDATION.md)
-├── app.json                      # Expo application manifest
-└── playwright.config.ts          # E2E test configuration
-```
-
----
-
-## 4. Core Subsystems
-
-### A. Location & Coordinate Subsystem (`src/lib/coordinates.ts`, `src/hooks/use-location.ts`)
-
-- **Automatic Lifecycle**: `useAutomaticLocation` starts watching position automatically when mounted on `/emergency` or `/location`. When the user switches tabs or backgrounds the app (`AppState !== "active"`), hardware GPS watches are immediately torn down.
-- **Three Supported Formats**:
-  1. **DD**: Decimal Degrees (`47.42537° N, 121.41382° W`) — standard for digital mapping and 911 dispatch.
-  2. **DDM**: Degrees & Decimal Minutes (`47° 25.522′ N, 121° 24.829′ W`) — standard for King County Sheriff Air Support helicopters. Rounds to thousandths of a minute; carries 59.99995+ min into degrees.
-  3. **UTM**: Universal Transverse Mercator (`10T · Northern hemisphere, 619574 m E, 5253549 m N`) — standard for ground search teams and topographic maps. Uses `proj4` WGS84 projection and includes Norway/Svalbard zone adjustments.
-- **Warning Thresholds**:
-  - Fix age >= 120 seconds -> **STALE LOCATION** warning banner.
-  - Horizontal uncertainty > 100 meters -> **LOW ACCURACY** warning banner.
-  - Fix flagged with `mocked: true` -> **SIMULATED LOCATION** label.
-
-### B. Trip Planning & Dual Vehicles (`src/lib/plans.ts`, `src/app/profile.tsx`, `src/app/plans/[id].tsx`)
-
-- **Trip Plan Lifecycle**: Plans transition between `draft` -> `current` -> `completed`.
-- **Reusable Profile & Dual Vehicles**:
-  - `Profile` supports two vehicles: Car 1 (`vehicle`, `plate`) and Car 2 (`vehicle2`, `plate2`).
-  - When creating a new trip plan (`/plans/new`), quick-select chips (`Car 1` / `Car 2`) allow one-tap selection of which vehicle is being parked at the trailhead.
-- **Explicit Deadlines**: Trip plans enforce explicit return and overdue dates/times. Overnight trips carry across midnight.
-- **Safe Return Notification**: One-tap SMS check-in draft (`buildSafeReturnDraft`) confirms safe completion to emergency contacts.
-
-### C. Storage & Persistence Layer (`src/lib/persistence.ts`, `src/state/store.tsx`)
-
-- **Storage Key**: `trailsafe.local.v1` in `AsyncStorage`.
-- **Concurrency & Integrity**: All updates are serialized through a promise queue (`queue.current`). If AsyncStorage contains unparseable data, the loader throws and sets `writable = false`, blocking any overwrite to guarantee zero data loss.
-- **Migration**: `parseStoredData` normalizes legacy single-vehicle profiles by initializing `vehicle2: ""` and `plate2: ""` seamlessly.
-
-### D. Design System & WCAG Contrast Standards (`src/components/trailsafe/theme.ts`, `ui.tsx`)
-
-- **Token Architecture**: `theme.ts` is pure TypeScript (no React Native runtime dependencies) so it can be tested directly in Node via `tsx`.
-- **Semantic Tokens**: Avoid raw color references. Use semantic tokens:
-  - Surfaces: `paper`, `cardBg`, `headerBg`, `locationCardBg`, `checkBg` (elevated slate for checked items and active tabs).
-  - Text: `ink`, `muted`, `heading` (12.9:1 in dark mode), `kicker` (8.2:1 in dark mode), `headerText`.
-  - Buttons: `btnPrimaryBg/btnPrimaryText` (6.56:1 in dark mode), `btnOutlineBorder/btnOutlineText` (11.75:1 in dark mode), `orange` (4.07:1 for bold text).
-  - Badges/Toasts: `toastBg/toastText`, `chipSelectedBg/chipSelectedText`.
-- **Automated Verification**: `tests/theme.test.ts` calculates relative luminance and asserts WCAG AA compliance (>= 4.5:1 for body/subtext, >= 3.0:1 for large bold text) across all light and dark combinations.
-
-### E. Voice Assistant, App Intents & Device Search Subsystem (`modules/device-search`, `plugins/with-app-intents.cjs`, `plugins/ios/TrailSafeIntents.swift`, `src/lib/search-indexing.ts`, `src/app/plan/current/[action].tsx`)
-
-- **Emergency / Panic Trigger**: Siri ("Open Emergency in TrailSafe", "I need help in TrailSafe") or Action Button / Lock Screen controls open `trailsafe://emergency` for immediate GPS acquisition and 911 SMS prep without live dispatch risk.
-- **Hands-Free Trip Management**: Assistant commands ("Mark my trip complete in TrailSafe", "Start my trip in TrailSafe") invoke `trailsafe://plan/current/complete` or `start`. It updates persistent storage and alerts hikers to confirm safe return with emergency contacts, preventing false SAR callouts.
-- **Safety Guide Voice Search**: "Search in TrailSafe" deep-links to `trailsafe://guide?search=<query>` for instant filtering across the bundled offline guide articles.
-- **On-Device Search Indexing**:
-  - `modules/device-search`: Local Expo module interfacing with CoreSpotlight (`CSSearchableIndex`) on iOS and `ShortcutManagerCompat` on Android.
-  - `TrailSafeSceneDelegate.swift`: Intercepts `CSSearchableItemActionType` to route directly to `trailsafe://article/[id]`.
-  - OTA Compatibility: `getGuideContentVersion` hashes article contents. Whenever an OTA update via `expo-updates` changes guide content, the app detects the hash change and silently re-indexes CoreSpotlight/Android shortcuts on launch.
-- **Continuous Native Generation (CNG)**: `plugins/with-app-intents.cjs` injects `TrailSafeIntents.swift`, `Info.plist` activity types, and Android `shortcuts.xml` dynamically during `npx expo prebuild --clean`.
-
-### F. Wilderness Tools, Solar / Forest Dusk, Signaling & Hazards Subsystem (`src/lib/solar.ts`, `src/lib/signaling.ts`, `src/lib/hypothermia.ts`, `src/lib/hiking-tools.ts`, `src/app/tools.tsx`)
-
-The Tools screen (`/tools`) is organized into four distinct, focused tabs:
-
-1. **Solar & Forest Dusk (`src/lib/solar.ts`)**:
-   - Pure TypeScript NOAA ephemeris calculations (zero network API calls).
-   - Calculates Sunrise, Solar Noon, Horizon Sunset, Civil Dusk (sun 6° below horizon), and Nautical Dusk.
-   - **PNW Forest Dusk Factor**: Deducts 30 min (moderate forest) or 60 min (dense old-growth timber / glaciated canyons) from civil twilight to calculate realistic ambient trail light loss and warn hikers before headlamps become essential. Includes clear-sky baseline disclaimer.
-   - Sun-compass bearing indicator (solar azimuth and elevation degrees).
-2. **Audible & Visual Signaling (`src/lib/signaling.ts`)**:
-   - **Whistle Cadence**: Enforces universal alpine SAR distress standard (3 sharp blasts of 3s, separated by 1s pause, followed by mandatory 60s silent listening window for responder replies). Generates 2.8 kHz piercing audio tone natively via `expo-av` and `.wav` file (falling back to Web Audio API in browsers) alongside synchronized device vibration. Teaches that SAR ground teams reply with 2 blasts.
-   - **Screen Beacon**: High-contrast optical signaling modes (high-frequency strobe, ITU-R Morse code SOS, 100% red night-vision preserving lantern, and daylight aircraft signal mirror sighting guide).
-3. **Wilderness Hazards (`src/lib/hypothermia.ts`, `src/app/tools.tsx`)**:
-   - **Hypothermia & Wind Chill Index**: NWS Wind Chill matrix factoring in PNW "Cascade Concrete" wet cooling deductions (-12°F damp, -22°F soaked). Detects the deadly 25x thermal conductivity hazard in 32°F–52°F wet wind. Includes "The Umbles" clinical diagnostic markers, shivering cessation warning, and SAR field rewarming protocol.
-   - **Avalanche Slope Inclinometer**: Live tilt sensor using `expo-sensors` `DeviceMotion` (to measure rotation beta angle), identifying the critical 30°–45° prime slab avalanche danger zone.
-4. **Backcountry Utilities (`src/lib/hiking-tools.ts`, `src/lib/coordinates.ts`, `src/app/tools.tsx`)**:
-   - **Compass Magnetic Declination**: Live World Magnetic Model true north variation calculated from current GPS fix, providing exact compass bezel adjustment instructions.
-   - **Naismith's Rule Hiking Time**: Calculates mountain travel time with Langmuir elevation adjustments, alerting if estimated finish occurs after Forest Dusk.
-   - **Water Treatment Countdown**: Temperature-sensitive disinfection timers (cold glacial runoff vs warm water, boiling altitude adjustments, and UV purification).
-
----
-
-## 5. Development & Testing Commands
-
-### Standard Checks
+## Validation
 
 ```sh
-# 1. Run the current unit & contrast test suite
 npm test
-
-# 2. Strict TypeScript type check
 npm run typecheck
-
-# 3. Linter
 npx eslint .
-```
-
-### Static Web Export & Playwright E2E Tests
-
-Playwright tests run against the production web export served locally by `scripts/serve-preview.cjs`:
-
-```sh
-# 1. Export production web bundle (requires BypassSandbox outside sandbox)
-EXPO_NO_TELEMETRY=1 npx expo export --platform web
-
-# 2. Start the local preview server in the background (runs on port 8082)
-node scripts/serve-preview.cjs &
-
-# 3. Run Playwright E2E test suite (Chrome browser)
+EXPO_NO_TELEMETRY=1 npx expo export --platform all
+node scripts/serve-preview.cjs
 TRAILSAFE_BROWSER="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" npm run test:e2e
 ```
 
-### Physical iOS Device Deployment
+Export outside the filesystem sandbox when needed: Expo traverses parent directories for its workspace. Preview port is 8082. Test screenshots go to ignored `test-results/screenshots`, preserving prior documentation images. Fresh exports validate JS/assets for all platforms; they are not native compilation or device acceptance.
 
-To build and install a signed Release build directly on a connected iPhone:
+Expo 57 bundles its navigation APIs: do not assume a separate `@react-navigation/*` import shares its context. Typed routes may be stale after adding files; regenerate with the installed Expo tooling. Keep Node-tested domain modules free of React Native imports; use lazy imports at native boundaries.
 
-```sh
-bash scripts/install-iphone.sh YOUR_IPHONE_UDID YOUR_APPLE_TEAM_ID
-```
+For signed iOS deployment, use `scripts/install-iphone.sh <UDID> <team>` only when deployment is requested. Preserve signing settings and installed user data. Device acceptance includes airplane-mode cold launch, permission/accuracy/staleness, native date pickers, reminders/cleanup, voice cancellation, accessibility and diagnostic policy. No live 911 test calls.
 
----
-
-## 6. Critical Agent & Contributor Gotchas
-
-1. **Expo Versioned Docs**: Always consult `https://docs.expo.dev/versions/v57.0.0/` for API contracts in SDK 57.
-2. **Web Export Sandbox**: `npx expo export` traverses parent directories to find workspace root (`/Users/andrew/package.json`). Inside agent sandbox environments, always execute `expo export` with `BypassSandbox: true`.
-3. **Preview Port is 8082**: `scripts/serve-preview.cjs` serves on port `8082` (to avoid standard Metro port 8081 conflicts). Playwright's `baseURL` in `playwright.config.ts` defaults to `http://localhost:8082`.
-4. **Node Test Runner Separation**: The unit test runner uses `tsx --test tests/*.test.ts`. Any file imported by tests must NOT import React Native components that rely on JSX runtime without transpilation. In `src/lib/search-indexing.ts`, keep domain functions pure and load `@react-native-async-storage/async-storage` and `device-search` lazily inside `indexGuideContent()`.
-5. **AppIntents Phrase Parameter Restrictions**: In Swift `AppShortcutsProvider.appShortcuts`, trigger phrases cannot interpolate open-ended primitive `String` parameters (e.g. `\(\.$query)`). Only `AppEntity` or `AppEnum` types are permitted. Use static phrases (e.g., `"Search in \(.applicationName)"`) so Apple's `appintentsmetadataprocessor` compiles successfully.
-6. **Preserve User Rules**: Always keep the user rule `# Expo HAS CHANGED` at the very top of `AGENTS.md`.
-
-## 7. Release Diagnostics Policy
-
-- Bugsnag is expected in developer, internal/pre-release, and TestFlight builds.
-- The final production App Store / Play Store build must not initialize or transmit to Bugsnag.
-- Release automation should make this an explicit artifact-level configuration rather than relying only on `__DEV__`.
-- Before store submission, verify the actual production artifact has crash diagnostics disabled.
-- Do not weaken eventual production privacy/disclaimer language merely because pre-release builds use Bugsnag.
-- Track implementation and release verification in GitHub issue #11.
+Reference prototypes in `docs/reference` are historical, not current requirements. Current user instructions and this guide supersede their Practice Mode, timers and governance sections.

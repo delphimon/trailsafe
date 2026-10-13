@@ -1,3 +1,4 @@
+import { WASHINGTON_REGION } from "@/content/regions";
 import {
   Button,
   Callout,
@@ -24,11 +25,12 @@ import {
 } from "lucide-react-native";
 import { useState } from "react";
 import { Linking, Platform, View } from "react-native";
+import { shouldInitializeCrashDiagnostics } from "@/lib/diagnostics";
 import { getGuideContentVersion } from "@/lib/search-indexing";
 
 export default function About() {
   const { C } = useThemeStyles();
-  const { reset, error } = useStore(),
+  const { reset, error, reminderStatus, data } = useStore(),
     { run, notify, setDialog } = useApp();
   const [checkingUpdate, setCheckingUpdate] = useState(false);
 
@@ -73,6 +75,10 @@ export default function About() {
     : null;
 
   const checkForUpdates = async () => {
+    if (data.plans.some((p) => p.status === "current")) {
+      notify("Finish your current trip before applying app updates.");
+      return;
+    }
     if (!isOtaEnabled) {
       notify("OTA updates are only active on installed native builds.");
       return;
@@ -125,21 +131,27 @@ export default function About() {
         />
       </Card>
       <Note>
-        External links require Internet. The Center for Adventure Leadership
-        is not an emergency service — in an emergency, call or text 911.
+        External links require Internet. The Center for Adventure Leadership is
+        not an emergency service — in an emergency, call or text 911.
       </Note>
       <Kicker>Important</Kicker>
       <Callout critical title="This app is not monitored">
-        Nobody is watching your location or trip plans. TrailSafe doesn’t
-        alert anyone automatically. In an emergency, call or text 911.
+        Nobody is watching your location or trip plans. TrailSafe doesn’t alert
+        anyone automatically. In an emergency, call or text 911.
       </Callout>
       <Callout title="Search and rescue is free">
-        Don’t delay calling 911 because of cost. In Washington State, search-and-rescue response does not bill rescued persons.
+        Don’t delay calling 911 because of cost. {WASHINGTON_REGION.sarCostNote}
       </Callout>
       <Kicker>Privacy</Kicker>
       <Card>
         <T>
-          Your trip plans, profile, and checklists are stored locally. No accounts, advertising, or behavioral analytics. Anonymous crash diagnostics are collected to fix bugs (Bugsnag). No cloud database or background location tracking. The Center for Adventure Leadership does not receive your location or trip
+          Your trip plans, profile, and checklists are stored locally. No
+          accounts, advertising, or behavioral analytics.{" "}
+          {shouldInitializeCrashDiagnostics()
+            ? "This pre-release build enables Bugsnag crash diagnostics to help fix bugs."
+            : "Crash diagnostics are disabled in this build."}{" "}
+          No cloud database or background location tracking. The Center for
+          Adventure Leadership does not receive your location or trip
           information.
         </T>
         <T style={{ marginTop: 12 }}>
@@ -176,6 +188,12 @@ export default function About() {
           })
         }
       />
+      {reminderStatus === "failed" && (
+        <Callout title="Reminder cleanup needs attention">
+          Could not reconcile local reminders. Reopen TrailSafe to retry and
+          check your device’s notification settings.
+        </Callout>
+      )}
       <Kicker>Content & sources</Kicker>
       <Card>
         <Heading>TrailSafe · Development build</Heading>
@@ -186,9 +204,8 @@ export default function About() {
         <T style={{ marginTop: 12 }}>
           Guidance draws on and cites public material from authoritative
           sources, including King County Search & Rescue, King County 911, the
-          Northwest Avalanche Center, the CDC, and the National Weather
-          Service. Cited organizations did not create, sponsor, or endorse
-          TrailSafe.
+          Northwest Avalanche Center, the CDC, and the National Weather Service.
+          Cited organizations did not create, sponsor, or endorse TrailSafe.
         </T>
         <T style={{ marginTop: 12 }}>
           This app is an educational aid, not a substitute for training or

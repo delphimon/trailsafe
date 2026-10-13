@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import { Linking } from "react-native";
 import { ExternalLink } from "lucide-react-native";
-import library from "@/content/library.json";
+import { WASHINGTON_REGION } from "@/content/regions";
 import { useApp } from "@/state/app";
 import { Card, Kicker, Note, Row, Screen } from "@/components/trailsafe/ui";
 export default function Resources() {
@@ -16,7 +16,7 @@ export default function Resources() {
         <Fragment key={cat}>
           <Kicker>{cat[0].toUpperCase() + cat.slice(1)}</Kicker>
           <Card>
-            {library.RESOURCES.filter((r) => r.cat === cat).map((r) => (
+            {WASHINGTON_REGION.resources.filter((r) => r.cat === cat).map((r) => (
               <Row
                 key={r.url}
                 title={r.name}

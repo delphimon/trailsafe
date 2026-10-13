@@ -4,8 +4,13 @@ import { router } from "expo-router";
 import { ClipboardList, Plus, UserRound } from "lucide-react-native";
 import { useStore } from "@/state/store";
 import { useApp } from "@/state/app";
-import { isOverdue, completeTrip, duplicateTrip, buildSafeReturnDraft } from "@/lib/plans";
-import { cancelTripReminders } from "@/lib/notifications";
+import {
+  isOverdue,
+  completeTrip,
+  duplicateTrip,
+  buildSafeReturnDraft,
+} from "@/lib/plans";
+import { smsOutcomeMessage } from "@/lib/emergency";
 import * as SMS from "expo-sms";
 import {
   Button,
@@ -21,7 +26,7 @@ import {
 } from "@/components/trailsafe/ui";
 export default function Plans() {
   const { C, s } = useThemeStyles();
-  const { data, update, ready, error } = useStore(),
+  const { data, update, ready, error, changeTrip, reminderStatus } = useStore(),
     { run, notify, setDialog, share } = useApp();
   const [now, setNow] = useState(new Date());
   useEffect(() => {
@@ -54,6 +59,12 @@ export default function Plans() {
           leave reliable coverage.
         </Note>
       </View>
+      {reminderStatus !== "idle" && (
+        <Note>
+          Local reminders: {reminderStatus}. TrailSafe does not notify anyone
+          automatically.
+        </Note>
+      )}
       {!ready && <T>Loading saved plans…</T>}
       {error && (
         <Callout critical title="Could not load plans">
@@ -133,18 +144,12 @@ export default function Plans() {
                   variant="ghost"
                   onPress={() =>
                     void run(async () => {
-                      const res = duplicateTrip(p.id, data.plans);
-                      if (!res.ok) {
-                        notify(res.errors[0]);
-                        return;
-                      }
-                      await update((d) => ({
-                        ...d,
-                        plans: res.plans,
-                      }));
+                      const saved = await changeTrip((plans) =>
+                        duplicateTrip(p.id, plans),
+                      );
                       router.push({
                         pathname: "/plans/[id]",
-                        params: { id: res.plan.id, edit: "1" },
+                        params: { id: saved.id, edit: "1" },
                       });
                     })
                   }
@@ -160,16 +165,9 @@ export default function Plans() {
                         message: `Mark “${p.title || "Untitled trip"}” as complete locally? Completing a plan does not notify anyone.`,
                         confirmLabel: "Mark Complete",
                         onConfirm: async () => {
-                          const res = completeTrip(p.id, data.plans);
-                          if (!res.ok) {
-                            notify(res.errors[0]);
-                            return;
-                          }
-                          await cancelTripReminders(p.id);
-                          await update((d) => ({
-                            ...d,
-                            plans: res.plans,
-                          }));
+                          const saved = await changeTrip((plans) =>
+                            completeTrip(p.id, plans),
+                          );
                           notify("Trip marked complete locally.");
                           setDialog({
                             title: "Plan completed locally",
@@ -178,21 +176,16 @@ export default function Plans() {
                             confirmLabel: "Open Safe-Return Text",
                             cancelLabel: "Not Now",
                             onConfirm: async () => {
-                              const text = buildSafeReturnDraft(res.plan);
-                              const targetPhone = res.plan.trustedContactPhone
-                                ? [res.plan.trustedContactPhone]
+                              const text = buildSafeReturnDraft(saved);
+                              const targetPhone = saved.trustedContactPhone
+                                ? [saved.trustedContactPhone]
                                 : [];
                               if (await SMS.isAvailableAsync()) {
-                                const smsRes = await SMS.sendSMSAsync(targetPhone, text);
-                                if (smsRes.result === "sent") {
-                                  notify(
-                                    "Composer closed. Confirm sending in your messaging app — TrailSafe cannot verify delivery.",
-                                  );
-                                } else {
-                                  notify(
-                                    "Text was not sent. Be sure to reach out to your contact directly.",
-                                  );
-                                }
+                                const smsRes = await SMS.sendSMSAsync(
+                                  targetPhone,
+                                  text,
+                                );
+                                notify(smsOutcomeMessage(smsRes.result));
                               } else {
                                 await share(text, "Safe return check-in");
                                 notify(

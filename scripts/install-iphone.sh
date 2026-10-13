@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Local signed installs are internal builds. Store builds must explicitly select production.
+export EXPO_PUBLIC_RELEASE_CHANNEL="${EXPO_PUBLIC_RELEASE_CHANNEL:-preview}"
+
 if [[ $# -ne 2 ]]; then
   echo "Usage: bash scripts/install-iphone.sh <iPhone-UDID> <Apple-team-ID>" >&2
   exit 2

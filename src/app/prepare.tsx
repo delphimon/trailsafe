@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { View, Linking } from "react-native";
+import { View, Linking, Pressable } from "react-native";
 import { router } from "expo-router";
-import { ClipboardList, ExternalLink } from "lucide-react-native";
+import { ClipboardList, ExternalLink, Info } from "lucide-react-native";
 import library from "@/content/library.json";
 import { useStore } from "@/state/store";
 import { useApp } from "@/state/app";
@@ -20,7 +20,7 @@ import {
   useThemeStyles,
 } from "@/components/trailsafe/ui";
 export default function Prepare() {
-  const { s } = useThemeStyles();
+  const { C, s } = useThemeStyles();
   const [mountedAt] = useState(() => Date.now());
   const { data, update, ready, error } = useStore(),
     { run, setDialog } = useApp();
@@ -37,26 +37,59 @@ export default function Prepare() {
         },
       })),
     );
-  
+
   const baseAddon = library.ADD_ONS[data.tripDuration];
   const winterAddon = data.winterConditions ? library.ADD_ONS["winter"] : null;
   const currentPlan = data.plans.find((p) => p.status === "current");
 
+  const isStale =
+    data.checklist.checks.length > 0 &&
+    ((currentPlan && data.checklist.planId !== currentPlan.id) ||
+      (!currentPlan &&
+        mountedAt - data.checklist.updatedAt > 7 * 24 * 60 * 60 * 1000));
 
-  const isStale = data.checklist.checks.length > 0 && (
-    (currentPlan && data.checklist.planId !== currentPlan.id) ||
-    (!currentPlan && mountedAt - data.checklist.updatedAt > 7 * 24 * 60 * 60 * 1000)
-  );
-  
   return (
     <Screen
       title="Before You Go"
       subtitle="Essentials, phone readiness, and trip prep"
+      rightAction={
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="About"
+          onPress={() => router.push("/about")}
+          style={{ padding: 12 }}
+        >
+          <Info color={C.headerText} size={24} />
+        </Pressable>
+      }
     >
+      <Button
+        label="NEED HELP?"
+        variant="orange"
+        onPress={() => router.navigate("/emergency")}
+      />
+      {currentPlan && (
+        <Row
+          title={currentPlan.title || "Your current trip"}
+          subtitle={`Current · Expected back ${currentPlan.returnDate} ${currentPlan.returnTime}`}
+          icon={ClipboardList}
+          onPress={() =>
+            router.push({
+              pathname: "/plans/[id]",
+              params: { id: currentPlan.id },
+            })
+          }
+        />
+      )}
+      <Note>
+        Guides, saved plans and tools work offline. Calls, messages and live
+        conditions need an available connection.
+      </Note>
       {isStale && (
         <View style={{ marginBottom: 12 }}>
-          <Callout title="Checklist may be from a previous trip" >
-            This checklist was started a while ago or belongs to an older trip plan.
+          <Callout title="Checklist may be from a previous trip">
+            This checklist was started a while ago or belongs to an older trip
+            plan.
             <View style={{ marginTop: 10 }}>
               <Button
                 label="Start Fresh"
@@ -65,8 +98,13 @@ export default function Prepare() {
                   void run(() =>
                     update((d) => ({
                       ...d,
-                      checklist: { checks: [], startedAt: Date.now(), updatedAt: Date.now(), planId: currentPlan?.id },
-                    }))
+                      checklist: {
+                        checks: [],
+                        startedAt: Date.now(),
+                        updatedAt: Date.now(),
+                        planId: currentPlan?.id,
+                      },
+                    })),
                   )
                 }
               />
@@ -86,12 +124,16 @@ export default function Prepare() {
         <Chip
           label="Day hike"
           selected={data.tripDuration === "day"}
-          onPress={() => void run(() => update((d) => ({ ...d, tripDuration: "day" })))}
+          onPress={() =>
+            void run(() => update((d) => ({ ...d, tripDuration: "day" })))
+          }
         />
         <Chip
           label="Overnight"
           selected={data.tripDuration === "overnight"}
-          onPress={() => void run(() => update((d) => ({ ...d, tripDuration: "overnight" })))}
+          onPress={() =>
+            void run(() => update((d) => ({ ...d, tripDuration: "overnight" })))
+          }
         />
       </View>
       <View style={{ marginTop: 8 }}>
@@ -99,7 +141,11 @@ export default function Prepare() {
           label="Winter / snow conditions"
           description="Adds traction, insulation, and avalanche gear reminders"
           checked={data.winterConditions}
-          onPress={() => void run(() => update((d) => ({ ...d, winterConditions: !d.winterConditions })))}
+          onPress={() =>
+            void run(() =>
+              update((d) => ({ ...d, winterConditions: !d.winterConditions })),
+            )
+          }
         />
       </View>
       <View style={{ marginTop: 12 }}>
@@ -108,23 +154,29 @@ export default function Prepare() {
           few reminders specific to your trip type.
         </Note>
         <Callout title="Why this matters">
-          Lower-extremity injuries, inadequate lighting, insufficient water, and inadequate layers are common reasons ordinary outings turn into rescues.
+          Lower-extremity injuries, inadequate lighting, insufficient water, and
+          inadequate layers are common reasons ordinary outings turn into
+          rescues.
         </Callout>
       </View>
       {(!ready || error) && <Note>{error || "Loading saved checklist…"}</Note>}
       <Kicker>
         Ten Essentials ·{" "}
-        {data.checklist.checks.filter((k) => k.startsWith("ess-")).length}/
-        {library.ESSENTIALS.length}
+        {
+          library.ESSENTIALS.filter((e) =>
+            data.checklist.checks.includes(`essential:${e[0]}`),
+          ).length
+        }
+        /{library.ESSENTIALS.length}
       </Kicker>
       <Card style={{ paddingVertical: 0 }}>
-        {library.ESSENTIALS.map((e, i) => (
+        {library.ESSENTIALS.map((e) => (
           <Checkbox
             key={e[0]}
             label={e[0]}
             description={e[1]}
-            checked={data.checklist.checks.includes(`ess-${i}`)}
-            onPress={() => toggle(`ess-${i}`)}
+            checked={data.checklist.checks.includes(`essential:${e[0]}`)}
+            onPress={() => toggle(`essential:${e[0]}`)}
           />
         ))}
       </Card>
@@ -136,7 +188,9 @@ export default function Prepare() {
               <Checkbox
                 key={item}
                 label={item}
-                checked={data.checklist.checks.includes(`${data.tripDuration}-${i}`)}
+                checked={data.checklist.checks.includes(
+                  `${data.tripDuration}-${i}`,
+                )}
                 onPress={() => toggle(`${data.tripDuration}-${i}`)}
               />
             ))}
@@ -144,7 +198,9 @@ export default function Prepare() {
         )}
         {winterAddon && (
           <>
-            <View style={{ marginTop: 16 }}><Heading>{winterAddon.title}</Heading></View>
+            <View style={{ marginTop: 16 }}>
+              <Heading>{winterAddon.title}</Heading>
+            </View>
             {winterAddon.items.map((item, i) => (
               <Checkbox
                 key={item}
@@ -156,9 +212,9 @@ export default function Prepare() {
           </>
         )}
         <Checkbox
-          label="Food for the trip, plus extra for a delay"
-          checked={data.checklist.checks.includes("food")}
-          onPress={() => toggle("food")}
+          label="Communications: charged phone and a backup way to reach help"
+          checked={data.checklist.checks.includes("communication")}
+          onPress={() => toggle("communication")}
         />
       </Card>
       <Kicker>Phone & communications readiness</Kicker>
@@ -181,7 +237,16 @@ export default function Prepare() {
             message:
               "This clears the checked items for your next outing. Your saved trip plans stay available.",
             confirmLabel: "Reset checklist",
-            onConfirm: () => update((d) => ({ ...d, checklist: { checks: [], startedAt: Date.now(), updatedAt: Date.now(), planId: currentPlan?.id } })),
+            onConfirm: () =>
+              update((d) => ({
+                ...d,
+                checklist: {
+                  checks: [],
+                  startedAt: Date.now(),
+                  updatedAt: Date.now(),
+                  planId: currentPlan?.id,
+                },
+              })),
           })
         }
       />
@@ -196,7 +261,12 @@ export default function Prepare() {
           <Button
             label={`Share: ${currentPlan.title || "Current Plan"}`}
             variant="primary"
-            onPress={() => router.push({ pathname: "/plans/[id]", params: { id: currentPlan.id } })}
+            onPress={() =>
+              router.push({
+                pathname: "/plans/[id]",
+                params: { id: currentPlan.id },
+              })
+            }
           />
         ) : (
           <Button

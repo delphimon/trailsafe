@@ -3,40 +3,23 @@ import assert from "node:assert/strict";
 import {
   buildEmergencyDraft,
   performEmergencyAction,
+  smsOutcomeMessage,
 } from "../src/lib/emergency";
 import library from "../src/content/library.json";
-test("every practice action blocks both native handoffs", async () => {
-  let calls = 0,
-    texts = 0;
-  const simulated: string[] = [];
-  for (const action of ["call", "text"] as const)
-    await performEmergencyAction(true, action, {
-      simulate: (a) => simulated.push(a),
-      call: async () => {
-        calls++;
-      },
-      text: async () => {
-        texts++;
-      },
-    });
-  assert.equal(calls, 0);
-  assert.equal(texts, 0);
-  assert.deepEqual(simulated, ["call", "text"]);
-});
-test("live action routes only to the requested injected handoff", async () => {
-  let calls = 0,
-    texts = 0;
-  await performEmergencyAction(false, "text", {
-    simulate: () => assert.fail(),
+test("emergency actions invoke only the requested inert handler", async () => {
+  const recorded: string[] = [];
+  const handlers = {
     call: async () => {
-      calls++;
+      recorded.push("call");
     },
     text: async () => {
-      texts++;
+      recorded.push("text");
     },
-  });
-  assert.equal(calls, 0);
-  assert.equal(texts, 1);
+  };
+  await performEmergencyAction("call", handlers);
+  assert.deepEqual(recorded, ["call"]);
+  await performEmergencyAction("text", handlers);
+  assert.deepEqual(recorded, ["call", "text"]);
 });
 test("missing GPS is explicit and never invents a county or position", () => {
   const text = buildEmergencyDraft(null, "Lost");
@@ -45,8 +28,13 @@ test("missing GPS is explicit and never invents a county or position", () => {
   assert.ok(!text.includes("Get Location"));
 });
 test("overdue and missing person drafts never present the caller GPS as the subject location", () => {
-  const fix = { latitude: 47, longitude: -122, accuracy: 5, timestamp: Date.now() };
-  
+  const fix = {
+    latitude: 47,
+    longitude: -122,
+    accuracy: 5,
+    timestamp: Date.now(),
+  };
+
   // Overdue case
   const overdueText = buildEmergencyDraft(fix, "Overdue Person");
   assert.match(overdueText, /Missing person’s last known location/);
@@ -58,11 +46,31 @@ test("overdue and missing person drafts never present the caller GPS as the subj
   assert.ok(!missingText.includes("47.00000"));
 });
 
-test("generic emergency drafts clearly label caller location with prompt for third-party reporting", () => {
-  const fix = { latitude: 47.42537, longitude: -121.41382, accuracy: 5, timestamp: Date.now() };
-  const genericText = buildEmergencyDraft(fix, "Describe what happened");
-  assert.match(genericText, /47\.42537° N, 121\.41382° W/);
-  assert.match(genericText, /If reporting someone else, replace with their last known location/);
+test("explicit third-party location omits caller GPS even for generic incident titles", () => {
+  const fix = {
+    latitude: 47.42537,
+    longitude: -121.41382,
+    accuracy: 5,
+    timestamp: Date.now(),
+  };
+  const here = buildEmergencyDraft(
+    fix,
+    "Injured",
+    undefined,
+    undefined,
+    "here",
+  );
+  assert.match(here, /Emergency at my location/);
+  assert.match(here, /47.42537/);
+  const elsewhere = buildEmergencyDraft(
+    fix,
+    "Injured",
+    undefined,
+    undefined,
+    "elsewhere",
+  );
+  assert.doesNotMatch(elsewhere, /47.42537/);
+  assert.match(elsewhere, /last known location/);
 });
 test("all bundled article targets resolve; no prototype placeholder topic exposed", () => {
   for (const topic of library.GUIDE_TOPICS) {
@@ -85,5 +93,15 @@ test("bundled content cites sources without implying sponsorship or endorsement"
   // Cited organizations (e.g. KCSAR) are fine as sources; the app must not
   // claim to be their product, voice their volunteers, or carry their review.
   assert.doesNotMatch(text, /KCESAR volunteers|official (KCESAR|KCSAR)/i);
-  assert.doesNotMatch(text, /review pending|reviewed by|endorsed by|sponsored by/i);
+  assert.doesNotMatch(
+    text,
+    /review pending|reviewed by|endorsed by|sponsored by/i,
+  );
+});
+
+test("unknown SMS outcome never claims success or failure", () => {
+  assert.match(smsOutcomeMessage("unknown"), /cannot verify sending/);
+  assert.doesNotMatch(smsOutcomeMessage("unknown"), /not sent/);
+  assert.match(smsOutcomeMessage("cancelled"), /cancelled/);
+  assert.match(smsOutcomeMessage("sent"), /cannot verify delivery/);
 });

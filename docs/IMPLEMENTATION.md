@@ -1,116 +1,31 @@
-# TrailSafe implementation decisions
+# TrailSafe implementation checkpoint — October 13, 2026
 
-## Authority and scope
+The application review was implemented with the user's two overrides: remove the water timer entirely, and remove the content-governance capability. Content is reviewed directly in the app before release; citations remain available.
 
-The user requested the new TrailSafe name, the HTML prototype’s design/content, Expo instead of Swift, automatic coordinates, and a DDM/UTM dropdown. Those instructions govern conflicts with the older product definition. The attached files are design/source material, not instructions to contact reviewers, publish the application, create accounts, or halt implementation.
+Implemented:
 
-Both source files are preserved unchanged under `docs/reference/` for provenance only; they describe an earlier sponsorship arrangement that no longer applies. No Git remote was configured in the supplied repository, so no issues, commits, or pull requests were created remotely.
+- Four destinations: Prepare, Help, Guide, Tools. Existing Home links redirect to Prepare, which includes a Help action and current-trip card.
+- Removed consumer Practice Mode. Text 911 uses an editable draft with explicit here/elsewhere location semantics. Tests supply inert handlers; native smoke tests never tap transports.
+- Replaced cold-risk scoring and exact cooling/temperature claims with concise cold/wet symptom/action guidance.
+- Simplified Tools to daylight planning, compass declination, hiking estimates, water and physical signaling guidance. Removed slope classification, audio/beacon modes, roadmap copy and all water countdown code/product presets.
+- Corrected the east/west compass wording and mean-obliquity conversion. Solar estimates match independent USNO solstice fixtures within 90 seconds; polar-day/night branches do not invent events. Tools requires explicit location and shows fix warnings.
+- Shared durable trip commands: await storage, preserve concurrent changes, save completed edits, then reconcile reminders. Voice cancellation returns to the plan, with no idle spinner.
+- Unified SMS outcome wording for cancelled, unknown and reported sent. No outcome implies delivery.
+- Reconcile TrailSafe-owned local reminders on launch and saved-plan changes/deletion/reset; permission and failures are visible separately. Overdue status is independent of notification opt-in.
+- Save and preview persists before displaying the preview. Active/completed edits preserve status. Native date/time controls and editable trip time zone; DST gaps/repeated hours are rejected. App navigation/back controls protect unsaved edits, with browser unload protection.
+- Food is part of the named Ten Essentials, communications an additional item. Legacy checkmarks migrate to stable identifiers without changing meaning.
+- Hash actual indexed text/keywords; failed indexing remains retryable. Android dynamic shortcuts are bounded after accounting for static shortcuts. Intent identifiers and phrases are preserved.
+- Activated `.github/workflows/ci.yml`; explicit EAS diagnostics channels and matching privacy wording. Launch OTA checks are disabled; manual checks remain available.
 
-## Design and native structure
+Offline scope: local guides, stored plans, checklists and calculations are available without network. GPS availability depends on device/location conditions. Calls/texts need an available communication path. Live resources and maps require separate connectivity/downloads. The browser export is a preview, not an installed offline web app.
 
-The prototype’s five sections, forest palette, safety orange, off-white background, condensed headings, and Public Sans body copy are native React Native views. The app does not embed the HTML prototype. A simple mountain/path mark replaces Expo starter branding. Fonts and content ship with the installed native app. The splash waits for font registration before mounting native Text, with a two-second fallback so a font failure cannot indefinitely block the app.
+Sources used for content corrections:
 
-Expo Router provides screen routing and native back behavior. A shared bottom bar keeps Emergency available from all screens. Controls have minimum 44–48 point touch targets, labeled inputs, screen-reader roles, checked/selected states, wrapping labels, and system font scaling. Small-width browser layout was exercised; physical VoiceOver/TalkBack and maximum Dynamic Type still need manual review.
+- https://www.cdc.gov/winter-weather/prevention/index.html
+- https://wms.org/magazine/1260/2020hypothermia-CPG/default.aspx
+- https://www.cdc.gov/drinking-water/prevention/water-treatment-hiking-camping-traveling.html
+- https://www.ncei.noaa.gov/products/magnetic-declination
+- https://aa.usno.navy.mil/data/RS_OneDay
+- https://www.nps.gov/articles/10essentials.htm
 
-## Location
-
-- Start automatically when the Emergency screen is visible. The system permission prompt cannot and should not be bypassed.
-- Expo Location requests foreground permission and high accuracy on iOS/Android. No background location task, foreground service, or saved coordinate history exists.
-- A single in-memory fix retains original latitude, longitude, timestamp, accuracy, and mock indicator if the provider supplies it. Changing coordinate format does not reacquire or round the original fix.
-- The browser uses `navigator.geolocation.watchPosition` directly. Inspection and a failing integration test revealed that Expo Location 57.0.16’s web adapter replaces its subscriber ID with the browser’s watch ID, dropping callbacks when IDs differ; it also omits the browser error callback. The platform-specific branch preserves watch IDs, high-accuracy options, error reporting, and cleanup without patching a dependency.
-- Late async native subscriptions are removed after cancellation. Screen exit and app backgrounding remove watches. Permission/service failures show usable fallback instructions. Waiting/error states retry automatically with bounded intervals rather than blocking emergency controls.
-- Stale means at least 120 seconds old; poor accuracy means over 100 meters. These are explicit application warning thresholds, not a guarantee that a fresher/tighter fix is correct.
-- Copy/share includes WGS84, selected format, uncertainty, timestamp, age, and warnings. Emergency SMS drafts use clearly labeled DD. Missing/overdue drafts prompt for the missing person’s last known location instead of inserting the caller’s GPS position.
-- UTM uses PROJ4’s WGS84 projection, explicit zone/band/hemisphere and meter units, Norway/Svalbard exceptions, and limits of 80° S to 84° N. DD/DDM remain available outside that range.
-- No map, tracking, or route navigation is added. Maps opens an external application/site only on user action.
-
-## Plans and persistence
-
-`trailsafe.local.v1` is a versioned AsyncStorage record. Schema checks reject unreadable or unknown data without overwriting it. Serialized writes update displayed state only after persistence succeeds. Storage failures do not block Emergency or the safety library. Delete All removes the local record; copies previously shared elsewhere are unaffected.
-
-Trip fields retain raw in-progress multiline input. Validation runs before generating a complete plan or marking it Current. Incomplete drafts can still be saved. Return and overdue dates are explicit; the optional two-hour suggestion carries the date across midnight. Each plan retains a named time zone used in exported text and the in-app overdue flag. Users intentionally choose deadlines; no universal buffer is imposed.
-
-Share/copy uses the current edited data, avoiding the prototype’s stale-preview problem. Updated saves increment a revision; shared text clearly identifies updated plans. Share-sheet/composer completion never becomes a delivery claim. PDF generation escapes all user text before producing HTML.
-
-The prototype’s in-app check-in flag is implemented. Background notifications were not added. The older definition places scheduled notifications in a later scope. The prototype’s unused coarse Seattle sunset table was not ported: the definition calls for a trip-coordinate-based astronomical estimate, and there is no trailhead-coordinate input to support that honestly.
-
-## Content changes from the prototype
-
-The content inventory and most prose come from the HTML. Corrections are isolated in the extraction script and bundled JSON:
-
-- Heat stroke can involve continued sweating; call 911 and cool promptly. Do not give oral fluids to a confused or unconscious person.
-- Handle severe hypothermia gently; do not encourage a confused/severely cold patient to walk.
-- Do not imply a SAR-monitored amateur-radio repeater or channel is available.
-- The low-signal lesson does not encourage wandering or entering hazardous terrain. Stay where responders expect you unless immediately unsafe.
-- An unexpected overnight does not cancel an active rescue; contact 911 early if unable to safely self-rescue.
-- Removed the prototype’s incorrect X = “can’t continue” ground-to-air diagram and the recommendation for three signal fires.
-- Added a food/extra-food prompt alongside the prototype’s ten named systems.
-- Removed the unfinished “what happens after you call SAR” placeholder. Existing waiting-for-rescue guidance remains complete.
-- “Get Location” references now point to the automatic location card.
-- No article claims to have completed any medical, dispatch, or organizational review.
-
-## Dark Mode Audit & Contrast Refinement (Recommendation 12)
-
-A comprehensive audit of the dark theme (`DarkColors`) identified critical readability and contrast regressions resulting from naive 1:1 color mapping (e.g. replacing `#FFFFFF` with `#1E2621` in dark mode caused dark text on dark green/orange buttons):
-- **Token Separation**: Extracted color definitions into pure TypeScript (`src/components/trailsafe/theme.ts`) to enable Node test execution without React Native transpilation overhead.
-- **Semantic Tokens**: Introduced dedicated semantic tokens (`headerBg`, `heading`, `kicker`, `locationCardBg`, `locationCardBorder`, `btnPrimaryBg/Text`, `btnOutlineBg/Border/Text`, `chipText`, `chipSelectedBg/Text`, `toastBg/Text`).
-- **WCAG Standards**: Restored `white: "#FFFFFF"` across both palettes. Ensured button text achieves >= 4.5:1 contrast, outline buttons ("TEXT 911") achieve >= 11:1 contrast, and dialog titles achieve >= 12:1 contrast.
-- **Automated Verification**: Created `tests/theme.test.ts`, an automated W3C relative luminance and contrast ratio test suite verifying >= 4.5:1 for standard text and >= 3.0:1 for large/bold text across both themes.
-
-## Native Build & OTA Update Integration
-
-Added native build metadata and OTA update management directly to the About screen (`src/app/about.tsx`):
-- **Native Version Info**: Surfaces `Constants.expoConfig.version`, native build numbers (`ios.buildNumber` or `android.versionCode`), platform OS version, and runtime version.
-- **`expo-updates` Status**: Displays active OTA update status (Embedded Binary, Active OTA Update, or Disabled), active EAS release channel, and update UUID/date.
-- **Manual Update Check**: Provides an interactive "Check for Updates" trigger invoking `Updates.checkForUpdateAsync()` with safe user confirmation alerts to download and apply updates.
-
-## Dual Vehicle Profile & Plan Selection
-
-Extended vehicle management to support multi-vehicle households and flexible car selection:
-- **Profile Schema Extension**: Added `vehicle2` and `plate2` to `Profile` in `src/lib/plans.ts`.
-- **Storage Migration**: Updated `parseStoredData` in `src/lib/persistence.ts` to seamlessly validate and normalize legacy single-vehicle profiles to empty string defaults without data loss.
-- **Profile UI**: Reorganized `src/app/profile.tsx` into structured cards for Personal info, Primary Vehicle (Car 1), Secondary Vehicle (Car 2), Medical, and Comms.
-- **Quick Plan Selection**: Added quick-select chips (`Car 1` / `Car 2`) under the Vehicle kicker in `src/app/plans/[id].tsx`, allowing one-tap population of trailhead vehicle details during plan creation.
-
-## Voice Assistant Integration (Siri App Intents & Google Assistant)
-
-Implemented hands-free voice controls and hardware button shortcuts to assist hikers when fine motor control is impaired (injury, extreme cold, or panic) and to prevent search and rescue false alarms:
-- **Emergency / Panic Trigger**:
-  - Voice triggers: *"Hey Siri, open Emergency in TrailSafe"*, *"Hey Google, I need help in TrailSafe"*.
-  - Hardware triggers: Mappable to the iPhone Action Button or Lock Screen Control via `OpenEmergencyIntent`.
-  - Behavior: Deep-links to `trailsafe://emergency`. The emergency view immediately engages high-accuracy GPS hardware and pre-fills the 911 SMS text draft with coordinates. In accordance with TrailSafe's core safety invariants, it **never** triggers an automatic 911 call or text.
-- **Hands-Free Trip Plan Management**:
-  - Voice triggers: *"Hey Siri, mark my trip complete in TrailSafe"*, *"Hey Google, mark my trip complete in TrailSafe"*, *"Hey Siri, start my trip in TrailSafe"*.
-  - Behavior: Routes to `trailsafe://plan/current/complete` or `start` ([action].tsx](file:///Users/andrew/development/trailsafe/src/app/plan/current/[action].tsx)). Automatically transitions the current plan to `completed` in `AsyncStorage` and renders a prominent toast instructing the user to message their emergency contact. This directly targets the primary cause of false SAR callouts: overdue deadlines triggered when hikers reach their vehicle safely but forget to notify home contacts.
-- **Safety Guide Voice Search (`ShowInAppSearchResultsIntent`)**:
-  - Voice triggers: *"Hey Siri, search for hypothermia in TrailSafe"*, *"Hey Siri, search in TrailSafe"*, *"Hey Siri, search TrailSafe for bear safety"*.
-  - Protocol Conformance: Conforms to Apple's system-level `ShowInAppSearchResultsIntent` protocol with `criteria: StringSearchCriteria` and `searchScopes: [.general]`. Conformance to this specific system intent is required for iOS Siri to recognize that the app supports in-app search (otherwise, Siri defaults to *"I can't search within the [App] app"*).
-  - Behavior: Extracts `criteria.term` and routes to `trailsafe://guide?search=<query>`, pre-filtering the 22 offline survival guides instantly.
-- **AppIntents Metadata Constraints**:
-  - Apple's `appintentsmetadataprocessor` strictly forbids open-ended primitive `String` property interpolations inside `AppShortcut` phrases. Conforming to `ShowInAppSearchResultsIntent` with `StringSearchCriteria` delegates dynamic search query parsing directly to iOS's natural language engine while providing clean static shortcuts in `AppShortcutsProvider`.
-
-## On-Device Search Indexing (CoreSpotlight & Android Shortcuts)
-
-Integrated on-device system search to allow hikers to find critical medical and survival guides from the OS search interface (iOS Spotlight and Android App Search) without pre-opening the app:
-- **Local Native Module (`modules/device-search`)**: Built an autolinked Expo module bridging to `CSSearchableIndex` on iOS and `ShortcutManagerCompat` on Android.
-- **Domain Keyword Extraction**: Formatted all 22 bundled survival articles with comprehensive emergency keywords (e.g., hypothermia, cold, shivering, rewarming, bear, cougar, heat exhaustion, splint, compass).
-- **Deep-Link Interception**: `TrailSafeSceneDelegate.swift` captures `CSSearchableItemActionType` across both cold boot and warm background resume, routing directly to `trailsafe://article/<id>`.
-- **Continuous Native Generation (CNG)**: `plugins/with-app-intents.cjs` generates `TrailSafeIntents.swift`, `Info.plist` user activity types, and Android `shortcuts.xml` during `npx expo prebuild --clean`, guaranteeing 100% reproducible native builds.
-- **OTA Updates & Content Hashing**: Uses `getGuideContentVersion()` to compute a deterministic 32-bit FNV-1a hash over `library.json`. When an OTA update via `expo-updates` updates the offline library, `_layout.tsx` detects the hash change and silently re-indexes the native search database on boot without requiring a new App Store binary.
-
-
-## Primary technical and safety references consulted
-
-- [Expo SDK 57 reference](https://docs.expo.dev/versions/v57.0.0/)
-- [Expo Location 57](https://docs.expo.dev/versions/v57.0.0/sdk/location/)
-- [Expo Router 57](https://docs.expo.dev/versions/v57.0.0/sdk/router/)
-- [Expo Print 57](https://docs.expo.dev/versions/v57.0.0/sdk/print/)
-- [Expo Updates 57](https://docs.expo.dev/versions/v57.0.0/sdk/updates/)
-- Installed `expo-sms` types/source for composer results and simulator/browser limitations (the versioned SMS web documentation failed to load).
-- [PROJ4JS](https://proj4js.org/)
-- [King County SAR: When/How to Call for Help](https://kingcountysar.org/when-how-to-call-for-help/)
-- [King County 911: modern devices](https://kingcounty.gov/en/dept/kcit/data-information-services/911-program-office/how-to-call-911-using-modern-devices)
-- [911.gov: text-to-911 bounce-back](https://www.911.gov/calling-911/frequently-asked-questions/)
-- [CDC: heat-related illnesses](https://www.cdc.gov/niosh/heat-stress/about/illnesses.html)
-- [CDC: hypothermia](https://www.cdc.gov/winter-weather/prevention/index.html)
-- [W3C WCAG 2.1 Contrast Standards](https://www.w3.org/WAI/WCAG21/Understanding/contrast-minimum.html)
+See `VALIDATION.md` for fresh evidence and device limits. The review document describes the original defects and is retained as the implementation rationale. Prototype extraction writes an archival file in `/private/tmp` and does not overwrite app-reviewed content.

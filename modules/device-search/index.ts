@@ -28,13 +28,13 @@ export async function isAvailable(): Promise<boolean> {
   return false;
 }
 
-export async function indexItems(items: SearchIndexItem[]): Promise<void> {
-  if (NativeDeviceSearch?.indexItems) {
-    try {
-      await NativeDeviceSearch.indexItems(items);
-    } catch {
-      // Non-fatal if device indexing fails or is unavailable on this platform
-    }
+export async function indexItems(items: SearchIndexItem[]): Promise<boolean> {
+  if (!NativeDeviceSearch?.indexItems || !(await isAvailable())) return false;
+  try {
+    await NativeDeviceSearch.indexItems(items);
+    return true;
+  } catch {
+    return false;
   }
 }
 

@@ -76,8 +76,10 @@ export function parseStoredData(raw: string): StoredData {
     throw new Error("Unrecognized saved data. It has been preserved.");
 
   if (v.version === 1) {
-    v.profile.travelerName = typeof v.profile.name === "string" ? v.profile.name : "";
-    v.profile.travelerPhone = typeof v.profile.phone === "string" ? v.profile.phone : "";
+    v.profile.travelerName =
+      typeof v.profile.name === "string" ? v.profile.name : "";
+    v.profile.travelerPhone =
+      typeof v.profile.phone === "string" ? v.profile.phone : "";
     v.profile.defaultTrustedContactName = "";
     v.profile.defaultTrustedContactPhone = "";
     delete v.profile.name;
@@ -88,15 +90,21 @@ export function parseStoredData(raw: string): StoredData {
     v.checklist = {
       checks: Array.isArray(v.checks) ? v.checks : [],
       startedAt: Date.now(),
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     };
     v.tripDuration = v.tripType === "overnight" ? "overnight" : "day";
     v.winterConditions = v.tripType === "winter";
     delete v.checks;
     delete v.tripType;
   }
-  
-  if (!v.checklist || !Array.isArray(v.checklist.checks) || typeof v.checklist.startedAt !== "number" || typeof v.checklist.updatedAt !== "number" || !["day", "overnight"].includes(v.tripDuration)) {
+
+  if (
+    !v.checklist ||
+    !Array.isArray(v.checklist.checks) ||
+    typeof v.checklist.startedAt !== "number" ||
+    typeof v.checklist.updatedAt !== "number" ||
+    !["day", "overnight"].includes(v.tripDuration)
+  ) {
     throw new Error("Saved data is damaged. It has been preserved.");
   }
 
@@ -107,17 +115,45 @@ export function parseStoredData(raw: string): StoredData {
     "defaultTrustedContactPhone",
     "vehicle",
     "plate",
-    "medical"
+    "medical",
   ];
   if (
     !profileFields.every((k) => typeof v.profile[k] === "string") ||
-    (v.profile.vehicle2 !== undefined && typeof v.profile.vehicle2 !== "string") ||
+    (v.profile.vehicle2 !== undefined &&
+      typeof v.profile.vehicle2 !== "string") ||
     (v.profile.plate2 !== undefined && typeof v.profile.plate2 !== "string") ||
     !Array.isArray(v.profile.comms) ||
     !v.profile.comms.every((x: unknown) => typeof x === "string") ||
     !v.checklist.checks.every((x: unknown) => typeof x === "string")
   )
     throw new Error("Saved data is damaged. It has been preserved.");
+  // Stable checklist IDs preserve legacy checks when Food replaces Communications in the named ten.
+  const legacyEssentials = [
+    "Water",
+    "Navigation",
+    "Insulation",
+    "Headlamp",
+    "Fire starter",
+    "Communication",
+    "Repair kit",
+    "Sun protection",
+    "Emergency shelter",
+    "First aid",
+  ];
+  v.checklist.checks = [
+    ...new Set(
+      v.checklist.checks.map((key: string) => {
+        const index = /^ess-(\d+)$/.exec(key);
+        if (index && legacyEssentials[Number(index[1])]) {
+          const name = legacyEssentials[Number(index[1])];
+          return name === "Communication"
+            ? "communication"
+            : `essential:${name}`;
+        }
+        return key === "food" ? "essential:Food" : key;
+      }),
+    ),
+  ];
   v.profile.vehicle2 =
     typeof v.profile.vehicle2 === "string" ? v.profile.vehicle2 : "";
   v.profile.plate2 =
@@ -159,7 +195,8 @@ export function parseStoredData(raw: string): StoredData {
 
   for (let i = 0; i < v.plans.length; i++) {
     const p = v.plans[i];
-    if (!p) throw new Error("A saved trip plan is damaged. It has been preserved.");
+    if (!p)
+      throw new Error("A saved trip plan is damaged. It has been preserved.");
 
     if (v.version === 1) {
       p.travelerName = typeof p.name === "string" ? p.name : "";

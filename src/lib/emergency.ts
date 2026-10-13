@@ -1,16 +1,4 @@
-/**
- * @file emergency.ts
- * @description Emergency message generation and guarded handoff orchestration for 911 dispatch.
- *
- * Critical Safety Invariants:
- * 1. Location-First: Formats always lead with coordinate/location details so 911 dispatchers
- *    receive critical location even if a call or text drops immediately.
- * 2. Overdue/Missing Person Separation: When reporting an overdue or missing party, the draft
- *    deliberately omits the caller's GPS coordinates to prevent searchers from deploying to the
- *    reporting party instead of the subject's last known position.
- * 3. Practice Isolation: Practice mode strictly intercepts all handoffs, invoking simulation
- *    handlers and ensuring zero native telecom, SMS, or emergency service connections are made.
- */
+/** Emergency drafts and transport injection. Tests supply inert handlers; no consumer modes. */
 
 import { Fix, locationText } from "./coordinates";
 
@@ -28,12 +16,17 @@ export function buildEmergencyDraft(
   situation: string,
   partySize?: string,
   phone?: string,
+  locationKind: "here" | "elsewhere" = /overdue|missing/i.test(situation)
+    ? "elsewhere"
+    : "here",
 ): string {
-  const missing = /overdue|missing/i.test(situation);
+  const missing = locationKind === "elsewhere";
   const where = missing
-    ? "Missing person’s last known location: [enter trail, area, and time last seen]"
+    ? /missing|overdue/i.test(situation)
+      ? "Missing person’s last known location: [enter trail, area, and time last seen]"
+      : "Person needing help — last known location: [enter trail, area, and time last seen]"
     : fix
-      ? `${locationText(fix, "DD")}\n(Note: If reporting someone else, replace with their last known location)`
+      ? `Emergency at my location:\n${locationText(fix, "DD")}`
       : null;
   return [
     where ||
@@ -45,25 +38,21 @@ export function buildEmergencyDraft(
   ].join("\n");
 }
 
-/**
- * Executes an emergency communication action (call or text) with a strict practice safety interlock.
- *
- * @param practice If true, the action is simulated and native handoffs are guaranteed not to run.
- * @param action The requested communication method ("call" or "text").
- * @param handlers Handlers object containing simulation and live action implementations.
- */
+/** Dispatches only to the injected handler. Unit tests never import native transports. */
 export async function performEmergencyAction(
-  practice: boolean,
   action: "call" | "text",
-  handlers: {
-    simulate: (action: "call" | "text") => void;
-    call: () => Promise<void>;
-    text: () => Promise<void>;
-  },
+  handlers: { call: () => Promise<void>; text: () => Promise<void> },
 ): Promise<void> {
-  if (practice) {
-    handlers.simulate(action);
-    return;
-  }
   await handlers[action]();
+}
+
+/** A composer result is not a delivery receipt; Android returns unknown. */
+export function smsOutcomeMessage(
+  result: "sent" | "cancelled" | "unknown",
+): string {
+  if (result === "cancelled")
+    return "Text cancelled. Contact your trusted contact directly if needed.";
+  if (result === "unknown")
+    return "Check your messaging app. TrailSafe cannot verify sending or delivery.";
+  return "Composer closed. Confirm sending in your messaging app; TrailSafe cannot verify delivery.";
 }

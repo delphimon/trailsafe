@@ -1,3 +1,4 @@
+import { WASHINGTON_REGION } from "@/content/regions";
 import { Pressable, View } from "react-native";
 import { router } from "expo-router";
 import {
@@ -7,11 +8,8 @@ import {
   Info,
   Mountain,
   Users,
-  ShieldCheck,
 } from "lucide-react-native";
-import { useApp } from "@/state/app";
 import {
-  Button,
   useThemeStyles,
   Callout,
   fonts,
@@ -32,7 +30,6 @@ const choices = [
 ];
 export default function Emergency() {
   const { C } = useThemeStyles();
-  const { practice, setPractice } = useApp();
   return (
     <Screen title="Need Help?" subtitle="Call, text, and share your location">
       <EmergencyActions />
@@ -49,7 +46,7 @@ export default function Emergency() {
         Call if you can, text if you can’t.
       </T>
       <Note>
-        Don’t delay calling 911 because of cost. In Washington State, search-and-rescue response does not bill rescued persons.
+        Don’t delay calling 911 because of cost. {WASHINGTON_REGION.sarCostNote}
       </Note>
       <Note>
         These buttons open your phone’s calling and messaging apps. TrailSafe
@@ -111,14 +108,6 @@ export default function Emergency() {
           })
         }
       />
-      <View style={{ marginTop: 22 }}>
-        <Button
-          label={practice ? "Exit Practice Mode" : "Practice Emergency Mode"}
-          icon={ShieldCheck}
-          variant="ghost"
-          onPress={() => setPractice(!practice)}
-        />
-      </View>
       <T
         style={{
           textAlign: "center",

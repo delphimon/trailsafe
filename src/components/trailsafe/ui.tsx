@@ -1,3 +1,4 @@
+import { useApp } from "@/state/app";
 import React from "react";
 import {
   KeyboardAvoidingView,
@@ -313,6 +314,7 @@ export function Screen({
   children: React.ReactNode;
 }) {
   const { C, s } = useThemeStyles();
+  const { navigate } = useApp();
   const insets = useSafeAreaInsets();
   return (
     <KeyboardAvoidingView
@@ -327,7 +329,7 @@ export function Screen({
                 accessibilityRole="button"
                 accessibilityLabel="Back"
                 onPress={() =>
-                  router.canGoBack() ? router.back() : router.replace("/")
+                  navigate(() => router.canGoBack() ? router.back() : router.replace("/"))
                 }
                 style={{
                   flexDirection: "row",

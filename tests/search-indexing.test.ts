@@ -10,16 +10,26 @@ import { newPlan, type TripPlan } from "../src/lib/plans";
 
 test("formatGuideSearchItems indexes all guide topics", () => {
   const items = formatGuideSearchItems();
-  assert.equal(items.length, topics.length, "Must index all topics in content/topics");
+  assert.equal(
+    items.length,
+    topics.length,
+    "Must index all topics in content/topics",
+  );
 
   for (const item of items) {
     assert.ok(item.id, "Every item must have an id");
     assert.ok(item.title, `Item ${item.id} must have a title`);
-    assert.ok(item.url.startsWith("trailsafe://article/"), `URL must start with trailsafe://article/ for ${item.id}`);
-    assert.ok(item.keywords.length > 0, `Keywords array must not be empty for ${item.id}`);
+    assert.ok(
+      item.url.startsWith("trailsafe://article/"),
+      `URL must start with trailsafe://article/ for ${item.id}`,
+    );
+    assert.ok(
+      item.keywords.length > 0,
+      `Keywords array must not be empty for ${item.id}`,
+    );
     assert.ok(
       item.keywords.includes(item.title.toLowerCase()),
-      `Keywords must include the lowercase item title for ${item.title}`
+      `Keywords must include the lowercase item title for ${item.title}`,
     );
   }
 });
@@ -30,15 +40,21 @@ test("formatGuideSearchItems extracts rich keywords for critical medical/surviva
   const hypothermia = items.find((i) => i.id === "cold-hypothermia");
   assert.ok(hypothermia, "cold-hypothermia must exist");
   assert.ok(
-    hypothermia.keywords.some((k) => k.includes("cold") || k.includes("shiver") || k.includes("hypothermia")),
-    "Hypothermia keywords must contain cold/shiver/hypothermia"
+    hypothermia.keywords.some(
+      (k) =>
+        k.includes("cold") || k.includes("shiver") || k.includes("hypothermia"),
+    ),
+    "Hypothermia keywords must contain cold/shiver/hypothermia",
   );
 
   const injured = items.find((i) => i.id === "g-injured");
   assert.ok(injured, "g-injured must exist");
   assert.ok(
-    injured.keywords.some((k) => k.includes("injur") || k.includes("medical") || k.includes("first aid")),
-    "Injured topic must include injury/first aid keywords"
+    injured.keywords.some(
+      (k) =>
+        k.includes("injur") || k.includes("medical") || k.includes("first aid"),
+    ),
+    "Injured topic must include injury/first aid keywords",
   );
 });
 
@@ -46,7 +62,10 @@ test("getGuideContentVersion is deterministic and prefixed with guide-", () => {
   const v1 = getGuideContentVersion();
   const v2 = getGuideContentVersion();
   assert.equal(v1, v2, "getGuideContentVersion must be deterministic");
-  assert.ok(v1.startsWith("guide-"), "getGuideContentVersion must start with guide-");
+  assert.ok(
+    v1.startsWith("guide-"),
+    "getGuideContentVersion must start with guide-",
+  );
   assert.equal(INDEXED_GUIDE_VERSION_KEY, "@trailsafe_indexed_guide_version");
 });
 
@@ -87,4 +106,13 @@ test("hands-free trip completion transitions current plan to completed", () => {
   assert.equal(completedPlan.revision, 2);
   assert.equal(completedPlan.id, activePlan.id);
   assert.equal(completedPlan.title, activePlan.title);
+});
+
+test("search version changes when indexed article text or keywords change", () => {
+  const items = formatGuideSearchItems();
+  const original = getGuideContentVersion(items);
+  const updated = items.map((item, i) =>
+    i ? item : { ...item, keywords: [...item.keywords, "new-guidance"] },
+  );
+  assert.notEqual(getGuideContentVersion(updated), original);
 });

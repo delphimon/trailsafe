@@ -213,10 +213,13 @@ export function locationText(
 }
 
 /**
- * Calculates the exact magnetic declination (variation) for the current date and location
+ * Estimates magnetic declination (variation) for the current date and location
  * using the World Magnetic Model (WMM). Positive is East, negative is West.
  */
-export function getMagneticDeclination(latitude: number, longitude: number): number | null {
+export function getMagneticDeclination(
+  latitude: number,
+  longitude: number,
+): number | null {
   try {
     const geo = require("geomagnetism");
     const result = geo.model().point([latitude, longitude]);
@@ -224,4 +227,12 @@ export function getMagneticDeclination(latitude: number, longitude: number): num
   } catch {
     return null;
   }
+}
+
+/** Positive declination means magnetic north lies east of true north (NOAA). */
+export function declinationDescription(degrees: number): string {
+  if (!Number.isFinite(degrees)) return "Magnetic estimate unavailable.";
+  if (Math.abs(degrees) < 0.05)
+    return "Magnetic and true north are approximately aligned.";
+  return `Magnetic North is ${Math.abs(degrees).toFixed(1)}° ${degrees > 0 ? "East" : "West"} of True North.`;
 }

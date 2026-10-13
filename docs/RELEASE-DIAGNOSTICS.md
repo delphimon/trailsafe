@@ -27,3 +27,9 @@ Before shipping a production store artifact:
 Developer, internal, and TestFlight builds may enable Bugsnag to diagnose failures during testing. Diagnostic configuration should continue to minimize unnecessary user data and should never be treated as part of TrailSafe's functional emergency-delivery path.
 
 Tracking: see GitHub issue #11.
+
+## Current artifact configuration
+
+`eas.json` explicitly selects the diagnostic channel for development, preview, TestFlight and production profiles. `app.config.ts` embeds that selection in manifest extras and the manual OTA request channel. `scripts/install-iphone.sh` defaults local signed Release installs to preview; set `EXPO_PUBLIC_RELEASE_CHANNEL=production` for a local store-policy build. Production and web initialize no Bugsnag diagnostics, and About renders channel-appropriate privacy wording. Normal app launch does not check for OTA updates; manual update application is blocked while a trip is Current.
+
+Unit checks and JS exports pass. Actual production native-artifact network/crash behavior remains a separate distribution check; configuration alone is not evidence that a shipped artifact was inspected.

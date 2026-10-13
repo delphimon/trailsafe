@@ -7,7 +7,7 @@
  *    This prevents race conditions, partial writes, and read-modify-write corruption across rapid updates.
  * 2. Write Guard (`writable`): If AsyncStorage read fails on startup (e.g. damaged JSON), `writable`
  *    remains false and mutations reject immediately, guaranteeing user data is never accidentally wiped.
- * 3. Optimistic State Propagation: State updates only update React state after `AsyncStorage.setItem()` succeeds.
+ * 3. Durable State Propagation: State updates only update React state after `AsyncStorage.setItem()` succeeds.
  */
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -26,10 +26,17 @@ import {
   type StoredData,
 } from "@/lib/persistence";
 
+import { reconcileTripReminders } from "@/lib/notifications";
+import { type ReminderStatus } from "@/lib/reminder-reconciliation";
+import { commitTripCommand, type TripCommand } from "@/lib/trip-commands";
+import { type TripPlan } from "@/lib/plans";
+
 /** Store context value contract. */
 type Store = {
   /** In-memory snapshot of local app data. */
   data: StoredData;
+  reminderStatus: ReminderStatus;
+  changeTrip: (command: TripCommand) => Promise<TripPlan>;
   /** True when initial load from AsyncStorage has finished. */
   ready: boolean;
   /** Error message if loading or parsing failed, or null if healthy. */
@@ -49,18 +56,32 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState(initialData),
     [ready, setReady] = useState(false),
     [error, setError] = useState<string | null>(null);
+  const [reminderStatus, setReminderStatus] = useState<ReminderStatus>("idle");
+  const reminderQueue = useRef<Promise<void>>(Promise.resolve());
+  const reconcile = async (plans: TripPlan[], request = false) => {
+    const job = reminderQueue.current.then(async () => {
+      try {
+        setReminderStatus(await reconcileTripReminders(plans, request));
+      } catch {
+        setReminderStatus("failed");
+      }
+    });
+    reminderQueue.current = job;
+    await job;
+  };
   const current = useRef(initialData),
     queue = useRef<Promise<void>>(Promise.resolve()),
     writable = useRef(false);
   useEffect(() => {
     let alive = true;
     AsyncStorage.getItem(STORAGE_KEY)
-      .then((raw) => {
+      .then(async (raw) => {
         if (!alive) return;
         const next = raw ? parseStoredData(raw) : initialData;
         current.current = next;
         setData(next);
         writable.current = true;
+        await reconcile(next.plans);
       })
       .catch((e) => {
         if (alive) setError(e.message || "Could not load saved data.");
@@ -78,10 +99,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         throw new Error(
           "Saved data is unavailable. Existing data has not been overwritten.",
         );
-      const next = fn(current.current);
+      const before = current.current;
+      const next = fn(before);
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       current.current = next;
       setData(next);
+      if (next.plans !== before.plans) await reconcile(next.plans, true);
     });
     queue.current = op.catch(() => {});
     return op;
@@ -93,12 +116,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setData(initialData);
       setError(null);
       writable.current = true;
+      await reconcile([]);
     });
     queue.current = op.catch(() => {});
     return op;
   };
   return (
-    <Context.Provider value={{ data, ready, error, update, reset }}>
+    <Context.Provider
+      value={{
+        data,
+        ready,
+        error,
+        update,
+        reset,
+        reminderStatus,
+        changeTrip: (command) => commitTripCommand(update, command),
+      }}
+    >
       {children}
     </Context.Provider>
   );

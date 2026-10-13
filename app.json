@@ -61,7 +61,6 @@
           "motionUsagePermission": false
         }
       ],
-      "expo-audio",
       "./plugins/with-no-push.cjs"
     ],
     "experiments": {
@@ -75,7 +74,8 @@
       },
       "bugsnag": {
         "apiKey": "2e086cc635107ef068c55e1ff704d12a"
-      }
+      },
+      "releaseChannel": "production"
     },
     "owner": "applied-interactions",
     "runtimeVersion": {
@@ -83,7 +83,7 @@
     },
     "updates": {
       "url": "https://u.expo.dev/0e9f0b72-eb3b-4be2-840d-2f1b632e2b6f",
-      "checkAutomatically": "ON_LOAD",
+      "checkAutomatically": "NEVER",
       "fallbackToCacheTimeout": 0,
       "requestHeaders": {
         "expo-channel-name": "production"

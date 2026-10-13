@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import * as SplashScreen from "expo-splash-screen";
 import { initializeDiagnostics } from "@/lib/diagnostics";
 
-initializeDiagnostics();
 import { Stack } from "expo-router/stack";
 import { StatusBar } from "expo-status-bar";
 import { View } from "react-native";
@@ -19,14 +18,11 @@ import {
 import { StoreProvider } from "@/state/store";
 import { AppProvider } from "@/state/app";
 import { LocationProvider } from "@/hooks/use-location";
-import {
-  AppOverlays,
-  BottomBar,
-  PracticeBanner,
-} from "@/components/trailsafe/shell";
+import { AppOverlays, BottomBar } from "@/components/trailsafe/shell";
 import { useThemeStyles } from "@/components/trailsafe/ui";
 import { indexGuideContent } from "@/lib/search-indexing";
 
+initializeDiagnostics();
 void SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
@@ -55,32 +51,31 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <StoreProvider>
         <LocationProvider>
-        <AppProvider>
-          <StatusBar style="light" />
-          <View
-            style={{ flex: 1, backgroundColor: C.deep, alignItems: "center" }}
-          >
+          <AppProvider>
+            <StatusBar style="light" />
             <View
-              style={{
-                flex: 1,
-                width: "100%",
-                maxWidth: 620,
-                backgroundColor: C.paper,
-              }}
+              style={{ flex: 1, backgroundColor: C.deep, alignItems: "center" }}
             >
-              <PracticeBanner />
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  contentStyle: { backgroundColor: C.paper },
-                  animation: "none",
+              <View
+                style={{
+                  flex: 1,
+                  width: "100%",
+                  maxWidth: 620,
+                  backgroundColor: C.paper,
                 }}
-              />
-              <BottomBar />
-              <AppOverlays />
+              >
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                    contentStyle: { backgroundColor: C.paper },
+                    animation: "none",
+                  }}
+                />
+                <BottomBar />
+                <AppOverlays />
+              </View>
             </View>
-          </View>
-        </AppProvider>
+          </AppProvider>
         </LocationProvider>
       </StoreProvider>
     </SafeAreaProvider>
