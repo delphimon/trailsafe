@@ -196,7 +196,7 @@ export default function About() {
       )}
       <Kicker>Content & sources</Kicker>
       <Card>
-        <Heading>TrailSafe · Development build</Heading>
+        <Heading>TrailSafe</Heading>
         <T>
           Safety guidance is bundled with the app for offline use. Content
           version: {getGuideContentVersion()}.

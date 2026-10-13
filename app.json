@@ -2,7 +2,7 @@
   "expo": {
     "name": "TrailSafe",
     "slug": "trailsafe",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "orientation": "portrait",
     "icon": "./assets/images/trailsafe-icon.png",
     "scheme": "trailsafe",
@@ -13,7 +13,8 @@
         "NSLocationWhenInUseUsageDescription": "TrailSafe shows your GPS coordinates so you can read or share them with emergency responders. Your location is not monitored or saved.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "bundleIdentifier": "com.appliedinteractions.trailsafe"
+      "bundleIdentifier": "com.appliedinteractions.trailsafe",
+      "buildNumber": "2"
     },
     "android": {
       "adaptiveIcon": {
@@ -30,7 +31,8 @@
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
-      ]
+      ],
+      "versionCode": 2
     },
     "web": {
       "output": "static",
