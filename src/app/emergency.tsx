@@ -1,3 +1,4 @@
+import { WASHINGTON_REGION } from "@/content/regions";
 import { Pressable, View } from "react-native";
 import { router } from "expo-router";
 import {
@@ -7,12 +8,10 @@ import {
   Info,
   Mountain,
   Users,
-  ShieldCheck,
 } from "lucide-react-native";
-import { useApp } from "@/state/app";
 import {
-  Button,
   useThemeStyles,
+  Button,
   Callout,
   fonts,
   Kicker,
@@ -32,10 +31,20 @@ const choices = [
 ];
 export default function Emergency() {
   const { C } = useThemeStyles();
-  const { practice, setPractice } = useApp();
   return (
     <Screen title="Need Help?" subtitle="Call, text, and share your location">
       <EmergencyActions />
+      <Button
+        label="Help for someone elsewhere / edit message"
+        variant="ghost"
+        small
+        onPress={() =>
+          router.push({
+            pathname: "/emergency-message",
+            params: { kind: "elsewhere" },
+          })
+        }
+      />
       <T
         style={{
           fontSize: 13,
@@ -49,11 +58,11 @@ export default function Emergency() {
         Call if you can, text if you can’t.
       </T>
       <Note>
-        Don’t delay calling 911 because of cost. In Washington State, search-and-rescue response does not bill rescued persons.
+        Don’t delay calling 911 because of cost. {WASHINGTON_REGION.sarCostNote}
       </Note>
       <Note>
-        These buttons open your phone’s calling and messaging apps. TrailSafe
-        does not contact anyone directly.
+        Text 911 opens Messages with your location. You can edit it before
+        sending. For someone elsewhere, use the separate message option above.
       </Note>
       <LocationCard />
       <Callout title="If a text bounces back">
@@ -111,14 +120,6 @@ export default function Emergency() {
           })
         }
       />
-      <View style={{ marginTop: 22 }}>
-        <Button
-          label={practice ? "Exit Practice Mode" : "Practice Emergency Mode"}
-          icon={ShieldCheck}
-          variant="ghost"
-          onPress={() => setPractice(!practice)}
-        />
-      </View>
       <T
         style={{
           textAlign: "center",

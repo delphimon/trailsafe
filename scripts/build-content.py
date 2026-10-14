@@ -74,8 +74,8 @@ raw['GUIDE_TOPICS']=[t for t in raw['GUIDE_TOPICS'] if t['kind']!='soon']
 # Cited organizations are sources, not authors or sponsors; avoid wording that implies otherwise.
 for r in raw['RESOURCES']:
     if r.get('note')=='The core guidance this app draws from': r['note']='Wilderness-safety guidance cited in this app'
-# This checklist intentionally follows the prototype’s ten systems; food is an explicit extra prompt.
-Path('src/content/library.json').write_text(
+# Prototype extraction is archival only. Review current content directly in src/content/library.json.
+Path('/private/tmp/trailsafe-prototype-library.json').write_text(
     json.dumps(raw,ensure_ascii=False,indent=2)
     .replace('Patterns KCESAR volunteers see','Patterns search-and-rescue volunteers see')+'\n')
 print(f'Extracted {len(articles)} articles and {len(raw["RESOURCES"])} resources.')

@@ -16,6 +16,7 @@ import {
   duplicateTrip,
   saveCurrentTrip,
   saveTripDraft,
+  saveTrip,
 } from "../src/lib/plans";
 import { initialData, parseStoredData } from "../src/lib/persistence";
 const p = {
@@ -72,7 +73,7 @@ test("PDF output escapes user input", () => {
   assert.ok(!html.includes("<script>"));
   assert.ok(html.includes("&lt;script&gt;"));
 });
-test("local check-in flag uses saved time zone and requires current plus opt-in", () => {
+test("overdue state uses saved time zone and requires a current plan", () => {
   const q = { ...p, status: "current" as const, remind: true };
   assert.equal(isOverdue(q, new Date("2026-09-07T07:59:00Z")), false);
   assert.equal(isOverdue(q, new Date("2026-09-07T08:00:00Z")), true);
@@ -106,9 +107,9 @@ test("versioned storage supports dual vehicles in profile and migrates legacy pr
   // Legacy profile with only vehicle and plate (no vehicle2 or plate2)
   const legacyProfile = {
     travelerName: "Hiker",
-  defaultTrustedContactName: "Jane",
+    defaultTrustedContactName: "Jane",
     travelerPhone: "206 555 0100",
-  defaultTrustedContactPhone: "999",
+    defaultTrustedContactPhone: "999",
     vehicle: "Silver Subaru Outback",
     plate: "WA ABC123",
     medical: "None",
@@ -138,7 +139,8 @@ test("safe return notification draft includes destination and safe confirmation"
   const draft = buildSafeReturnDraft(p);
   assert.match(draft, /Granite Mountain/);
   assert.match(draft, /back safely/);
-  assert.match(draft, /TrailSafe/);
+  assert.match(draft, /confirm you received/);
+  assert.doesNotMatch(draft, /plan is complete|Sent via/);
 });
 test("addDays correctly increments dates", () => {
   assert.equal(addDays("2026-09-13", 1), "2026-09-14");
@@ -161,24 +163,47 @@ test("currentTimeRounded rounds to five minutes in 24-hour format", () => {
 });
 
 test("parseDateTimeInTimeZone correctly parses PDT, PST, and EDT without timezone corruption", () => {
-  const pdt = parseDateTimeInTimeZone("2026-07-15", "14:30", "America/Los_Angeles");
+  const pdt = parseDateTimeInTimeZone(
+    "2026-07-15",
+    "14:30",
+    "America/Los_Angeles",
+  );
   assert.ok(pdt);
   assert.equal(pdt.toISOString(), "2026-07-15T21:30:00.000Z");
 
-  const pst = parseDateTimeInTimeZone("2026-01-15", "14:30", "America/Los_Angeles");
+  const pst = parseDateTimeInTimeZone(
+    "2026-01-15",
+    "14:30",
+    "America/Los_Angeles",
+  );
   assert.ok(pst);
   assert.equal(pst.toISOString(), "2026-01-15T22:30:00.000Z");
 
-  const edt = parseDateTimeInTimeZone("2026-07-15", "14:30", "America/New_York");
+  const edt = parseDateTimeInTimeZone(
+    "2026-07-15",
+    "14:30",
+    "America/New_York",
+  );
   assert.ok(edt);
   assert.equal(edt.toISOString(), "2026-07-15T18:30:00.000Z");
 
-  assert.equal(parseDateTimeInTimeZone("invalid", "14:30", "America/Los_Angeles"), null);
-  assert.equal(parseDateTimeInTimeZone("2026-07-15", "25:30", "America/Los_Angeles"), null);
+  assert.equal(
+    parseDateTimeInTimeZone("invalid", "14:30", "America/Los_Angeles"),
+    null,
+  );
+  assert.equal(
+    parseDateTimeInTimeZone("2026-07-15", "25:30", "America/Los_Angeles"),
+    null,
+  );
 });
 
 test("activateTrip enforces trusted contact and demotes previous current trip", () => {
-  const planA = { ...p, id: "plan-a", status: "current" as const, title: "Plan A" };
+  const planA = {
+    ...p,
+    id: "plan-a",
+    status: "current" as const,
+    title: "Plan A",
+  };
   const planB = {
     ...p,
     id: "plan-b",
@@ -216,7 +241,12 @@ test("activateTrip enforces trusted contact and demotes previous current trip", 
 });
 
 test("completeTrip marks plan as completed locally and increments revision", () => {
-  const plan = { ...p, id: "plan-active", status: "current" as const, revision: 1 };
+  const plan = {
+    ...p,
+    id: "plan-active",
+    status: "current" as const,
+    revision: 1,
+  };
   const res = completeTrip("plan-active", [plan]);
   assert.equal(res.ok, true);
   if (res.ok) {
@@ -227,7 +257,13 @@ test("completeTrip marks plan as completed locally and increments revision", () 
 });
 
 test("duplicateTrip resets ID, status to draft, revision to 1, and disables remind", () => {
-  const original = { ...p, id: "original-id", status: "current" as const, revision: 5, remind: true };
+  const original = {
+    ...p,
+    id: "original-id",
+    status: "current" as const,
+    revision: 5,
+    remind: true,
+  };
   const res = duplicateTrip("original-id", [original]);
   assert.equal(res.ok, true);
   if (res.ok) {
@@ -241,7 +277,12 @@ test("duplicateTrip resets ID, status to draft, revision to 1, and disables remi
 });
 
 test("saveCurrentTrip validates requirements and replaces any existing current trip", () => {
-  const existingCurrent = { ...p, id: "p1", status: "current" as const, title: "Trip 1" };
+  const existingCurrent = {
+    ...p,
+    id: "p1",
+    status: "current" as const,
+    title: "Trip 1",
+  };
   const invalidCandidate = {
     ...p,
     id: "p2",
@@ -269,7 +310,13 @@ test("saveCurrentTrip validates requirements and replaces any existing current t
 });
 
 test("saveTripDraft updates plan and increments revision", () => {
-  const original = { ...p, id: "p-draft", status: "draft" as const, revision: 2, title: "Draft 1" };
+  const original = {
+    ...p,
+    id: "p-draft",
+    status: "draft" as const,
+    revision: 2,
+    title: "Draft 1",
+  };
   const updated = { ...original, title: "Draft 1 Updated" };
   const res = saveTripDraft(updated, [original]);
   assert.equal(res.plan.title, "Draft 1 Updated");
@@ -277,4 +324,75 @@ test("saveTripDraft updates plan and increments revision", () => {
   assert.equal(res.plan.status, "draft");
 });
 
+test("completed plan edits survive saving with status and revision intact", () => {
+  const old = { ...p, status: "completed" as const, revision: 7 };
+  const result = saveTrip(
+    { ...old, title: "Edited completed trip", route: "Edited route" },
+    [old],
+  );
+  assert.ok(result.ok);
+  if (!result.ok) return;
+  assert.equal(result.plan.title, "Edited completed trip");
+  assert.equal(result.plan.route, "Edited route");
+  assert.equal(result.plan.status, "completed");
+  assert.equal(result.plan.revision, 8);
+});
+test("overdue status does not require opting into notifications", () => {
+  assert.equal(
+    isOverdue(
+      { ...p, status: "current", remind: false },
+      new Date("2026-09-08T00:00Z"),
+    ),
+    true,
+  );
+});
+test("DST gaps and repeated times are rejected instead of silently choosing an instant", () => {
+  assert.equal(
+    parseDateTimeInTimeZone("2027-03-14", "02:30", "America/Los_Angeles"),
+    null,
+  );
+  assert.equal(
+    parseDateTimeInTimeZone("2026-11-01", "01:30", "America/Los_Angeles"),
+    null,
+  );
+  assert.equal(
+    parseDateTimeInTimeZone(
+      "2027-03-14",
+      "03:30",
+      "America/Los_Angeles",
+    )?.toISOString(),
+    "2027-03-14T10:30:00.000Z",
+  );
+  assert.ok(
+    validatePlan({ ...p, date: "2027-03-14", startTime: "02:30" }).some((e) =>
+      e.includes("unambiguous"),
+    ),
+  );
+});
+test("legacy essentials preserve meaning when the list changes", () => {
+  const parsed = parseStoredData(
+    JSON.stringify({
+      ...initialData,
+      checklist: {
+        ...initialData.checklist,
+        checks: ["ess-5", "ess-1", "food"],
+      },
+    }),
+  );
+  assert.deepEqual(parsed.checklist.checks, [
+    "communication",
+    "essential:Navigation",
+    "essential:Food",
+  ]);
+});
 
+test("relative overdue suggestions add elapsed hours across DST changes", () => {
+  assert.deepEqual(
+    suggestOverdue("2027-03-14", "01:30", 2, "America/Los_Angeles"),
+    { overdueDate: "2027-03-14", overdueTime: "04:30" },
+  );
+  assert.deepEqual(
+    suggestOverdue("2026-11-01", "00:30", 3, "America/Los_Angeles"),
+    { overdueDate: "2026-11-01", overdueTime: "02:30" },
+  );
+});

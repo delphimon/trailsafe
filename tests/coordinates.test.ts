@@ -94,13 +94,19 @@ test("getMagneticDeclination calculates PNW variation correctly", () => {
   const declination = getMagneticDeclination(47.425, -121.413);
   assert.ok(declination !== null);
   // PNW declination is currently around 14° to 16° East
-  assert.ok(declination > 14 && declination < 16, "Snoqualmie Pass should be ~15° East");
+  assert.ok(
+    declination > 14 && declination < 16,
+    "Snoqualmie Pass should be ~15° East",
+  );
 
   // New York
   const nyDeclination = getMagneticDeclination(40.712, -74.006);
   assert.ok(nyDeclination !== null);
   // NY declination is currently around -12° to -14° West
-  assert.ok(nyDeclination < -10 && nyDeclination > -15, "New York should be West declination");
+  assert.ok(
+    nyDeclination < -10 && nyDeclination > -15,
+    "New York should be West declination",
+  );
 });
 
 test("locationText formats elevation and includes vertical accuracy when available", () => {
@@ -117,7 +123,22 @@ test("locationText formats elevation and includes vertical accuracy when availab
     altitude: 1000,
     altitudeAccuracy: null,
   };
-  const textNoAcc = locationText(fixWithoutAltAcc, "DD", fixWithoutAltAcc.timestamp)!;
+  const textNoAcc = locationText(
+    fixWithoutAltAcc,
+    "DD",
+    fixWithoutAltAcc.timestamp,
+  )!;
   assert.match(textNoAcc, /Device elevation: ~3281 ft$/m);
 });
 
+test("declination wording uses NOAA positive-east convention", async () => {
+  const { declinationDescription } = await import("../src/lib/coordinates");
+  assert.equal(
+    declinationDescription(15),
+    "Magnetic North is 15.0° East of True North.",
+  );
+  assert.equal(
+    declinationDescription(-12),
+    "Magnetic North is 12.0° West of True North.",
+  );
+});

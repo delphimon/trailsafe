@@ -128,5 +128,5 @@ test("isOverdue correctly evaluates check-in deadlines without false alarms", ()
 
   // If user opted out of reminders, isOverdue returns false
   const optedOut = { ...samplePlan, remind: false };
-  assert.equal(isOverdue(optedOut, atOverdue), false);
+  assert.equal(isOverdue(optedOut, atOverdue), true);
 });

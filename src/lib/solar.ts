@@ -1,77 +1,8 @@
-/**
- * @file solar.ts
- * @description Offline astronomical solar calculation engine for wilderness navigation.
- *
- * Operational Principles:
- * 1. 100% Offline: Calculates sunrise, solar noon, sunset, civil twilight, and forest dusk
- *    entirely through standard NOAA astronomical ephemeris equations without network calls.
- * 2. PNW "Forest Dusk" Factor: In the Pacific Northwest's dense coniferous canopy (Douglas fir,
- *    hemlock, cedar) and steep glaciated U-valleys, usable trail light cuts out 45–75 minutes
- *    earlier than open-sky civil twilight. This module provides a canopy penalty factor to
- *    prevent hikers from being caught without headlamps.
- * 3. 24-Hour Day/Night Continuity: Accurately differentiates daylight (between sunrise and
- *    forest dusk tonight) from nighttime (after forest dusk or before dawn). When daylight is
- *    active, it counts down to tonight's forest dusk ("headlamp needed in X hours"). When dark,
- *    it reports that artificial light is required now until the next morning's sunrise
- *    ("headlamp needed now until Xam").
- * 4. Sun-Compass Orientation: Provides real-time solar elevation and azimuth to allow hikers
- *    to verify compass headings against the sun's position.
- */
+/** Offline NOAA-style solar estimates. Canopy offsets are optional planning buffers, not measured darkness. */
 
 export type CanopyType = "open" | "moderate" | "dense";
 
-export interface TrailheadPreset {
-  id: string;
-  name: string;
-  region: string;
-  latitude: number;
-  longitude: number;
-}
-
-export const PNW_TRAILHEAD_PRESETS: TrailheadPreset[] = [
-  {
-    id: "snoqualmie",
-    name: "Snoqualmie Pass",
-    region: "I-90 Corridor",
-    latitude: 47.425,
-    longitude: -121.414,
-  },
-  {
-    id: "rainier-paradise",
-    name: "Mount Rainier (Paradise)",
-    region: "South Cascades",
-    latitude: 46.786,
-    longitude: -121.735,
-  },
-  {
-    id: "north-cascades",
-    name: "North Cascades (Mt. Baker)",
-    region: "North Cascades",
-    latitude: 48.857,
-    longitude: -121.666,
-  },
-  {
-    id: "olympic-hoh",
-    name: "Hoh Rain Forest",
-    region: "Olympic Peninsula",
-    latitude: 47.86,
-    longitude: -123.935,
-  },
-  {
-    id: "leavenworth",
-    name: "Leavenworth / Enchantments",
-    region: "Central Cascades",
-    latitude: 47.596,
-    longitude: -120.661,
-  },
-  {
-    id: "columbia-gorge",
-    name: "Columbia River Gorge",
-    region: "SW Washington / Oregon",
-    latitude: 45.698,
-    longitude: -121.89,
-  },
-];
+export { PNW_TRAILHEAD_PRESETS } from "../content/regions";
 
 export interface SolarTimes {
   sunrise: Date | null;
@@ -96,23 +27,6 @@ export interface SolarTimes {
   minutesUntilNextSunrise: number | null;
 }
 
-export const SOLAR_TOOL_METADATA = {
-  id: "tool:solar",
-  title: "Astronomical Solar Calculations & Canopy Dusk Planning Buffer",
-  category: "general-outdoor" as const,
-  owner: "Center for Adventure Leadership",
-  sources: [
-    "NOAA Earth System Research Laboratories (ESRL) Solar Calculation Algorithms",
-    "United States Naval Observatory (USNO) Astronomical Applications",
-  ],
-  contentVersion: "1.1.0",
-  lastVerified: "2026-09-30",
-  nextReview: "2027-09-30",
-  authoritativeOrganization: "Center for Adventure Leadership",
-  lastReviewed: "2026-09-30",
-  reviewCategory: "outdoor" as const,
-};
-
 /**
  * Standard disclaimer noting that dusk calculations are clear-sky models.
  */
@@ -134,6 +48,11 @@ export function getCanopyOffsetMinutes(canopy: CanopyType): number {
     case "dense":
       return 60;
   }
+}
+
+function meanObliquity(jc: number): number {
+  const seconds = 21.448 - jc * (46.815 + jc * (0.00059 - jc * 0.001813));
+  return 23 + (26 + seconds / 60) / 60;
 }
 
 const toRad = (deg: number) => (deg * Math.PI) / 180;
@@ -168,32 +87,22 @@ function calculateDaySolarEvents(
 
   const geomMeanLongSun =
     (280.46646 + jc * (36000.76983 + jc * 0.0003032)) % 360;
-  const geomMeanAnomSun =
-    357.52911 + jc * (35999.05029 - 0.0001537 * jc);
-  const eccentEarthOrbit =
-    0.016708634 - jc * (0.000042037 + 0.0000001267 * jc);
+  const geomMeanAnomSun = 357.52911 + jc * (35999.05029 - 0.0001537 * jc);
+  const eccentEarthOrbit = 0.016708634 - jc * (0.000042037 + 0.0000001267 * jc);
 
   const sunEqOfCenter =
     Math.sin(toRad(geomMeanAnomSun)) *
       (1.914602 - jc * (0.004817 + 0.000014 * jc)) +
-    Math.sin(toRad(2 * geomMeanAnomSun)) *
-      (0.019993 - 0.000101 * jc) +
+    Math.sin(toRad(2 * geomMeanAnomSun)) * (0.019993 - 0.000101 * jc) +
     Math.sin(toRad(3 * geomMeanAnomSun)) * 0.000289;
 
   const sunTrueLong = geomMeanLongSun + sunEqOfCenter;
   const sunAppLong =
     sunTrueLong - 0.00569 - 0.00478 * Math.sin(toRad(125.04 - 1934.136 * jc));
 
-  const meanObliqEcliptic =
-    23 +
-    (26 +
-      (21.448 -
-        jc * (46.815 + jc * (0.00059 - jc * 0.001813)))) /
-      60 /
-      60;
+  const meanObliqEcliptic = meanObliquity(jc);
   const obliqCorr =
-    meanObliqEcliptic +
-    0.00256 * Math.cos(toRad(125.04 - 1934.136 * jc));
+    meanObliqEcliptic + 0.00256 * Math.cos(toRad(125.04 - 1934.136 * jc));
 
   const sunDeclin = toDeg(
     Math.asin(Math.sin(toRad(obliqCorr)) * Math.sin(toRad(sunAppLong))),
@@ -332,29 +241,22 @@ export function calculateSolarTimes(
   const jcNow = (jdNow - 2451545.0) / 36525.0;
   const geomMeanLongSun =
     (280.46646 + jcNow * (36000.76983 + jcNow * 0.0003032)) % 360;
-  const geomMeanAnomSun =
-    357.52911 + jcNow * (35999.05029 - 0.0001537 * jcNow);
+  const geomMeanAnomSun = 357.52911 + jcNow * (35999.05029 - 0.0001537 * jcNow);
   const eccentEarthOrbit =
     0.016708634 - jcNow * (0.000042037 + 0.0000001267 * jcNow);
   const sunEqOfCenter =
     Math.sin(toRad(geomMeanAnomSun)) *
       (1.914602 - jcNow * (0.004817 + 0.000014 * jcNow)) +
-    Math.sin(toRad(2 * geomMeanAnomSun)) *
-      (0.019993 - 0.000101 * jcNow) +
+    Math.sin(toRad(2 * geomMeanAnomSun)) * (0.019993 - 0.000101 * jcNow) +
     Math.sin(toRad(3 * geomMeanAnomSun)) * 0.000289;
   const sunTrueLong = geomMeanLongSun + sunEqOfCenter;
   const sunAppLong =
-    sunTrueLong - 0.00569 - 0.00478 * Math.sin(toRad(125.04 - 1934.136 * jcNow));
-  const meanObliqEcliptic =
-    23 +
-    (26 +
-      (21.448 -
-        jcNow * (46.815 + jcNow * (0.00059 - jcNow * 0.001813)))) /
-      60 /
-      60;
+    sunTrueLong -
+    0.00569 -
+    0.00478 * Math.sin(toRad(125.04 - 1934.136 * jcNow));
+  const meanObliqEcliptic = meanObliquity(jcNow);
   const obliqCorr =
-    meanObliqEcliptic +
-    0.00256 * Math.cos(toRad(125.04 - 1934.136 * jcNow));
+    meanObliqEcliptic + 0.00256 * Math.cos(toRad(125.04 - 1934.136 * jcNow));
   const sunDeclin = toDeg(
     Math.asin(Math.sin(toRad(obliqCorr)) * Math.sin(toRad(sunAppLong))),
   );
@@ -428,7 +330,14 @@ export function calculateSolarTimes(
   let headlampStatusHeadline = "";
   let headlampStatusSubtext = "";
 
-  if (today.sunrise && nowMs < todaySunriseMs) {
+  if (!today.sunrise || !today.sunset || !today.forestDusk) {
+    isTrailDaylight = isDaylight;
+    headlampNeededNow = !isDaylight;
+    headlampStatusHeadline =
+      "No daily sunrise, sunset or twilight at this location";
+    headlampStatusSubtext =
+      "Carry a headlamp and judge actual light. No daylight deadline can be calculated for this date.";
+  } else if (today.sunrise && nowMs < todaySunriseMs) {
     // 1. Pre-dawn night (e.g. 4:00 AM)
     headlampNeededNow = true;
     isTrailDaylight = false;
@@ -439,7 +348,7 @@ export function calculateSolarTimes(
     );
     const riseStr = formatTimeString(today.sunrise);
     headlampStatusHeadline = `Headlamp needed now until ${riseStr}`;
-    headlampStatusSubtext = `Natural light returns at ${riseStr} (in ${formatDurationMinutes(minutesUntilNextSunrise)})`;
+    headlampStatusSubtext = `Natural light returns at ${riseStr} (in ${minutesUntilNextSunrise === null ? "time unavailable" : formatDurationMinutes(minutesUntilNextSunrise)})`;
   } else if (today.forestDusk && nowMs < todayForestDuskMs) {
     // 2. Daytime between sunrise and forest dusk (e.g. 10:00 AM, 5:30 PM)
     headlampNeededNow = false;
@@ -455,24 +364,21 @@ export function calculateSolarTimes(
       );
     }
     const duskStr = formatTimeString(today.forestDusk);
-    headlampStatusHeadline = `Headlamp needed in ${formatDurationMinutes(minutesUntilForestDusk)}`;
-    headlampStatusSubtext = `Estimated headlamp target: ${duskStr} (Forest Dusk tonight)`;
+    headlampStatusHeadline = `Have your headlamp ready by ${duskStr}`;
+    headlampStatusSubtext = `Planning buffer: ${canopyMinutesLost} min before civil dusk. Use your headlamp sooner if needed.`;
   } else {
     // 3. Evening/night after forest dusk (e.g. 7:30 PM, 9:00 PM)
     headlampNeededNow = true;
     isTrailDaylight = false;
     nextSunrise = tomorrow.sunrise;
-    const tomorrowSunriseMs =
-      tomorrow.sunrise?.getTime() ?? nowMs + 8 * 3600000;
-    minutesUntilNextSunrise = Math.max(
-      0,
-      Math.round((tomorrowSunriseMs - nowMs) / 60000),
-    );
+    minutesUntilNextSunrise = tomorrow.sunrise
+      ? Math.max(0, Math.round((tomorrow.sunrise.getTime() - nowMs) / 60000))
+      : null;
     const riseStr = tomorrow.sunrise
       ? formatTimeString(tomorrow.sunrise)
       : "morning";
     headlampStatusHeadline = `Headlamp needed now until ${riseStr}`;
-    headlampStatusSubtext = `Natural light returns at ${riseStr} (in ${formatDurationMinutes(minutesUntilNextSunrise)})`;
+    headlampStatusSubtext = `Natural light returns at ${riseStr} (in ${minutesUntilNextSunrise === null ? "time unavailable" : formatDurationMinutes(minutesUntilNextSunrise)})`;
   }
 
   return {

@@ -22,7 +22,7 @@ struct OpenEmergencyIntent: AppIntent {
 @available(iOS 16.0, *)
 struct CompleteCurrentTripIntent: AppIntent {
   static var title: LocalizedStringResource = "Mark Trip Complete"
-  static var description = IntentDescription("Marks your current active TrailSafe trip plan as completed to prevent false alarms.")
+  static var description = IntentDescription("Opens TrailSafe to confirm local trip completion. Contact your trusted contact directly to confirm safe return.")
   static var openAppWhenRun: Bool = true
 
   @MainActor

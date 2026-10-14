@@ -13,19 +13,26 @@
  *    lost, rather than leaving the emergency screen stuck in a permanent error state.
  */
 
-import React, { useEffect, useState, createContext, useContext, useCallback, useMemo } from "react";
+import React, {
+  useEffect,
+  useState,
+  createContext,
+  useContext,
+  useCallback,
+  useMemo,
+} from "react";
 import { AppState, Platform } from "react-native";
 import * as Location from "expo-location";
 import { Fix, validCoordinates } from "@/lib/coordinates";
 
 /** Current operational state of the location service. */
 export type LocationStatus =
-  | "idle"        // Location watching has not been requested
-  | "locating"    // Acquiring satellite lock or querying provider
-  | "located"     // Valid, fresh GPS fix received
-  | "denied"      // Location permission rejected by user or system
-  | "disabled"    // Device-level location services are turned off
-  | "unavailable";// Provider failed, timed out (15s), or satellite signal lost
+  | "idle" // Location watching has not been requested
+  | "locating" // Acquiring satellite lock or querying provider
+  | "located" // Valid, fresh GPS fix received
+  | "denied" // Location permission rejected by user or system
+  | "disabled" // Device-level location services are turned off
+  | "unavailable"; // Provider failed, timed out (15s), or satellite signal lost
 
 /**
  * React hook that manages automatic GPS tracking while an emergency or map surface is visible.
@@ -142,17 +149,18 @@ export function useAutomaticLocation(enabled: boolean): {
           return;
         }
         timeout = setTimeout(unavailable, 15000);
-        
+
         // Query last-known position first
         try {
-          const last = await Location.getLastKnownPositionAsync({ maxAge: 10 * 60 * 1000 });
-          if (!cancelled && last && status !== "located") {
+          const last = await Location.getLastKnownPositionAsync({
+            maxAge: 10 * 60 * 1000,
+          });
+          if (!cancelled && last) {
             receive(last);
           }
         } catch {}
 
         subscription = await Location.watchPositionAsync(
-
           {
             accuracy: Location.Accuracy.High,
             timeInterval: 5000,
@@ -177,8 +185,6 @@ export function useAutomaticLocation(enabled: boolean): {
   return { fix, status };
 }
 
-
-
 type LocationContextType = {
   fix: Fix | null;
   status: LocationStatus;
@@ -190,7 +196,7 @@ const LocationContext = createContext<LocationContextType | null>(null);
 export function LocationProvider({ children }: { children: React.ReactNode }) {
   const [requests, setRequests] = useState(0);
   const enabled = requests > 0;
-  
+
   // The existing hook handles the watch automatically when enabled is true
   const { fix, status } = useAutomaticLocation(enabled);
 
@@ -199,13 +205,21 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     return () => setRequests((n) => Math.max(0, n - 1));
   }, []);
 
-  const value = useMemo(() => ({ fix, status, requestLocation }), [fix, status, requestLocation]);
+  const value = useMemo(
+    () => ({ fix, status, requestLocation }),
+    [fix, status, requestLocation],
+  );
 
-  return <LocationContext.Provider value={value}>{children}</LocationContext.Provider>;
+  return (
+    <LocationContext.Provider value={value}>
+      {children}
+    </LocationContext.Provider>
+  );
 }
 
 export function useLocation() {
   const ctx = useContext(LocationContext);
-  if (!ctx) throw new Error("useLocation must be used within a LocationProvider");
+  if (!ctx)
+    throw new Error("useLocation must be used within a LocationProvider");
   return ctx;
 }

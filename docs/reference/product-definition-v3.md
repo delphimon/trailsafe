@@ -1,3 +1,5 @@
+> Historical reference. Current scope is in AGENTS.md and docs/IMPLEMENTATION.md. The October 13, 2026 user decisions remove Practice Mode, water timers and the content-governance subsystem.
+
 # KCESAR TrailReady
 ## Comprehensive Product Definition
 **Status:** Draft for product, operational, medical, and public-information review  

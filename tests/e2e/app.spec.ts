@@ -1,3 +1,5 @@
+import { newPlan } from "../../src/lib/plans";
+import { initialData } from "../../src/lib/persistence";
 import { test, expect, type Page } from "@playwright/test";
 
 declare global {
@@ -83,7 +85,7 @@ async function setupLocation(
   }, options);
 }
 async function ready(page: Page) {
-  await page.getByRole("tab", { name: "Home", exact: true }).waitFor();
+  await page.getByRole("tab", { name: "Prepare", exact: true }).waitFor();
   await expect
     .poll(() =>
       page.evaluate(() => document.fonts.check("16px PublicSans_400Regular")),
@@ -91,13 +93,13 @@ async function ready(page: Page) {
     .toBe(true);
 }
 
-test("prototype home, automatic coordinates, dropdown persistence, and watcher cleanup", async ({
+test("home landing, automatic coordinates, format persistence, and watcher cleanup", async ({
   page,
 }) => {
   await setupLocation(page);
   await page.goto("/");
   await ready(page);
-  await page.screenshot({ path: "docs/screenshots/home.png" });
+  await page.screenshot({ path: "test-results/screenshots/home.png" });
   expect(await page.evaluate(() => window.locationWatches)).toBe(0);
   await page.getByRole("button", { name: "NEED HELP?", exact: true }).click();
   await expect(page.getByTestId("coordinates")).toContainText("47.42537° N");
@@ -116,10 +118,10 @@ test("prototype home, automatic coordinates, dropdown persistence, and watcher c
   await expect
     .poll(() => page.evaluate(() => window.sharedText))
     .toContain("Accuracy: ±26 ft");
-  await page.screenshot({ path: "docs/screenshots/emergency-utm.png" });
+  await page.screenshot({ path: "test-results/screenshots/emergency-utm.png" });
   await page.reload();
   await expect(page.getByTestId("coordinates")).toContainText("10T");
-  await page.getByRole("tab", { name: "Home", exact: true }).click();
+  await page.getByRole("tab", { name: "Prepare", exact: true }).click();
   await expect
     .poll(() => page.evaluate(() => window.locationClears))
     .toBeGreaterThan(0);
@@ -158,27 +160,39 @@ test("stale and poor accuracy are visible and retained when sharing", async ({
     .toContain("STALE LOCATION");
 });
 
-test("practice actions across emergency and guide screens never open a handoff", async ({
+test("editable emergency drafts distinguish subject location without opening a handoff", async ({
   page,
 }) => {
   await setupLocation(page);
   await page.goto("/emergency");
   await ready(page);
+  await expect(page.getByRole("button", { name: /Practice/ })).toHaveCount(0);
   await page
-    .getByRole("button", { name: "Practice Emergency Mode", exact: true })
+    .getByRole("button", {
+      name: "Help for someone elsewhere / edit message",
+      exact: true,
+    })
     .click();
-  await page.getByRole("button", { name: "CALL 911", exact: true }).click();
-  await expect(page.getByText(/Nothing was contacted/)).toBeVisible();
-  await page.getByRole("button", { name: "Continue Practice", exact: true }).click();
-  await page.getByRole("button", { name: "TEXT 911", exact: true }).click();
-  await expect(page.getByText(/Nothing was contacted/)).toBeVisible();
-  await page.getByRole("button", { name: "Continue Practice", exact: true }).click();
+  await expect(
+    page.getByRole("textbox", { name: "Emergency message" }),
+  ).not.toContainText("47.42537");
   await page
-    .getByRole("button", { name: "Lost / off route", exact: true })
+    .getByRole("button", { name: "At my location", exact: true })
     .click();
-  await page.getByRole("button", { name: "Call 911", exact: true }).click();
-  await expect(page.getByText(/Nothing was contacted/)).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { name: "Emergency message" }),
+  ).toContainText("47.42537");
+  await page
+    .getByRole("button", { name: "Someone elsewhere", exact: true })
+    .click();
+  await expect(
+    page.getByRole("textbox", { name: "Emergency message" }),
+  ).not.toContainText("47.42537");
+  await expect(
+    page.getByRole("textbox", { name: "Emergency message" }),
+  ).toContainText("last known location");
   expect(await page.evaluate(() => window.externalCalls)).toEqual([]);
+  // Deliberately never click native handoff controls. Inert transports are exercised in unit tests.
 });
 
 test("checklist, search, and articles work offline after launch", async ({
@@ -200,14 +214,14 @@ test("checklist, search, and articles work offline after launch", async ({
     .fill("hypothermia");
   await page.getByRole("button", { name: /Cold & hypothermia/ }).click();
   await expect(
-    page.getByText("Recognize it early", { exact: true }),
+    page.getByText("Watch for changes", { exact: true }),
   ).toBeVisible();
   await context.setOffline(false);
   await page.goto("/prepare");
   await expect(
     page.getByRole("checkbox", { name: "Water", exact: true }),
   ).toBeChecked();
-  await page.screenshot({ path: "docs/screenshots/prepare.png" });
+  await page.screenshot({ path: "test-results/screenshots/prepare.png" });
 });
 
 test("trip creation, midnight buffer, persistence, editing, and deletion", async ({
@@ -242,7 +256,7 @@ test("trip creation, midnight buffer, persistence, editing, and deletion", async
     page.getByRole("textbox", { name: "Overdue date", exact: true }),
   ).toHaveValue("2026-09-07");
   await page
-    .getByRole("button", { name: "Generate Plan", exact: true })
+    .getByRole("button", { name: "Save and preview", exact: true })
     .click();
   await expect(page.getByTestId("plan-preview")).toContainText(
     "2026-09-07 01:00",
@@ -270,7 +284,7 @@ test("trip creation, midnight buffer, persistence, editing, and deletion", async
     .getByRole("textbox", { name: "Planned route", exact: true })
     .fill("Changed route\nStay on main trail");
   await page
-    .getByRole("button", { name: "Generate Plan", exact: true })
+    .getByRole("button", { name: "Save and preview", exact: true })
     .click();
   await expect(page.getByTestId("plan-preview")).toContainText("Changed route");
   await page
@@ -316,13 +330,19 @@ test("saved profile survives reload and prefills a new plan with dual vehicle se
     .getByRole("textbox", { name: "Car 1: Color, make, model", exact: true })
     .fill("Silver Subaru Outback");
   await page
-    .getByRole("textbox", { name: "Car 1: License plate and state", exact: true })
+    .getByRole("textbox", {
+      name: "Car 1: License plate and state",
+      exact: true,
+    })
     .fill("WA SUB123");
   await page
     .getByRole("textbox", { name: "Car 2: Color, make, model", exact: true })
     .fill("Blue Rivian R1S");
   await page
-    .getByRole("textbox", { name: "Car 2: License plate and state", exact: true })
+    .getByRole("textbox", {
+      name: "Car 2: License plate and state",
+      exact: true,
+    })
     .fill("WA RIV789");
 
   await page.getByRole("button", { name: "Save Profile", exact: true }).click();
@@ -335,10 +355,16 @@ test("saved profile survives reload and prefills a new plan with dual vehicle se
     page.getByRole("textbox", { name: "Your name", exact: true }),
   ).toHaveValue("Test Profile");
   await expect(
-    page.getByRole("textbox", { name: "Car 1: Color, make, model", exact: true }),
+    page.getByRole("textbox", {
+      name: "Car 1: Color, make, model",
+      exact: true,
+    }),
   ).toHaveValue("Silver Subaru Outback");
   await expect(
-    page.getByRole("textbox", { name: "Car 2: Color, make, model", exact: true }),
+    page.getByRole("textbox", {
+      name: "Car 2: Color, make, model",
+      exact: true,
+    }),
   ).toHaveValue("Blue Rivian R1S");
 
   await page.goto("/plans/new");
@@ -347,7 +373,10 @@ test("saved profile survives reload and prefills a new plan with dual vehicle se
     page.getByRole("textbox", { name: "Your name", exact: true }),
   ).toHaveValue("Test Profile");
   await expect(
-    page.getByRole("textbox", { name: "Vehicle color, make, model", exact: true }),
+    page.getByRole("textbox", {
+      name: "Vehicle color, make, model",
+      exact: true,
+    }),
   ).toHaveValue("Silver Subaru Outback");
   await expect(
     page.getByRole("textbox", { name: "License plate and state", exact: true }),
@@ -359,7 +388,10 @@ test("saved profile survives reload and prefills a new plan with dual vehicle se
   await car2Button.click();
 
   await expect(
-    page.getByRole("textbox", { name: "Vehicle color, make, model", exact: true }),
+    page.getByRole("textbox", {
+      name: "Vehicle color, make, model",
+      exact: true,
+    }),
   ).toHaveValue("Blue Rivian R1S");
   await expect(
     page.getByRole("textbox", { name: "License plate and state", exact: true }),
@@ -371,7 +403,10 @@ test("saved profile survives reload and prefills a new plan with dual vehicle se
   await car1Button.click();
 
   await expect(
-    page.getByRole("textbox", { name: "Vehicle color, make, model", exact: true }),
+    page.getByRole("textbox", {
+      name: "Vehicle color, make, model",
+      exact: true,
+    }),
   ).toHaveValue("Silver Subaru Outback");
   await expect(
     page.getByRole("textbox", { name: "License plate and state", exact: true }),
@@ -390,9 +425,11 @@ test("small screen has no horizontal overflow and retains all tabs", async ({
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(320);
   await expect(
-    page.getByRole("tab", { name: "Emergency", exact: true }),
+    page.getByRole("tab", { name: "Help", exact: true }),
   ).toBeVisible();
-  await page.screenshot({ path: "docs/screenshots/emergency-small.png" });
+  await page.screenshot({
+    path: "test-results/screenshots/emergency-small.png",
+  });
 });
 
 test("about screen displays native build and update info with check for updates action", async ({
@@ -401,7 +438,9 @@ test("about screen displays native build and update info with check for updates 
   await page.goto("/about");
   await ready(page);
   await expect(page.getByText("Version Details")).toBeVisible();
-  await expect(page.getByTestId("build-version")).toContainText(/\d+\.\d+\.\d+/);
+  await expect(page.getByTestId("build-version")).toContainText(
+    /\d+\.\d+\.\d+/,
+  );
   await expect(page.getByText("OTA Status")).toBeVisible();
   const checkBtn = page.getByRole("button", { name: "Check for Updates" });
   await expect(checkBtn).toBeVisible();
@@ -413,76 +452,219 @@ test("about screen displays native build and update info with check for updates 
   ).toBeVisible();
 });
 
-test("wilderness tools screen navigates, calculates forest dusk, runs signaling tools, and backcountry utilities", async ({
+test("tools put answers above settings and estimates use quick controls", async ({
   page,
 }) => {
-  await setupLocation(page, { lat: 47.425, lon: -121.414 });
+  await setupLocation(page);
+  await page.setViewportSize({ width: 440, height: 956 });
   await page.goto("/tools");
   await ready(page);
-
-  // Check header and tab navigation
-  await expect(page.getByText("Wilderness Tools")).toBeVisible();
-  await expect(page.getByRole("tab", { name: "Tools", exact: true })).toBeVisible();
-
-  // Verify Solar & Forest Dusk
+  await expect(page.getByTestId("headlamp-result")).not.toContainText(
+    "Waiting",
+  );
+  const box = await page.getByTestId("headlamp-result").boundingBox();
+  expect(box!.y + box!.height).toBeLessThan(650);
   await expect(
-    page.getByText(/TRAIL LIGHT|TRAIL DARKNESS/),
-  ).toBeVisible();
-  await expect(page.getByText(/Headlamp needed/i)).toBeVisible();
+    page.getByRole("button", { name: "Snoqualmie Pass", exact: true }),
+  ).toHaveCount(0);
+  await page.screenshot({
+    path: "test-results/screenshots/tools-daylight.png",
+  });
+  await page.getByRole("button", { name: "Compass", exact: true }).click();
+  await expect(page.getByTestId("declination-result")).toContainText("E");
   await expect(
-    page.getByText(/Estimates are based on a clear sky/i).first(),
+    page.getByText(/Magnetic North is .* East of True North/),
   ).toBeVisible();
-  await expect(page.getByText("Astronomical solar table")).toBeVisible();
-  await expect(page.getByText("Civil Twilight (Open Dusk)")).toBeVisible();
-
-  // Switch canopy preset
-  await page.getByRole("button", { name: "Dense Timber (-60m)" }).click();
-  await page.screenshot({ path: "docs/screenshots/tools-solar.png" });
-
-  // Switch to Signal tab
-  await page.getByRole("button", { name: "Signal", exact: true }).click();
-  await expect(page.getByText("Alpine distress whistle cadence")).toBeVisible();
-  await expect(page.getByText("Universal 3-Blast Signal")).toBeVisible();
-  await page.screenshot({ path: "docs/screenshots/tools-signaling.png" });
-
-  // Start whistle cadence
-  const startCadenceBtn = page.getByRole("button", { name: "Start Whistle Cadence" });
-  await expect(startCadenceBtn).toBeVisible();
-  await startCadenceBtn.click();
-  await expect(page.getByText(/BLAST 1 OF 3/)).toBeVisible();
-  await page.getByRole("button", { name: "Stop Cadence" }).click();
-
-  // Launch Strobe modal and dismiss
-  await page.getByRole("button", { name: "Emergency Strobe (High-Frequency)" }).click();
-  await expect(page.getByText("EMERGENCY STROBE ACTIVE")).toBeVisible();
-  await page.getByText("EMERGENCY STROBE ACTIVE").click();
-  await expect(page.getByText("EMERGENCY STROBE ACTIVE")).not.toBeVisible();
-
-  // Switch to Hazards tab
-  await page.getByRole("button", { name: "Hazards", exact: true }).click();
-  await expect(page.getByText("Avalanche slope inclinometer")).toBeVisible();
-  await expect(page.getByText(/Ready to Measure|Prime Slab Start Zone/i)).toBeVisible();
-
-  // Verify Hypothermia & Wind Chill Index (Cascade Concrete Hazard)
-  await expect(page.getByRole("heading", { name: "Hypothermia & Wind Chill", exact: true })).toBeVisible();
-  await expect(page.getByText("CASCADE CONCRETE ZONE")).toBeVisible();
-  await page.getByRole("button", { name: /Learn critical signs/i }).click();
-  await expect(page.getByText("Why Wet Cold Kills: 4 Life-Safety Principles")).toBeVisible();
-  await expect(page.getByText(/Wind chill — exposed skin estimate/i)).toBeVisible();
-  await expect(page.getByText(/Early Warning: The "Umbles" Checklist/)).toBeVisible();
-  await expect(page.getByText(/Search & Rescue Field Protocol/i)).toBeVisible();
-  await page.screenshot({ path: "docs/screenshots/tools-hazards.png" });
-
-  // Switch preset to Crisp Alpine Ridge (Dry)
-  await page.getByRole("button", { name: "Crisp Alpine Ridge (Dry)" }).click();
-  await expect(page.getByText(/Moisture: dry/i).first()).toBeVisible();
-
-  // Switch to Planning tab
-  await page.getByRole("button", { name: "Planning", exact: true }).click();
-  await expect(page.getByText("Compass Navigation")).toBeVisible();
-  await expect(page.getByText("Magnetic Declination")).toBeVisible();
-  await expect(page.getByText("Hiking Time Estimator")).toBeVisible();
-  await expect(page.getByText("Disinfection Timer")).toBeVisible();
-  await page.screenshot({ path: "docs/screenshots/tools-backcountry.png" });
+  await page.getByRole("button", { name: "Hiking", exact: true }).click();
+  const first = await page.getByTestId("hiking-result").textContent();
+  await page.getByRole("button", { name: "10 mi", exact: true }).click();
+  await expect(page.getByTestId("hiking-result")).not.toHaveText(first!);
+  const slider = page.getByRole("slider", {
+    name: "Total distance",
+    exact: true,
+  });
+  await slider.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(
+    page.getByText("Total distance: 10.5 miles", { exact: true }),
+  ).toBeVisible();
+  await page.screenshot({ path: "test-results/screenshots/tools-hiking.png" });
+  await page.getByRole("button", { name: "More", exact: true }).click();
+  await expect(page.getByText(/Use your phone’s Clock timer/)).toBeVisible();
+  await expect(
+    page.getByRole("button", {
+      name: /Start Timer|Whistle Cadence|Strobe|Hazards/,
+    }),
+  ).toHaveCount(0);
+});
+test("denied tools location never substitutes a preset", async ({ page }) => {
+  await setupLocation(page, { denied: true });
+  await page.goto("/tools");
+  await ready(page);
+  await expect(page.getByText(/Location unavailable/)).toBeVisible();
+  await expect(page.getByTestId("headlamp-result")).toContainText("Waiting");
+  await page.getByRole("button", { name: /Location: GPS.*Change/ }).click();
+  await page
+    .getByRole("button", { name: "Snoqualmie Pass", exact: true })
+    .click();
+  await expect(page.getByTestId("headlamp-result")).not.toContainText(
+    "Waiting",
+  );
+  await expect(page.getByText(/Today · Snoqualmie Pass/)).toBeVisible();
+});
+test("Text 911 reaches the intercepted system handoff in one click", async ({
+  page,
+}) => {
+  await setupLocation(page);
+  await page.goto("/emergency");
+  await ready(page);
+  await expect(page.getByTestId("coordinates")).toContainText("47.42537");
+  await page.getByRole("button", { name: "TEXT 911", exact: true }).click();
+  await expect
+    .poll(() => page.evaluate(() => window.externalCalls.length))
+    .toBe(1);
+  const url = await page.evaluate(() => window.externalCalls[0]);
+  expect(url).toMatch(/^sms:911/);
+  expect(decodeURIComponent(url)).toContain("47.42537");
+  expect(decodeURIComponent(url)).toContain("Emergency at my location");
+  await expect(
+    page.getByRole("textbox", { name: "Emergency message" }),
+  ).toHaveCount(0);
+});
+test("Home exposes Trips separately from the packing checklist", async ({
+  page,
+}) => {
+  await seedPlan(page, "current");
+  await page.goto("/");
+  await ready(page);
+  await expect(
+    page.getByRole("button", { name: "Open current trip", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("tab", { name: "Trips", exact: true }).click();
+  for (const name of ["Current", "Upcoming", "Past"])
+    await expect(
+      page.getByRole("heading", { name, exact: true }),
+    ).toBeVisible();
+  await expect(page.getByText("Original trip", { exact: true })).toBeVisible();
+  await page.getByRole("tab", { name: "Prepare", exact: true }).click();
+  await expect(
+    page.getByRole("checkbox", { name: "Water", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "New Trip Plan", exact: true }),
+  ).toHaveCount(0);
 });
 
+async function seedPlan(page: Page, status: "current" | "completed") {
+  const plan = {
+    ...newPlan(),
+    id: "review-plan",
+    status,
+    title: "Original trip",
+    travelerName: "Test hiker",
+    travelerPhone: "2065550100",
+    trustedContactName: "Test contact",
+    trustedContactPhone: "2065550199",
+    partySize: "1",
+    trailhead: "Test trailhead",
+    route: "Test route",
+    date: "2027-01-01",
+    startTime: "08:00",
+    returnDate: "2027-01-01",
+    returnTime: "16:00",
+    overdueDate: "2027-01-01",
+    overdueTime: "18:00",
+    timeZone: "America/Los_Angeles",
+  };
+  await page.addInitScript(
+    (data) => localStorage.setItem("trailsafe.local.v1", JSON.stringify(data)),
+    { ...initialData, plans: [plan] },
+  );
+}
+test("completed edits persist and preserve completed status", async ({
+  page,
+}) => {
+  await setupLocation(page);
+  await seedPlan(page, "completed");
+  await page.goto("/plans/review-plan?edit=1");
+  await ready(page);
+  await page
+    .getByRole("textbox", { name: "Trip title / destination" })
+    .fill("Edited completed trip");
+  await page
+    .getByRole("button", { name: "Save and preview", exact: true })
+    .click();
+  await expect(page.getByTestId("plan-preview")).toContainText(
+    "Edited completed trip",
+  );
+  await expect(page.getByTestId("plan-preview")).toContainText("COMPLETED");
+  const stored = await page.evaluate(
+    () => JSON.parse(localStorage.getItem("trailsafe.local.v1")!).plans[0],
+  );
+  expect(stored.title).toBe("Edited completed trip");
+  expect(stored.status).toBe("completed");
+});
+test("voice-action cancellation returns to a usable plan", async ({ page }) => {
+  await setupLocation(page);
+  await seedPlan(page, "current");
+  await page.goto("/plan/current/complete");
+  await ready(page);
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(page.getByTestId("plan-preview")).toContainText("CURRENT");
+  await expect(page.getByText(/Updating your trip/)).toHaveCount(0);
+});
+test("failed voice storage write never announces completion or changes saved status", async ({
+  page,
+}) => {
+  await setupLocation(page);
+  await seedPlan(page, "current");
+  await page.goto("/plan/current/complete");
+  await ready(page);
+  await page.evaluate(() => {
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (key === "trailsafe.local.v1")
+        throw new Error("Simulated storage failure");
+      return original.call(this, key, value);
+    };
+  });
+  await page
+    .getByRole("button", { name: "Mark Complete", exact: true })
+    .click();
+  await expect(
+    page.getByText("Could not finish", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Simulated storage failure", { exact: true }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () =>
+        JSON.parse(localStorage.getItem("trailsafe.local.v1")!).plans[0].status,
+    ),
+  ).toBe("current");
+  await expect(page.getByText(/Trip completed locally/)).toHaveCount(0);
+});
+test("navigation protects unsaved edits", async ({ page }) => {
+  await setupLocation(page);
+  await page.goto("/plans/new");
+  await ready(page);
+  await page
+    .getByRole("textbox", { name: "Trip title / destination" })
+    .fill("Unsaved trip");
+  await page.getByRole("tab", { name: "Prepare", exact: true }).click();
+  await expect(
+    page.getByText("Discard unsaved changes?", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Keep editing", exact: true }).click();
+  await expect(
+    page.getByRole("textbox", { name: "Trip title / destination" }),
+  ).toHaveValue("Unsaved trip");
+  await page.getByRole("tab", { name: "Prepare", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Discard changes", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Prepare", exact: true }),
+  ).toBeVisible();
+});

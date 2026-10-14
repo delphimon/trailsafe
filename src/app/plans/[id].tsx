@@ -1,6 +1,11 @@
-import { useState } from "react";
-import { View } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
+import { useState, useEffect, useCallback } from "react";
+import { View, Platform, BackHandler } from "react-native";
+import {
+  router,
+  useLocalSearchParams,
+  useFocusEffect,
+  Stack,
+} from "expo-router";
 import {
   ChevronDown,
   ChevronUp,
@@ -9,21 +14,20 @@ import {
   MessageSquare,
   Share2,
 } from "lucide-react-native";
+import { DateTimeField } from "@/components/trailsafe/date-time-field";
 import * as SMS from "expo-sms";
 import { useStore } from "@/state/store";
-import { scheduleTripReminders, cancelTripReminders } from "@/lib/notifications";
+import { smsOutcomeMessage } from "@/lib/emergency";
 import { useApp } from "@/state/app";
 import {
   TripPlan,
   addDays,
   buildPlanText,
   buildSafeReturnDraft,
-  completeTrip,
   currentTimeRounded,
   localDate,
   newPlan,
-  saveCurrentTrip,
-  saveTripDraft,
+  saveTrip,
   suggestOverdue,
   validatePlan,
 } from "@/lib/plans";
@@ -92,26 +96,72 @@ function PlanEditor({
   editInitially: boolean;
 }) {
   const { C, s } = useThemeStyles();
-  const { data, update } = useStore();
-  const { run, copy, share, notify, setDialog } = useApp();
+  const { data, changeTrip, reminderStatus } = useStore();
+  const { run, copy, share, notify, setDialog, setNavigationGuard } = useApp();
   const [plan, setPlan] = useState(initial),
     [editing, setEditing] = useState(editInitially),
     [additional, setAdditional] = useState(false),
     [errors, setErrors] = useState<string[]>([]),
     [busy, setBusy] = useState(false);
+  const savedPlan = data.plans.find((p) => p.id === plan.id) ?? initial;
+  const dirty = editing && JSON.stringify(plan) !== JSON.stringify(savedPlan);
+  const confirmLeave = useCallback(
+    (leave: () => void) => {
+      if (!dirty) {
+        leave();
+        return;
+      }
+      setDialog({
+        title: "Discard unsaved changes?",
+        message: "Save your plan before leaving to keep these changes.",
+        confirmLabel: "Discard changes",
+        cancelLabel: "Keep editing",
+        onConfirm: () => {
+          setPlan(savedPlan);
+          leave();
+        },
+      });
+    },
+    [dirty, setDialog, savedPlan],
+  );
+  useFocusEffect(
+    useCallback(() => {
+      setNavigationGuard(dirty ? confirmLeave : null);
+      const back = BackHandler.addEventListener("hardwareBackPress", () => {
+        if (!dirty) return false;
+        confirmLeave(() =>
+          router.canGoBack() ? router.back() : router.replace("/plans"),
+        );
+        return true;
+      });
+      return () => {
+        setNavigationGuard(null);
+        back.remove();
+      };
+    }, [dirty, confirmLeave, setNavigationGuard]),
+  );
+  useEffect(() => {
+    if (Platform.OS !== "web" || !dirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
   const sendSafeReturn = async () => {
     const text = buildSafeReturnDraft(plan);
-    const targetPhone = plan.trustedContactPhone ? [plan.trustedContactPhone] : [];
+    const targetPhone = plan.trustedContactPhone
+      ? [plan.trustedContactPhone]
+      : [];
     if (await SMS.isAvailableAsync()) {
       const res = await SMS.sendSMSAsync(targetPhone, text);
-      if (res.result === "sent") {
-        notify("Safe-return draft handed to Messages. Verify sending; TrailSafe cannot verify delivery.");
-      } else {
-        notify("Safe-return text was not sent. Be sure to reach out to your contact.");
-      }
+      notify(smsOutcomeMessage(res.result));
     } else {
       await share(text, "Safe return check-in");
-      notify("Safe-return draft opened in share sheet. Verify sending; TrailSafe cannot verify delivery.");
+      notify(
+        "Safe-return draft opened in share sheet. Verify sending; TrailSafe cannot verify delivery.",
+      );
     }
   };
   const change = <K extends keyof TripPlan>(key: K, value: TripPlan[K]) => {
@@ -119,56 +169,8 @@ function PlanEditor({
     setErrors([]);
   };
   const save = async (status = plan.status): Promise<TripPlan | null> => {
-    let saved: TripPlan | null = null;
-    let oldCurrentId: string | null = null;
-    let saveErrors: string[] = [];
-
-    await update((d) => {
-      const prevCurrent = d.plans.find((p) => p.status === "current" && p.id !== plan.id);
-      if (prevCurrent && status === "current") {
-        oldCurrentId = prevCurrent.id;
-      }
-
-      if (status === "current") {
-        const res = saveCurrentTrip(plan, d.plans);
-        if (!res.ok) {
-          saveErrors = res.errors;
-          return d;
-        }
-        saved = res.plan;
-        return { ...d, plans: res.plans };
-      } else if (status === "completed") {
-        const res = completeTrip(plan.id, d.plans);
-        if (!res.ok) {
-          saveErrors = res.errors;
-          return d;
-        }
-        saved = res.plan;
-        return { ...d, plans: res.plans };
-      } else {
-        const res = saveTripDraft(plan, d.plans);
-        saved = res.plan;
-        return { ...d, plans: res.plans };
-      }
-    });
-
-    if (saveErrors.length > 0) {
-      setErrors(saveErrors);
-      return null;
-    }
-
-    if (saved) {
-      setPlan(saved);
-      if (status === "current") {
-        if (oldCurrentId) {
-          void cancelTripReminders(oldCurrentId);
-        }
-        void scheduleTripReminders(saved);
-      } else {
-        void cancelTripReminders((saved as TripPlan).id);
-      }
-    }
-
+    const saved = await changeTrip((plans) => saveTrip(plan, plans, status));
+    setPlan(saved);
     return saved;
   };
   const action = (fn: () => Promise<unknown>) =>
@@ -211,12 +213,24 @@ function PlanEditor({
     dateLabel: string,
     timeLabel: string,
   ) => (
-    <View style={s.flexRow}>
+    <View style={Platform.OS === "web" ? s.flexRow : { gap: 0 }}>
       <View style={{ flex: 1.15 }}>
-        {field(dateKey, dateLabel, "YYYY-MM-DD", false, "YYYY-MM-DD")}
+        <DateTimeField
+          label={dateLabel}
+          value={plan[dateKey]}
+          mode="date"
+          timeZone={plan.timeZone}
+          onChange={(value) => change(dateKey, value)}
+        />
       </View>
       <View style={{ flex: 1 }}>
-        {field(timeKey, timeLabel, "HH:MM", false, "24-hour time")}
+        <DateTimeField
+          label={timeLabel}
+          value={plan[timeKey]}
+          mode="time"
+          timeZone={plan.timeZone}
+          onChange={(value) => change(timeKey, value)}
+        />
       </View>
     </View>
   );
@@ -236,6 +250,19 @@ function PlanEditor({
       }
       back
     >
+      {reminderStatus === "denied" ||
+      reminderStatus === "failed" ||
+      reminderStatus === "unavailable" ? (
+        <Callout title="Local reminders">
+          {reminderStatus === "denied"
+            ? "Notifications are not permitted. Enable them in device settings if you want local reminders."
+            : reminderStatus === "unavailable"
+              ? "Local reminders are unavailable in this browser."
+              : "Could not reconcile local reminders. Check notification settings and reopen the app to retry."}{" "}
+          Your saved plan is unaffected. No one is notified automatically.
+        </Callout>
+      ) : null}
+      <Stack.Screen options={{ gestureEnabled: !dirty }} />
       {!editing ? (
         <>
           <Callout title="Share before you leave coverage">
@@ -249,6 +276,9 @@ function PlanEditor({
               contact.
             </Note>
           )}
+          <Note>
+            Saved on this device · {plan.status} · Revision {plan.revision}
+          </Note>
           <Card>
             <T
               selectable
@@ -262,14 +292,7 @@ function PlanEditor({
             label={busy ? "Working…" : "Share Trip Plan Now"}
             icon={Share2}
             disabled={busy}
-            onPress={() =>
-              action(async () => {
-                const saved = await save();
-                if (saved) {
-                  await share(buildPlanText(saved), saved.title);
-                }
-              })
-            }
+            onPress={() => action(() => share(buildPlanText(plan), plan.title))}
           />
           <View style={[s.flexRow, { marginVertical: 10 }]}>
             <View style={{ flex: 1 }}>
@@ -280,22 +303,6 @@ function PlanEditor({
                 variant="outline"
                 disabled={busy}
                 onPress={() => action(() => copy(buildPlanText(plan)))}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Button
-                label="Save Plan"
-                small
-                variant="outline"
-                disabled={busy}
-                onPress={() =>
-                  action(async () => {
-                    const saved = await save();
-                    if (saved) {
-                      notify("Plan saved on this device");
-                    }
-                  })
-                }
               />
             </View>
           </View>
@@ -340,10 +347,7 @@ function PlanEditor({
                         message:
                           "This marks your trip complete on your phone, but it does not contact anyone. Open a safe-return text to let your trusted contact know you returned safely.",
                         confirmLabel: "Open Safe-Return Text",
-                        onConfirm: () => {
-                          setDialog(null);
-                          void sendSafeReturn();
-                        },
+                        onConfirm: sendSafeReturn,
                       });
                     })
                   }
@@ -374,12 +378,16 @@ function PlanEditor({
                     setEditing(true);
                     return;
                   }
-                  const existingCurrent = data.plans.find((p) => p.status === "current" && p.id !== plan.id);
+                  const existingCurrent = data.plans.find(
+                    (p) => p.status === "current" && p.id !== plan.id,
+                  );
                   const performSave = () => {
                     action(async () => {
                       const saved = await save("current");
                       if (saved) {
-                        notify("Current plan saved. Share it with your contact.");
+                        notify(
+                          "Current plan saved. Share it with your contact.",
+                        );
                       }
                     });
                   };
@@ -409,6 +417,10 @@ function PlanEditor({
         </>
       ) : (
         <>
+          <Note>
+            Changes are saved when you tap Save. Use Save Draft to keep an
+            unfinished plan.
+          </Note>
           <Kicker>Trip</Kicker>
           {field("title", "Trip title / destination", "Granite Mountain")}
           <View style={s.flexRow}>
@@ -426,10 +438,17 @@ function PlanEditor({
           )}
           <View style={{ marginTop: 24, marginBottom: 8 }}>
             <Kicker>Trusted Contact</Kicker>
-            <Note>This is the person receiving your trip plan and expecting you to check in.</Note>
+            <Note>
+              This is the person receiving your trip plan and expecting you to
+              check in.
+            </Note>
           </View>
           {field("trustedContactName", "Contact name", "Name")}
-          {field("trustedContactPhone", "Contact phone", "Include country or area code")}
+          {field(
+            "trustedContactPhone",
+            "Contact phone",
+            "Include country or area code",
+          )}
           {field(
             "trailhead",
             "Starting location / trailhead",
@@ -447,6 +466,13 @@ function PlanEditor({
             "Turn around by 13:00 if not at summit",
           )}
           <Kicker>Timing</Kicker>
+          {field(
+            "timeZone",
+            "Trip time zone",
+            "America/Los_Angeles",
+            false,
+            "IANA zone for the trip, such as America/Los_Angeles or America/Denver",
+          )}
           <Note>
             All times are in {plan.timeZone}. Dates are explicit so overnight
             trips and overdue times stay unambiguous.
@@ -511,31 +537,50 @@ function PlanEditor({
                   const d = plan.date || localDate();
                   change("returnDate", d);
                   if (plan.returnTime && !plan.overdueTime) {
-                    const sug = suggestOverdue(d, plan.returnTime, 2);
+                    const sug = suggestOverdue(
+                      d,
+                      plan.returnTime,
+                      2,
+                      plan.timeZone,
+                    );
                     if (sug) setPlan((p) => ({ ...p, returnDate: d, ...sug }));
                   }
                 }}
               />
               <Chip
                 label="Tomorrow"
-                selected={plan.returnDate === addDays(plan.date || localDate(), 1)}
+                selected={
+                  plan.returnDate === addDays(plan.date || localDate(), 1)
+                }
                 onPress={() => {
                   const d = addDays(plan.date || localDate(), 1);
                   change("returnDate", d);
                   if (plan.returnTime && !plan.overdueTime) {
-                    const sug = suggestOverdue(d, plan.returnTime, 2);
+                    const sug = suggestOverdue(
+                      d,
+                      plan.returnTime,
+                      2,
+                      plan.timeZone,
+                    );
                     if (sug) setPlan((p) => ({ ...p, returnDate: d, ...sug }));
                   }
                 }}
               />
               <Chip
                 label="+2 days"
-                selected={plan.returnDate === addDays(plan.date || localDate(), 2)}
+                selected={
+                  plan.returnDate === addDays(plan.date || localDate(), 2)
+                }
                 onPress={() => {
                   const d = addDays(plan.date || localDate(), 2);
                   change("returnDate", d);
                   if (plan.returnTime && !plan.overdueTime) {
-                    const sug = suggestOverdue(d, plan.returnTime, 2);
+                    const sug = suggestOverdue(
+                      d,
+                      plan.returnTime,
+                      2,
+                      plan.timeZone,
+                    );
                     if (sug) setPlan((p) => ({ ...p, returnDate: d, ...sug }));
                   }
                 }}
@@ -545,7 +590,7 @@ function PlanEditor({
                 selected={plan.returnTime === "16:00"}
                 onPress={() => {
                   const rDate = plan.returnDate || plan.date || localDate();
-                  const sug = suggestOverdue(rDate, "16:00", 2);
+                  const sug = suggestOverdue(rDate, "16:00", 2, plan.timeZone);
                   setPlan((p) => ({
                     ...p,
                     returnDate: rDate,
@@ -559,7 +604,7 @@ function PlanEditor({
                 selected={plan.returnTime === "17:00"}
                 onPress={() => {
                   const rDate = plan.returnDate || plan.date || localDate();
-                  const sug = suggestOverdue(rDate, "17:00", 2);
+                  const sug = suggestOverdue(rDate, "17:00", 2, plan.timeZone);
                   setPlan((p) => ({
                     ...p,
                     returnDate: rDate,
@@ -573,7 +618,7 @@ function PlanEditor({
                 selected={plan.returnTime === "18:00"}
                 onPress={() => {
                   const rDate = plan.returnDate || plan.date || localDate();
-                  const sug = suggestOverdue(rDate, "18:00", 2);
+                  const sug = suggestOverdue(rDate, "18:00", 2, plan.timeZone);
                   setPlan((p) => ({
                     ...p,
                     returnDate: rDate,
@@ -583,11 +628,11 @@ function PlanEditor({
                 }}
               />
               <Chip
-                label="Dusk (19:00)"
+                label="19:00 (7 PM)"
                 selected={plan.returnTime === "19:00"}
                 onPress={() => {
                   const rDate = plan.returnDate || plan.date || localDate();
-                  const sug = suggestOverdue(rDate, "19:00", 2);
+                  const sug = suggestOverdue(rDate, "19:00", 2, plan.timeZone);
                   setPlan((p) => ({
                     ...p,
                     returnDate: rDate,
@@ -626,7 +671,12 @@ function PlanEditor({
                     setErrors(["Set expected return date and time first."]);
                     return;
                   }
-                  const sug = suggestOverdue(rDate, rTime, hours);
+                  const sug = suggestOverdue(
+                    rDate,
+                    rTime,
+                    hours,
+                    plan.timeZone,
+                  );
                   if (sug) {
                     setPlan((p) => ({ ...p, ...sug }));
                     setErrors([]);
@@ -662,6 +712,8 @@ function PlanEditor({
                 const suggested = suggestOverdue(
                   plan.returnDate,
                   plan.returnTime,
+                  2,
+                  plan.timeZone,
                 );
                 if (!suggested) {
                   setErrors([
@@ -810,24 +862,41 @@ function PlanEditor({
               </Callout>
             )}
             <Button
-              label="Generate Plan"
+              label="Save and preview"
               disabled={busy}
               onPress={() => {
                 const issues = validatePlan(plan);
                 setErrors(issues);
-                if (!issues.length) setEditing(false);
+                if (!issues.length)
+                  action(async () => {
+                    const saved = await save();
+                    if (!saved) return;
+                    setEditing(false);
+                    notify("Plan saved on this device.");
+                    if (isNew)
+                      router.replace({
+                        pathname: "/plans/[id]",
+                        params: { id: saved.id },
+                      });
+                  });
               }}
             />
             <View style={{ marginTop: 10 }}>
               <Button
-                label={busy ? "Saving…" : "Save Draft"}
+                label={
+                  busy
+                    ? "Saving…"
+                    : plan.status === "draft"
+                      ? "Save Draft"
+                      : "Save Changes"
+                }
                 variant="outline"
                 disabled={busy}
                 onPress={() =>
                   action(async () => {
-                    const saved = await save("draft");
+                    const saved = await save();
                     if (saved) {
-                      notify("Draft saved on this device");
+                      notify("Plan saved on this device");
                       router.replace({
                         pathname: "/plans/[id]",
                         params: { id: saved.id },

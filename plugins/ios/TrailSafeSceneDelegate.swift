@@ -1,82 +1,39 @@
-// TrailSafe scene lifecycle
-// Appended to AppDelegate.swift by with-ios-scenes.cjs during Expo prebuild.
+internal import Expo
 import CoreSpotlight
+import React
 
-class TrailSafeSceneDelegate: UIResponder, UIWindowSceneDelegate {
-  var window: UIWindow?
-
-  private var appDelegate: AppDelegate? {
-    UIApplication.shared.delegate as? AppDelegate
+class TrailSafeSceneDelegate: ExpoAppSceneDelegate {
+  private func spotlightURL(_ activities: Set<NSUserActivity>) -> URL? {
+    guard let activity = activities.first(where: { $0.activityType == CSSearchableItemActionType }),
+          let identifier = activity.userInfo?[CSSearchableItemActivityIdentifier] as? String,
+          let url = URL(string: identifier), url.scheme == "trailsafe" else { return nil }
+    return url
   }
 
-  func scene(
-    _ scene: UIScene,
-    willConnectTo session: UISceneSession,
-    options connectionOptions: UIScene.ConnectionOptions
-  ) {
-    guard let windowScene = scene as? UIWindowScene,
-          let appDelegate,
-          let factory = appDelegate.reactNativeFactory else { return }
-
+  override func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+    // Expo forwards normal URL/universal links. Spotlight needs its identifier
+    // inserted in RN launch options before the JS router starts listening.
+    guard let url = spotlightURL(connectionOptions.userActivities),
+          let windowScene = scene as? UIWindowScene,
+          let provider = UIApplication.shared.delegate as? ExpoReactNativeFactoryProvider,
+          let factory = provider.reactNativeFactory else {
+      super.scene(scene, willConnectTo: session, options: connectionOptions)
+      return
+    }
     let window = UIWindow(windowScene: windowScene)
     self.window = window
-    appDelegate.window = window
-    var launchOptions = appDelegate.initialLaunchOptions ?? [:]
-    if let context = connectionOptions.urlContexts.first {
-      launchOptions[.url] = context.url
-      launchOptions[.sourceApplication] = context.options.sourceApplication
-    }
-    if let activity = connectionOptions.userActivities.first {
-      launchOptions[.userActivityDictionary] = [
-        "UIApplicationLaunchOptionsUserActivityTypeKey": activity.activityType,
-        "UIApplicationLaunchOptionsUserActivityKey": activity,
-      ]
-      if activity.activityType == CSSearchableItemActionType,
-         let identifier = activity.userInfo?[CSSearchableItemActivityIdentifier] as? String,
-         let url = URL(string: identifier) {
-        launchOptions[.url] = url
-      }
-    }
-    factory.startReactNative(withModuleName: "main", in: window, launchOptions: launchOptions)
+    provider.window = window
+    factory.startReactNative(withModuleName: provider.reactNativeFactoryModuleName, in: window, initialProperties: initialProperties, launchOptions: [UIApplication.LaunchOptionsKey.url: url])
     window.makeKeyAndVisible()
   }
 
-  func scene(_ scene: UIScene, openURLContexts contexts: Set<UIOpenURLContext>) {
-    for context in contexts {
-      var options: [UIApplication.OpenURLOptionsKey: Any] = [
-        .openInPlace: context.options.openInPlace,
-      ]
-      options[.sourceApplication] = context.options.sourceApplication
-      options[.annotation] = context.options.annotation
-      _ = appDelegate?.application(UIApplication.shared, open: context.url, options: options)
-    }
-  }
-
-  func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
-    if userActivity.activityType == CSSearchableItemActionType,
-       let identifier = userActivity.userInfo?[CSSearchableItemActivityIdentifier] as? String,
-       let url = URL(string: identifier) {
-      _ = appDelegate?.application(UIApplication.shared, open: url, options: [:])
+  override func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
+    guard let url = spotlightURL([userActivity]) else {
+      super.scene(scene, continue: userActivity)
       return
     }
-    _ = appDelegate?.application(UIApplication.shared, continue: userActivity, restorationHandler: { _ in })
-  }
-
-  // Preserve Expo subscriber callbacks after moving to the scene lifecycle.
-  // UIKit continues sending UIApplication notifications used by React AppState.
-  func sceneDidBecomeActive(_ scene: UIScene) {
-    appDelegate?.applicationDidBecomeActive(UIApplication.shared)
-  }
-
-  func sceneWillResignActive(_ scene: UIScene) {
-    appDelegate?.applicationWillResignActive(UIApplication.shared)
-  }
-
-  func sceneWillEnterForeground(_ scene: UIScene) {
-    appDelegate?.applicationWillEnterForeground(UIApplication.shared)
-  }
-
-  func sceneDidEnterBackground(_ scene: UIScene) {
-    appDelegate?.applicationDidEnterBackground(UIApplication.shared)
+    let link = NSUserActivity(activityType: NSUserActivityTypeBrowsingWeb)
+    link.webpageURL = url
+    super.scene(scene, continue: link)
   }
 }

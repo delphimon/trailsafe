@@ -1,24 +1,13 @@
-/**
- * @file app.tsx
- * @description Application-level UI state, notifications, system handoffs, and emergency action orchestration.
- *
- * Responsibilities:
- * 1. Global Practice Mode: Manages the active Practice state across all tabs and screens.
- * 2. System Handoffs: Provides resilient wrappers around native clipboard (`expo-clipboard`),
- *    share sheets (`react-native` Share), and SMS composer (`expo-sms`).
- * 3. Emergency 911 Guard: Coordinates `emergency(kind, situation)` actions, ensuring that practice mode
- *    never opens native phone dialers or sends messages, while real actions prepare emergency drafts with coordinates.
- * 4. Location Coordination: Automatically activates the `useAutomaticLocation` hook when the user visits `/emergency`.
- */
+/** Shared dialogs, system handoffs and foreground emergency location. */
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { AppState, Linking, Platform, Share } from "react-native";
-import { usePathname } from "expo-router";
+import { Linking, Platform, Share } from "react-native";
+import { router, usePathname } from "expo-router";
 import * as Clipboard from "expo-clipboard";
 import * as SMS from "expo-sms";
 import { useLocation } from "@/hooks/use-location";
-import { buildEmergencyDraft, performEmergencyAction } from "@/lib/emergency";
-import { useStore } from "./store";
+import { performEmergencyAction, buildEmergencyDraft } from "@/lib/emergency";
+import { useStore } from "@/state/store";
 
 /** Generic modal alert/confirmation dialog state. */
 type Dialog = {
@@ -27,15 +16,15 @@ type Dialog = {
   confirmLabel?: string;
   onConfirm?: () => void | Promise<void>;
   cancelLabel?: string;
+  onCancel?: () => void;
 };
 
 /** App context interface. */
 type AppValue = {
-  /** True when practice mode is enabled, isolating all 911 triggers. */
-  practice: boolean;
-  setPractice: (v: boolean) => void;
   /** Active modal dialog, or null if no dialog is presented. */
   dialog: Dialog | null;
+  navigate: (action: () => void) => void;
+  setNavigationGuard: (guard: ((action: () => void) => void) | null) => void;
   setDialog: (v: Dialog | null) => void;
   /** Active temporary toast message text. */
   toast: string;
@@ -47,8 +36,9 @@ type AppValue = {
   copy: (text: string) => Promise<void>;
   /** Opens native share sheet or falls back to clipboard on unsupported browsers. */
   share: (text: string, title?: string) => Promise<void>;
-  /** Initiates an emergency call or text with practice safety interlock. */
+  /** Opens the system phone handoff or an editable emergency draft. */
   emergency: (kind: "call" | "text", situation?: string) => Promise<void>;
+  sendEmergencyText: (draft: string) => Promise<void>;
   /** Active GPS location hook state. */
   location: ReturnType<typeof useLocation>;
 };
@@ -56,30 +46,23 @@ type AppValue = {
 const Context = createContext<AppValue | null>(null);
 
 /**
- * Top-level application context provider managing modal dialogs, toasts, practice mode, and handoffs.
+ * Top-level application context provider managing modal dialogs, toasts, and handoffs.
  */
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const path = usePathname();
-  const { data } = useStore();
-  const [practice, setPractice] = useState(false),
-    [dialog, setDialog] = useState<Dialog | null>(null),
+  const [dialog, setDialog] = useState<Dialog | null>(null),
     [toast, setToast] = useState("");
+  const [navigationGuard, setGuard] = useState<
+    ((action: () => void) => void) | null
+  >(null);
+  const setNavigationGuard = React.useCallback(
+    (guard: ((action: () => void) => void) | null) => setGuard(() => guard),
+    [],
+  );
+  const navigate = (action: () => void) =>
+    navigationGuard ? navigationGuard(action) : action();
   const location = useLocation();
-
-  useEffect(() => {
-    const sub = AppState.addEventListener("change", (state) => {
-      if (state === "background" || state === "inactive") {
-        setPractice(false);
-      }
-    });
-    return () => sub.remove();
-  }, []);
-
-  useEffect(() => {
-    if (!practice) return;
-    const t = setTimeout(() => setPractice(false), 15 * 60 * 1000);
-    return () => clearTimeout(t);
-  }, [practice]);
+  const { data } = useStore();
 
   const requestLocation = location.requestLocation;
   useEffect(() => {
@@ -118,20 +101,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await Share.share({ message: text, title });
     // Opening a share sheet or a composer is never evidence of delivery.
   };
+  const sendEmergencyText = async (draft: string) => {
+    if (await SMS.isAvailableAsync()) {
+      await SMS.sendSMSAsync(["911"], draft);
+    } else if (Platform.OS === "web") {
+      const isIOS = /iPad|iPhone|iPod/.test(
+        globalThis.navigator?.userAgent || "",
+      );
+      await Linking.openURL(
+        `sms:911${isIOS ? "&" : "?"}body=${encodeURIComponent(draft)}`,
+      );
+    } else {
+      throw new Error(
+        "Messaging is unavailable. Use your phone to call 911, or text if you cannot call. Include the emergency location first.",
+      );
+    }
+    notify(
+      "Check Messages for replies. TrailSafe cannot verify sending or delivery.",
+    );
+  };
   const emergency = async (
     kind: "call" | "text",
     situation = "Describe what happened",
   ) =>
     run(async () => {
-      await performEmergencyAction(practice, kind, {
-        simulate: (action) =>
-          setDialog({
-            title: "Practice Mode",
-            message: `In an emergency, this would ${action === "call" ? "open your phone to call 911" : "open a text message to 911"}. Nothing was contacted. No phone or messaging app was opened.`,
-            confirmLabel: "Exit Practice Mode",
-            onConfirm: () => setPractice(false),
-            cancelLabel: "Continue Practice",
-          }),
+      await performEmergencyAction(kind, {
         call: async () => {
           try {
             await Linking.openURL("tel:911");
@@ -142,39 +136,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           }
         },
         text: async () => {
-          const current = data.plans.find((p) => p.status === "current");
-          const draft = buildEmergencyDraft(
-            location.fix,
-            situation,
-            undefined,
-            data.profile.travelerPhone || current?.travelerPhone,
-          );
-          if (await SMS.isAvailableAsync()) {
-            await SMS.sendSMSAsync(["911"], draft);
-            notify(
-              "Check Messages for replies. TrailSafe cannot verify delivery.",
-            );
-          } else if (Platform.OS === "web") {
-            try {
-              const isIOSWeb = /iPad|iPhone|iPod/.test(globalThis.navigator?.userAgent || "");
-              const sep = isIOSWeb ? "&" : "?";
-              await Linking.openURL(`sms:911${sep}body=${encodeURIComponent(draft)}`);
-              notify("Check Messages for replies. TrailSafe cannot verify delivery.");
-            } catch {
-              setDialog({
-                title: "Messaging unavailable here",
-                message:
-                  "Use a phone to call 911, or text 911 if you cannot call. Include your location and type of emergency first. A bounce-back means your text was not delivered.\n\n" +
-                  draft,
-              });
-            }
-          } else {
-            setDialog({
-              title: "Messaging unavailable here",
-              message:
-                "Use a phone to call 911, or text 911 if you cannot call. Include your location and type of emergency first. A bounce-back means your text was not delivered.\n\n" +
-                draft,
+          if (/missing|overdue|elsewhere/i.test(situation)) {
+            router.push({
+              pathname: "/emergency-message",
+              params: { situation, kind: "elsewhere" },
             });
+          } else {
+            await sendEmergencyText(
+              buildEmergencyDraft(
+                location.fix,
+                situation,
+                undefined,
+                data.profile.travelerPhone,
+                "here",
+              ),
+            );
           }
         },
       });
@@ -182,9 +158,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <Context.Provider
       value={{
-        practice,
-        setPractice,
         dialog,
+        navigate,
+        setNavigationGuard,
         setDialog,
         toast,
         notify,
@@ -192,6 +168,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         copy,
         share,
         emergency,
+        sendEmergencyText,
         location,
       }}
     >

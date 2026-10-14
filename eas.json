@@ -1,0 +1,36 @@
+{
+  "cli": {
+    "version": ">= 16.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_RELEASE_CHANNEL": "development"
+      },
+      "channel": "development"
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_RELEASE_CHANNEL": "preview"
+      },
+      "channel": "preview"
+    },
+    "testflight": {
+      "distribution": "store",
+      "env": {
+        "EXPO_PUBLIC_RELEASE_CHANNEL": "testflight"
+      },
+      "channel": "testflight"
+    },
+    "production": {
+      "distribution": "store",
+      "env": {
+        "EXPO_PUBLIC_RELEASE_CHANNEL": "production"
+      },
+      "channel": "production"
+    }
+  }
+}

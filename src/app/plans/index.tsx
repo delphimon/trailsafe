@@ -4,8 +4,14 @@ import { router } from "expo-router";
 import { ClipboardList, Plus, UserRound } from "lucide-react-native";
 import { useStore } from "@/state/store";
 import { useApp } from "@/state/app";
-import { isOverdue, completeTrip, duplicateTrip, buildSafeReturnDraft } from "@/lib/plans";
-import { cancelTripReminders } from "@/lib/notifications";
+import {
+  localDate,
+  isOverdue,
+  completeTrip,
+  duplicateTrip,
+  buildSafeReturnDraft,
+} from "@/lib/plans";
+import { smsOutcomeMessage } from "@/lib/emergency";
 import * as SMS from "expo-sms";
 import {
   Button,
@@ -21,7 +27,7 @@ import {
 } from "@/components/trailsafe/ui";
 export default function Plans() {
   const { C, s } = useThemeStyles();
-  const { data, update, ready, error } = useStore(),
+  const { data, update, ready, error, changeTrip, reminderStatus } = useStore(),
     { run, notify, setDialog, share } = useApp();
   const [now, setNow] = useState(new Date());
   useEffect(() => {
@@ -29,11 +35,7 @@ export default function Plans() {
     return () => clearInterval(timer);
   }, []);
   return (
-    <Screen
-      title="Trip Plans"
-      subtitle="Give someone the information SAR would need"
-      back
-    >
+    <Screen title="Trips" subtitle="Current, upcoming and past trip plans">
       <Button
         label="New Trip Plan"
         icon={Plus}
@@ -54,6 +56,12 @@ export default function Plans() {
           leave reliable coverage.
         </Note>
       </View>
+      {reminderStatus !== "idle" && (
+        <Note>
+          Local reminders: {reminderStatus}. TrailSafe does not notify anyone
+          automatically.
+        </Note>
+      )}
       {!ready && <T>Loading saved plans…</T>}
       {error && (
         <Callout critical title="Could not load plans">
@@ -71,161 +79,163 @@ export default function Plans() {
         </View>
       )}
       <View style={{ marginTop: 18 }}>
-        {[...data.plans]
-          .sort((a, b) => b.updatedAt - a.updatedAt)
-          .map((p) => (
-            <Card key={p.id}>
-              {isOverdue(p, now) && (
-                <Callout critical title="Your check-in time has passed">
-                  If you’re safe, contact the person holding your plan.
-                  Completing a plan here does not notify anyone.
-                </Callout>
-              )}
-              <T
-                style={{
-                  fontFamily: fonts.bold,
-                  fontSize: 10,
-                  color: p.status === "current" ? C.green : C.muted,
-                  letterSpacing: 1,
-                  marginBottom: 6,
-                }}
-              >
-                {p.status.toUpperCase()}
-              </T>
-              <Heading>{p.title || "Untitled trip"}</Heading>
-              <Note>
-                {p.date} ·{" "}
-                {p.returnTime
-                  ? `Back ${p.returnDate} at ${p.returnTime}`
-                  : "Return time not set"}
-              </Note>
-              <View style={[s.flexRow, { marginTop: 16 }]}>
-                <View style={{ flex: 1 }}>
-                  <Button
-                    label="View Plan"
-                    small
-                    onPress={() =>
-                      router.push({
-                        pathname: "/plans/[id]",
-                        params: { id: p.id },
-                      })
-                    }
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Button
-                    label="Edit"
-                    small
-                    variant="outline"
-                    onPress={() =>
-                      router.push({
-                        pathname: "/plans/[id]",
-                        params: { id: p.id, edit: "1" },
-                      })
-                    }
-                  />
-                </View>
-              </View>
-              <View style={[s.wrap, { marginTop: 10 }]}>
-                <Button
-                  label="Duplicate"
-                  small
-                  variant="ghost"
-                  onPress={() =>
-                    void run(async () => {
-                      const res = duplicateTrip(p.id, data.plans);
-                      if (!res.ok) {
-                        notify(res.errors[0]);
-                        return;
-                      }
-                      await update((d) => ({
-                        ...d,
-                        plans: res.plans,
-                      }));
-                      router.push({
-                        pathname: "/plans/[id]",
-                        params: { id: res.plan.id, edit: "1" },
-                      });
-                    })
-                  }
-                />
-                {p.status !== "completed" && (
-                  <Button
-                    label="Complete"
-                    small
-                    variant="ghost"
-                    onPress={() =>
-                      setDialog({
-                        title: "Mark trip complete?",
-                        message: `Mark “${p.title || "Untitled trip"}” as complete locally? Completing a plan does not notify anyone.`,
-                        confirmLabel: "Mark Complete",
-                        onConfirm: async () => {
-                          const res = completeTrip(p.id, data.plans);
-                          if (!res.ok) {
-                            notify(res.errors[0]);
-                            return;
-                          }
-                          await cancelTripReminders(p.id);
-                          await update((d) => ({
-                            ...d,
-                            plans: res.plans,
-                          }));
-                          notify("Trip marked complete locally.");
-                          setDialog({
-                            title: "Plan completed locally",
-                            message:
-                              "TrailSafe does not notify anyone automatically. Open a safe-return text draft for your trusted contact now?",
-                            confirmLabel: "Open Safe-Return Text",
-                            cancelLabel: "Not Now",
-                            onConfirm: async () => {
-                              const text = buildSafeReturnDraft(res.plan);
-                              const targetPhone = res.plan.trustedContactPhone
-                                ? [res.plan.trustedContactPhone]
-                                : [];
-                              if (await SMS.isAvailableAsync()) {
-                                const smsRes = await SMS.sendSMSAsync(targetPhone, text);
-                                if (smsRes.result === "sent") {
-                                  notify(
-                                    "Composer closed. Confirm sending in your messaging app — TrailSafe cannot verify delivery.",
-                                  );
-                                } else {
-                                  notify(
-                                    "Text was not sent. Be sure to reach out to your contact directly.",
-                                  );
-                                }
-                              } else {
-                                await share(text, "Safe return check-in");
-                                notify(
-                                  "Share opened. Verify your message was sent — TrailSafe cannot verify delivery.",
-                                );
-                              }
-                            },
+        {(["Current", "Upcoming", "Past"] as const).map((group) => {
+          const plans = data.plans
+            .filter((p) =>
+              group === "Current"
+                ? p.status === "current"
+                : group === "Past"
+                  ? p.status !== "current" &&
+                    (p.status === "completed" || p.date < localDate(now))
+                  : p.status === "draft" && p.date >= localDate(now),
+            )
+            .sort((a, b) =>
+              group === "Upcoming"
+                ? a.date.localeCompare(b.date)
+                : b.updatedAt - a.updatedAt,
+            );
+          return (
+            <View key={group} style={{ marginBottom: 18 }}>
+              <Heading>{group}</Heading>
+              {!plans.length && <Note>No {group.toLowerCase()} trips.</Note>}
+              {plans.map((p) => (
+                <Card key={p.id}>
+                  {isOverdue(p, now) && (
+                    <Callout critical title="Your check-in time has passed">
+                      If you’re safe, contact the person holding your plan.
+                      Completing a plan here does not notify anyone.
+                    </Callout>
+                  )}
+                  <T
+                    style={{
+                      fontFamily: fonts.bold,
+                      fontSize: 10,
+                      color: p.status === "current" ? C.green : C.muted,
+                      letterSpacing: 1,
+                      marginBottom: 6,
+                    }}
+                  >
+                    {p.status.toUpperCase()}
+                  </T>
+                  <Heading>{p.title || "Untitled trip"}</Heading>
+                  <Note>
+                    {p.date} ·{" "}
+                    {p.returnTime
+                      ? `Back ${p.returnDate} at ${p.returnTime}`
+                      : "Return time not set"}
+                  </Note>
+                  <View style={[s.flexRow, { marginTop: 16 }]}>
+                    <View style={{ flex: 1 }}>
+                      <Button
+                        label="View Plan"
+                        small
+                        onPress={() =>
+                          router.push({
+                            pathname: "/plans/[id]",
+                            params: { id: p.id },
+                          })
+                        }
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Button
+                        label="Edit"
+                        small
+                        variant="outline"
+                        onPress={() =>
+                          router.push({
+                            pathname: "/plans/[id]",
+                            params: { id: p.id, edit: "1" },
+                          })
+                        }
+                      />
+                    </View>
+                  </View>
+                  <View style={[s.wrap, { marginTop: 10 }]}>
+                    <Button
+                      label="Duplicate"
+                      small
+                      variant="ghost"
+                      onPress={() =>
+                        void run(async () => {
+                          const saved = await changeTrip((plans) =>
+                            duplicateTrip(p.id, plans),
+                          );
+                          router.push({
+                            pathname: "/plans/[id]",
+                            params: { id: saved.id, edit: "1" },
                           });
-                        },
-                      })
-                    }
-                  />
-                )}
-                <Button
-                  label="Delete"
-                  small
-                  variant="ghost"
-                  onPress={() =>
-                    setDialog({
-                      title: "Delete trip plan?",
-                      message: `Remove “${p.title || "Untitled trip"}” from this device? Previously shared copies are unaffected.`,
-                      confirmLabel: "Delete plan",
-                      onConfirm: () =>
-                        update((d) => ({
-                          ...d,
-                          plans: d.plans.filter((x) => x.id !== p.id),
-                        })),
-                    })
-                  }
-                />
-              </View>
-            </Card>
-          ))}
+                        })
+                      }
+                    />
+                    {p.status !== "completed" && (
+                      <Button
+                        label="Complete"
+                        small
+                        variant="ghost"
+                        onPress={() =>
+                          setDialog({
+                            title: "Mark trip complete?",
+                            message: `Mark “${p.title || "Untitled trip"}” as complete locally? Completing a plan does not notify anyone.`,
+                            confirmLabel: "Mark Complete",
+                            onConfirm: async () => {
+                              const saved = await changeTrip((plans) =>
+                                completeTrip(p.id, plans),
+                              );
+                              notify("Trip marked complete locally.");
+                              setDialog({
+                                title: "Plan completed locally",
+                                message:
+                                  "TrailSafe does not notify anyone automatically. Open a safe-return text draft for your trusted contact now?",
+                                confirmLabel: "Open Safe-Return Text",
+                                cancelLabel: "Not Now",
+                                onConfirm: async () => {
+                                  const text = buildSafeReturnDraft(saved);
+                                  const targetPhone = saved.trustedContactPhone
+                                    ? [saved.trustedContactPhone]
+                                    : [];
+                                  if (await SMS.isAvailableAsync()) {
+                                    const smsRes = await SMS.sendSMSAsync(
+                                      targetPhone,
+                                      text,
+                                    );
+                                    notify(smsOutcomeMessage(smsRes.result));
+                                  } else {
+                                    await share(text, "Safe return check-in");
+                                    notify(
+                                      "Share opened. Verify your message was sent — TrailSafe cannot verify delivery.",
+                                    );
+                                  }
+                                },
+                              });
+                            },
+                          })
+                        }
+                      />
+                    )}
+                    <Button
+                      label="Delete"
+                      small
+                      variant="ghost"
+                      onPress={() =>
+                        setDialog({
+                          title: "Delete trip plan?",
+                          message: `Remove “${p.title || "Untitled trip"}” from this device? Previously shared copies are unaffected.`,
+                          confirmLabel: "Delete plan",
+                          onConfirm: () =>
+                            update((d) => ({
+                              ...d,
+                              plans: d.plans.filter((x) => x.id !== p.id),
+                            })),
+                        })
+                      }
+                    />
+                  </View>
+                </Card>
+              ))}
+            </View>
+          );
+        })}
       </View>
     </Screen>
   );

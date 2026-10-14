@@ -2,7 +2,7 @@
   "expo": {
     "name": "TrailSafe",
     "slug": "trailsafe",
-    "version": "0.3.0",
+    "version": "0.5.0",
     "orientation": "portrait",
     "icon": "./assets/images/trailsafe-icon.png",
     "scheme": "trailsafe",
@@ -13,7 +13,8 @@
         "NSLocationWhenInUseUsageDescription": "TrailSafe shows your GPS coordinates so you can read or share them with emergency responders. Your location is not monitored or saved.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "bundleIdentifier": "com.appliedinteractions.trailsafe"
+      "bundleIdentifier": "com.appliedinteractions.trailsafe",
+      "buildNumber": "3"
     },
     "android": {
       "adaptiveIcon": {
@@ -30,7 +31,8 @@
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
-      ]
+      ],
+      "versionCode": 3
     },
     "web": {
       "output": "static",
@@ -39,7 +41,15 @@
     "plugins": [
       "./plugins/with-ios-scenes.cjs",
       "./plugins/with-app-intents.cjs",
-      "expo-router",
+      "./plugins/with-release-diagnostics.cjs",
+      [
+        "expo-router",
+        {
+          "asyncRoutes": {
+            "web": false
+          }
+        }
+      ],
       "expo-sharing",
       [
         "expo-splash-screen",
@@ -61,7 +71,6 @@
           "motionUsagePermission": false
         }
       ],
-      "expo-audio",
       "./plugins/with-no-push.cjs"
     ],
     "experiments": {
@@ -75,7 +84,8 @@
       },
       "bugsnag": {
         "apiKey": "2e086cc635107ef068c55e1ff704d12a"
-      }
+      },
+      "releaseChannel": "production"
     },
     "owner": "applied-interactions",
     "runtimeVersion": {
@@ -83,7 +93,7 @@
     },
     "updates": {
       "url": "https://u.expo.dev/0e9f0b72-eb3b-4be2-840d-2f1b632e2b6f",
-      "checkAutomatically": "ON_LOAD",
+      "checkAutomatically": "NEVER",
       "fallbackToCacheTimeout": 0,
       "requestHeaders": {
         "expo-channel-name": "production"

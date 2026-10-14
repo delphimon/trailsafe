@@ -112,7 +112,7 @@ export type TripPlan = {
   extraVehicles: string;
   /** Miscellaneous notes for rescuers. */
   notes: string;
-  /** If true, the in-app overdue banner displays when current time exceeds overdue deadline. */
+  /** Opts into local OS check-in reminders; overdue status is independent of this. */
   remind: boolean;
 };
 
@@ -212,7 +212,8 @@ export function validDate(s: string): boolean {
 }
 
 /** Validates that a string is a 24-hour time in HH:MM format (00:00 to 23:59). */
-export const validTime = (s: string): boolean => /^([01]\d|2[0-3]):[0-5]\d$/.test(s);
+export const validTime = (s: string): boolean =>
+  /^([01]\d|2[0-3]):[0-5]\d$/.test(s);
 
 /**
  * Validates plan data for generation and marking current.
@@ -245,18 +246,33 @@ export function validatePlan(p: TripPlan): string[] {
   if (![p.startTime, p.returnTime, p.overdueTime].every(validTime))
     errors.push("Enter times in 24-hour HH:MM format.");
   if (!errors.some((e) => e.includes("dates") || e.includes("times"))) {
-    if (`${p.returnDate}T${p.returnTime}` <= `${p.date}T${p.startTime}`)
+    const start = parseDateTimeInTimeZone(p.date, p.startTime, p.timeZone);
+    const back = parseDateTimeInTimeZone(
+      p.returnDate,
+      p.returnTime,
+      p.timeZone,
+    );
+    const overdue = parseDateTimeInTimeZone(
+      p.overdueDate,
+      p.overdueTime,
+      p.timeZone,
+    );
+    if (!start || !back || !overdue)
+      errors.push(
+        "Choose valid, unambiguous times in the trip time zone. Daylight-saving transitions can skip or repeat an hour.",
+      );
+    if (start && back && back <= start)
       errors.push(
         "Expected return must be after the start. Use the return date for overnight trips.",
       );
-    if (
-      `${p.overdueDate}T${p.overdueTime}` <= `${p.returnDate}T${p.returnTime}`
-    )
+    if (back && overdue && overdue <= back)
       errors.push("Choose an overdue time after expected return.");
   }
   if (p.status === "current") {
-    if (!p.trustedContactName.trim()) errors.push("Trusted contact name is required for a Current plan");
-    if (!p.trustedContactPhone.trim()) errors.push("Trusted contact phone is required for a Current plan");
+    if (!p.trustedContactName.trim())
+      errors.push("Trusted contact name is required for a Current plan");
+    if (!p.trustedContactPhone.trim())
+      errors.push("Trusted contact phone is required for a Current plan");
   }
   return errors;
 }
@@ -269,10 +285,34 @@ export function validatePlan(p: TripPlan): string[] {
  * @param hours Number of buffer hours to add (defaults to 2).
  * @returns Object with suggested overdueDate and overdueTime, or null if inputs are invalid.
  */
-export function suggestOverdue(date: string, time: string, hours = 2) {
+export function suggestOverdue(
+  date: string,
+  time: string,
+  hours = 2,
+  timeZone?: string,
+) {
   if (!validDate(date) || !validTime(time)) return null;
-  const d = new Date(`${date}T${time}:00Z`);
-  d.setUTCHours(d.getUTCHours() + hours);
+  const d = timeZone
+    ? parseDateTimeInTimeZone(date, time, timeZone)
+    : new Date(`${date}T${time}:00Z`);
+  if (!d || !Number.isFinite(hours)) return null;
+  d.setTime(d.getTime() + hours * 3600000);
+  if (timeZone) {
+    const parts = new Intl.DateTimeFormat("en", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(d);
+    const get = (key: string) => parts.find((p) => p.type === key)?.value;
+    return {
+      overdueDate: `${get("year")}-${get("month")}-${get("day")}`,
+      overdueTime: `${get("hour")}:${get("minute")}`,
+    };
+  }
   return {
     overdueDate: d.toISOString().slice(0, 10),
     overdueTime: d.toISOString().slice(11, 16),
@@ -329,8 +369,24 @@ export function parseDateTimeInTimeZone(
       if (diff === 0) break;
       utc += diff;
     }
-    const res = new Date(utc);
-    return isNaN(res.getTime()) ? null : res;
+    const wallMatches = (instant: number) => {
+      const parts = dtf.formatToParts(new Date(instant));
+      const get = (type: string) =>
+        Number(parts.find((p) => p.type === type)?.value);
+      return (
+        get("year") === y &&
+        get("month") === m &&
+        get("day") === d &&
+        get("hour") % 24 === hr &&
+        get("minute") === min
+      );
+    };
+    if (!wallMatches(utc)) return null;
+    // Reject repeated wall-clock hours rather than guessing which occurrence is intended.
+    for (const minutes of [-120, -90, -60, -30, 30, 60, 90, 120]) {
+      if (wallMatches(utc + minutes * 60000)) return null;
+    }
+    return new Date(utc);
   } catch {
     return null;
   }
@@ -340,9 +396,8 @@ export function parseDateTimeInTimeZone(
  * Checks whether a current trip plan is overdue based on device clock and the plan's specific time zone.
  * Requires:
  * 1. Plan status is "current".
- * 2. Plan reminder flag `remind` is true.
- * 3. Valid overdueDate and overdueTime.
- * 4. Local clock time in plan's timeZone has reached or passed the deadline.
+ * 2. Valid overdueDate and overdueTime.
+ * 3. Local clock time in plan's timeZone has reached or passed the deadline.
  *
  * @param p The TripPlan to evaluate.
  * @param now Current Date object (defaults to new Date()).
@@ -351,19 +406,21 @@ export function parseDateTimeInTimeZone(
 export function isOverdue(p: TripPlan, now = new Date()): boolean {
   if (
     p.status !== "current" ||
-    !p.remind ||
     !validDate(p.overdueDate) ||
     !validTime(p.overdueTime)
   )
     return false;
-  const deadline = parseDateTimeInTimeZone(p.overdueDate, p.overdueTime, p.timeZone);
+  const deadline = parseDateTimeInTimeZone(
+    p.overdueDate,
+    p.overdueTime,
+    p.timeZone,
+  );
   if (!deadline) return false;
   return now.getTime() >= deadline.getTime();
 }
 
 export type LifecycleResult<T> =
-  | { ok: true; plans: TripPlan[]; plan: T }
-  | { ok: false; errors: string[] };
+  { ok: true; plans: TripPlan[]; plan: T } | { ok: false; errors: string[] };
 
 /**
  * Activates a draft or completed plan as the single "current" plan.
@@ -512,9 +569,7 @@ export function saveCurrentTrip(
  */
 export function buildPlanText(p: TripPlan): string {
   const lines = [
-    p.revision > 1
-      ? "UPDATED TRAILSAFE TRIP PLAN"
-      : "TRAILSAFE TRIP PLAN",
+    p.revision > 1 ? "UPDATED TRAILSAFE TRIP PLAN" : "TRAILSAFE TRIP PLAN",
     `Revision: ${p.revision} · ${p.status.toUpperCase()}`,
     "",
     `Trip: ${p.title || "(not set)"}`,
@@ -602,11 +657,12 @@ export function planHTML(p: TripPlan): string {
  */
 export function buildSafeReturnDraft(p: TripPlan): string {
   const destination = p.title.trim() || p.trailhead.trim() || "my trip";
-  return `Hi! I’m back safely from ${destination}. Trip plan is complete and all is well! (Sent via TrailSafe)`;
+  return `Hi! I’m back safely from ${destination}. Please confirm you received this check-in.`;
 }
 
 export interface ScheduledReminderIntent {
   planId: string;
+  planRevision: number;
   type: "return" | "overdue";
   triggerDate: Date;
   title: string;
@@ -642,6 +698,7 @@ export function computeTripReminderIntents(
   if (returnDate && returnDate.getTime() > now) {
     intents.push({
       planId: plan.id,
+      planRevision: plan.revision,
       type: "return",
       triggerDate: returnDate,
       title: "Expected Return Time",
@@ -657,6 +714,7 @@ export function computeTripReminderIntents(
   if (overdueDate && overdueDate.getTime() > now) {
     intents.push({
       planId: plan.id,
+      planRevision: plan.revision,
       type: "overdue",
       triggerDate: overdueDate,
       title: "Trip Overdue",
@@ -667,3 +725,19 @@ export function computeTripReminderIntents(
   return intents;
 }
 
+/** Save edited values while preserving the requested lifecycle status. */
+export function saveTrip(
+  plan: TripPlan,
+  plans: TripPlan[],
+  status = plan.status,
+): LifecycleResult<TripPlan> {
+  if (status === "current") return saveCurrentTrip(plan, plans);
+  const draft = saveTripDraft(plan, plans);
+  if (status === "draft") return { ok: true, ...draft };
+  const saved = { ...draft.plan, status: "completed" as const };
+  return {
+    ok: true,
+    plan: saved,
+    plans: draft.plans.map((p) => (p.id === saved.id ? saved : p)),
+  };
+}

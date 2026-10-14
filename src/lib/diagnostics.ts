@@ -9,7 +9,8 @@
  * This configuration is inspectable and testable at build time.
  */
 
-export type ReleaseChannel = "development" | "preview" | "testflight" | "production";
+export type ReleaseChannel =
+  "development" | "preview" | "testflight" | "production";
 
 /**
  * Derives the active release channel using explicit environment or manifest configuration.
@@ -21,9 +22,14 @@ export function getReleaseChannel(): ReleaseChannel {
   if (env === "preview" || env === "internal") return "preview";
   if (env === "development" || env === "dev") return "development";
 
+  if (typeof __DEV__ !== "undefined" && __DEV__) return "development";
+
   try {
-    const Constants = require("expo-constants").default || require("expo-constants");
-    const extraChannel = (Constants.expoConfig?.extra as Record<string, unknown> | undefined)?.releaseChannel;
+    const Constants =
+      require("expo-constants").default || require("expo-constants");
+    const extraChannel = (
+      Constants.expoConfig?.extra as Record<string, unknown> | undefined
+    )?.releaseChannel;
     if (typeof extraChannel === "string") {
       const norm = extraChannel.toLowerCase();
       if (norm === "production" || norm === "store") return "production";
@@ -34,7 +40,9 @@ export function getReleaseChannel(): ReleaseChannel {
     // Non-fatal if expo-constants cannot be loaded in pure Node test environment
   }
 
-  return (typeof __DEV__ !== "undefined" && __DEV__) ? "development" : "production";
+  return typeof __DEV__ !== "undefined" && __DEV__
+    ? "development"
+    : "production";
 }
 
 function getPlatformName(): string {
@@ -42,7 +50,9 @@ function getPlatformName(): string {
     const { Platform } = require("react-native");
     return Platform.OS;
   } catch {
-    return typeof window !== "undefined" && typeof navigator !== "undefined" ? "web" : "ios";
+    return typeof window !== "undefined" && typeof navigator !== "undefined"
+      ? "web"
+      : "ios";
   }
 }
 
@@ -81,12 +91,12 @@ export function initializeDiagnostics(): boolean {
 
   try {
     // Dynamic require so production builds that strip Bugsnag do not fail
-    const BugsnagModule = require("@bugsnag/expo");
+    const BugsnagModule = require("@bugsnag/react-native");
     const Bugsnag = BugsnagModule.default || BugsnagModule;
     Bugsnag.start({
       onError: function (event: any) {
         event.context = "redacted";
-        event.user = {};
+        event.setUser();
         event.addMetadata("device", "id", "redacted");
       },
     });

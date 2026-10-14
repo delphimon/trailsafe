@@ -1,5 +1,5 @@
 import { View, Linking } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Clock, Users, ExternalLink } from "lucide-react-native";
 import { articles } from "@/content";
 import { ArticleBody } from "@/components/trailsafe/article-body";
@@ -15,7 +15,7 @@ import {
 } from "@/components/trailsafe/ui";
 import { useApp } from "@/state/app";
 import { useLocation } from "@/hooks/use-location";
-import { useEffect } from "react";
+import { useCallback } from "react";
 export default function ArticleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const article = articles[id];
@@ -23,11 +23,13 @@ export default function ArticleScreen() {
   const { requestLocation } = useLocation();
   const isIncident = typeof id === "string" && id.startsWith("g-");
 
-  useEffect(() => {
-    if (isIncident) {
-      return requestLocation();
-    }
-  }, [isIncident, requestLocation]);
+  useFocusEffect(
+    useCallback(() => {
+      if (isIncident) {
+        return requestLocation();
+      }
+    }, [isIncident, requestLocation]),
+  );
 
   if (id === "g-missing-split")
     return (

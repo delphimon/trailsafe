@@ -143,7 +143,12 @@ test("24-hour headlamp notification logic distinguishes daylight from nighttime 
   // Forest dusk on moderate canopy is ~7:15 PM PDT.
   // Must calculate ~1.75 hours (105 min), NOT 25.5 hours.
   const afternoonDate = new Date("2026-09-17T00:30:00Z");
-  const afternoonTimes = calculateSolarTimes(lat, lon, afternoonDate, "moderate");
+  const afternoonTimes = calculateSolarTimes(
+    lat,
+    lon,
+    afternoonDate,
+    "moderate",
+  );
 
   assert.equal(afternoonTimes.headlampNeededNow, false);
   assert.equal(afternoonTimes.isTrailDaylight, true);
@@ -155,12 +160,9 @@ test("24-hour headlamp notification logic distinguishes daylight from nighttime 
   );
   assert.match(
     afternoonTimes.headlampStatusHeadline,
-    /^Headlamp needed in 1h (4[0-9]|5[0-9])m$/,
+    /^Have your headlamp ready by/,
   );
-  assert.match(
-    afternoonTimes.headlampStatusSubtext,
-    /Forest Dusk tonight/,
-  );
+  assert.match(afternoonTimes.headlampStatusSubtext, /Planning buffer/);
 
   // 2. Evening night: 9:00 PM PDT (04:00 UTC next day)
   // Dusk occurred at ~7:15 PM PDT. It is currently dark!
@@ -223,4 +225,58 @@ test("invalid coordinates reject invalid bounds", () => {
   assert.throws(() => calculateSolarTimes(NaN, 0));
 });
 
-
+test("Seattle solstice events match independent USNO fixtures within 90 seconds", async () => {
+  // US Naval Observatory API, retrieved 2026-10-13. Stored local clock times use the fixture's UTC offset.
+  // https://aa.usno.navy.mil/api/rstt/oneday?date=2026-06-21&coords=47.6062,-122.3321&tz=-7
+  // https://aa.usno.navy.mil/api/rstt/oneday?date=2026-12-21&coords=47.6062,-122.3321&tz=-8
+  const { readFileSync } = await import("node:fs");
+  for (const name of ["summer", "winter"]) {
+    const fixture = JSON.parse(
+      readFileSync(
+        new URL(`./fixtures/usno-seattle-${name}.json`, import.meta.url),
+        "utf8",
+      ),
+    );
+    const data = fixture.properties.data;
+    const date = `${data.year}-${String(data.month).padStart(2, "0")}-${String(data.day).padStart(2, "0")}`;
+    const actual = calculateSolarTimes(
+      47.6062,
+      -122.3321,
+      new Date(`${date}T20:00:00Z`),
+      "open",
+    );
+    for (const [phen, field] of [
+      ["Rise", "sunrise"],
+      ["Set", "sunset"],
+      ["End Civil Twilight", "civilDusk"],
+    ] as const) {
+      const time = data.sundata.find(
+        (e: { phen: string }) => e.phen === phen,
+      ).time;
+      const expected =
+        new Date(`${date}T${time}:00Z`).getTime() - data.tz * 3600000;
+      assert.ok(
+        Math.abs(actual[field]!.getTime() - expected) < 90000,
+        `${name} ${phen}: ${actual[field]?.toISOString()}`,
+      );
+    }
+  }
+});
+test("polar day/night do not invent the next sunrise", () => {
+  const summer = calculateSolarTimes(
+    71.29,
+    -156.79,
+    new Date("2026-06-21T22:00Z"),
+  );
+  assert.equal(summer.sunset, null);
+  assert.equal(summer.headlampNeededNow, false);
+  assert.equal(summer.minutesUntilNextSunrise, null);
+  const winter = calculateSolarTimes(
+    71.29,
+    -156.79,
+    new Date("2026-12-21T22:00Z"),
+  );
+  assert.equal(winter.sunrise, null);
+  assert.equal(winter.nextSunrise, null);
+  assert.equal(winter.minutesUntilNextSunrise, null);
+});

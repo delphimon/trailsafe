@@ -1,156 +1,116 @@
-import { router } from "expo-router";
-import {
-  Backpack,
-  BookOpen,
-  ClipboardList,
-  Siren,
-  ArrowUpRight,
-  Info,
-} from "lucide-react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Path } from "react-native-svg";
+import { useRouter } from "expo-router";
+import { ClipboardList, Compass, Backpack, Info } from "lucide-react-native";
+import { Pressable } from "react-native";
+import { useStore } from "@/state/store";
 import {
   Button,
-  useThemeStyles,
   Card,
-  fonts,
-  FooterNote,
-  Kicker,
+  Heading,
+  Note,
   Row,
   Screen,
   T,
+  useThemeStyles,
 } from "@/components/trailsafe/ui";
-import { useStore } from "@/state/store";
-import { Pressable } from "react-native";
 export default function Home() {
+  const router = useRouter();
   const { C } = useThemeStyles();
-  const { data } = useStore();
-  const plan = data.plans.find((p) => p.status === "current");
+  const { data, ready, error } = useStore();
+  const current = data.plans.find((p) => p.status === "current");
   return (
-    <Screen 
-      title="TrailSafe" 
-      subtitle="Center for Adventure Leadership"
+    <Screen
+      title="TrailSafe"
+      subtitle="Ready for the trail. Help when you need it."
       rightAction={
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="About"
+          style={{ padding: 12 }}
           onPress={() => router.push("/about")}
-          style={({ pressed }) => ({
-            padding: 8,
-            opacity: pressed ? 0.6 : 1,
-            backgroundColor: 'rgba(255,255,255,0.15)',
-            borderRadius: 20,
-          })}
         >
-          <Info color={C.headerText} size={20} />
+          <Info size={24} color={C.headerText} />
         </Pressable>
       }
     >
-      <LinearGradient
-        colors={["#25503F", "#132720"]}
-        style={{
-          borderRadius: 16,
-          padding: 22,
-          overflow: "hidden",
-          marginBottom: 24,
-        }}
-      >
-        <Svg
-          width="450"
-          height="290"
-          viewBox="0 0 450 290"
-          style={{ position: "absolute", right: -65, top: -5 }}
-          pointerEvents="none"
-        >
-          {Array.from({ length: 11 }, (_, i) => (
-            <Path
-              key={i}
-              d={`M${180 + i * 9} -30 C ${410 + i * 8} ${20 + i * 6}, ${90 - i * 8} ${130 + i * 8}, ${410 + i * 7} ${300 + i * 4}`}
-              fill="none"
-              stroke="#AFCDBB"
-              strokeOpacity={0.1}
-              strokeWidth={1.5}
-            />
-          ))}
-        </Svg>
-        <T
-          style={{
-            fontFamily: fonts.display,
-            fontSize: 48,
-            lineHeight: 55,
-            color: "white",
-            marginBottom: 12,
-          }}
-        >
-          TrailSafe
-        </T>
-        <T
-          style={{
-            fontSize: 14,
-            lineHeight: 22,
-            color: "#D7E6DC",
-            marginBottom: 22,
-            maxWidth: 360,
-          }}
-        >
-          Prepare for ordinary trips, know when to ask for help, and give
-          rescuers what they need — even with no signal.
-        </T>
-        <Button
-          label="NEED HELP?"
-          icon={Siren}
-          variant="orange"
-          onPress={() => router.navigate("/emergency")}
-        />
-      </LinearGradient>
-      <T
-        accessibilityRole="header"
-        style={{
-          fontFamily: fonts.display,
-          fontSize: 17,
-          color: C.green,
-          marginBottom: 2,
-        }}
-      >
-        Get ready
-      </T>
-      <Row
-        title="Leave a Trip Plan"
-        subtitle="Give someone the information SAR would need"
-        icon={ClipboardList}
-        onPress={() => router.push("/plans")}
+      <Button
+        label="NEED HELP?"
+        variant="orange"
+        onPress={() => router.navigate("/emergency")}
       />
+      <Card style={{ marginTop: 16 }}>
+        <Heading>{current ? "Your current trip" : "Your trip plans"}</Heading>
+        {current && (
+          <T style={{ marginVertical: 10 }}>
+            {current.title || "Untitled trip"} · Back {current.returnDate} at{" "}
+            {current.returnTime}
+          </T>
+        )}
+        {!current && (
+          <Note>Current, upcoming and past trips, saved on your device.</Note>
+        )}
+        {current && (
+          <Button
+            label="Open current trip"
+            onPress={() =>
+              router.push({
+                pathname: "/plans/[id]",
+                params: { id: current.id },
+              })
+            }
+          />
+        )}
+        <Row
+          title="All trip plans"
+          subtitle={
+            ready
+              ? `${data.plans.length} saved · Create, review and share`
+              : "Loading saved trips…"
+          }
+          icon={ClipboardList}
+          onPress={() => router.navigate("/plans")}
+        />
+        {error && <Note>{error}</Note>}
+      </Card>
       <Row
-        title="Before You Go"
-        subtitle="Essentials, phone readiness, and trip prep"
+        title="Pack the essentials"
+        subtitle="Ten Essentials and gear for your trip"
         icon={Backpack}
         onPress={() => router.navigate("/prepare")}
       />
-      <Row
-        title="Safety Guide"
-        subtitle="What to do if you’re lost, hurt, stranded, or overdue"
-        icon={BookOpen}
-        onPress={() => router.navigate("/guide")}
-      />
-      {plan && (
-        <>
-          <Kicker>Your current plan</Kicker>
-          <Card>
-            <Row
-              title={plan.title}
-              subtitle={`${plan.date} · Expected back ${plan.returnTime}`}
-              icon={ArrowUpRight}
-              onPress={() =>
-                router.push({
-                  pathname: "/plans/[id]",
-                  params: { id: plan.id },
-                })
-              }
-            />
-          </Card>
-        </>
-      )}
-      <FooterNote />
+      <Heading>Useful on the trail</Heading>
+      {(
+        [
+          {
+            title: "When will I need a headlamp?",
+            subtitle: "Daylight for your location",
+            tool: "daylight",
+          },
+          {
+            title: "Compass declination",
+            subtitle: "Adjust for true north",
+            tool: "compass",
+          },
+          {
+            title: "Estimate hiking time",
+            subtitle: "Quick distance and elevation sliders",
+            tool: "hiking",
+          },
+        ] as const
+      ).map((item) => (
+        <Row
+          key={item.tool}
+          title={item.title}
+          subtitle={item.subtitle}
+          icon={Compass}
+          onPress={() =>
+            router.navigate({ pathname: "/tools", params: { tool: item.tool } })
+          }
+        />
+      ))}
+      <Note>
+        Guides, saved plans and tools work offline. Share your trip plan before
+        leaving coverage; TrailSafe does not monitor trips.
+      </Note>
     </Screen>
   );
 }

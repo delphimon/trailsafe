@@ -21,7 +21,9 @@ class DeviceSearchModule : Module() {
       val context = appContext.reactContext ?: return@AsyncFunction
       val shortcuts = mutableListOf<ShortcutInfoCompat>()
 
-      for (item in items) {
+      val staticCount = ShortcutManagerCompat.getShortcuts(context, ShortcutManagerCompat.FLAG_MATCH_MANIFEST).size
+      val limit = (ShortcutManagerCompat.getMaxShortcutCountPerActivity(context) - staticCount).coerceAtLeast(0)
+      for (item in items.take(limit)) {
         val id = item["id"] as? String ?: continue
         val title = item["title"] as? String ?: continue
         val description = item["description"] as? String ?: ""
@@ -41,7 +43,7 @@ class DeviceSearchModule : Module() {
         shortcuts.add(shortcut)
       }
 
-      ShortcutManagerCompat.setDynamicShortcuts(context, shortcuts)
+      check(ShortcutManagerCompat.setDynamicShortcuts(context, shortcuts)) { "Device search indexing failed" }
     }
 
     AsyncFunction("clearItems") {

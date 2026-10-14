@@ -1,28 +1,41 @@
 import { Modal, Platform, Pressable, StyleSheet, View } from "react-native";
 import { router, usePathname } from "expo-router";
-import { Backpack, BookOpen, Compass, House, Siren } from "lucide-react-native";
+import {
+  Backpack,
+  BookOpen,
+  Compass,
+  Siren,
+  House,
+  ClipboardList,
+} from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useApp } from "@/state/app";
 import { Button, useThemeStyles, fonts, T } from "./ui";
 export function BottomBar() {
   const { C } = useThemeStyles();
+  const { navigate } = useApp();
   const path = usePathname(),
     insets = useSafeAreaInsets();
   const tabs = [
     { label: "Home", path: "/" as const, icon: House },
+    { label: "Trips", path: "/plans" as const, icon: ClipboardList },
     { label: "Prepare", path: "/prepare" as const, icon: Backpack },
-    { label: "Emergency", path: "/emergency" as const, icon: Siren },
+    { label: "Help", path: "/emergency" as const, icon: Siren },
     { label: "Guide", path: "/guide" as const, icon: BookOpen },
     { label: "Tools", path: "/tools" as const, icon: Compass },
   ];
   const active =
-    path.startsWith("/plans") || path === "/profile"
-      ? "/prepare"
+    path.startsWith("/plans") ||
+    path === "/profile" ||
+    path.startsWith("/plan/")
+      ? "/plans"
       : path.startsWith("/article")
         ? "/guide"
         : path.startsWith("/tools")
           ? "/tools"
-          : path;
+          : path.startsWith("/emergency")
+            ? "/emergency"
+            : path;
   return (
     <View
       accessibilityRole="tablist"
@@ -50,7 +63,7 @@ export function BottomBar() {
             accessibilityLabel={tab.label}
             accessibilityState={{ selected }}
             aria-selected={selected}
-            onPress={() => router.navigate(tab.path as any)}
+            onPress={() => navigate(() => router.navigate(tab.path))}
             style={({ pressed }) => ({
               flex: 1,
               minHeight: 52,
@@ -86,6 +99,11 @@ export function BottomBar() {
 export function AppOverlays() {
   const { C } = useThemeStyles();
   const { dialog, setDialog, run, toast } = useApp();
+  const cancel = () => {
+    const action = dialog?.onCancel;
+    setDialog(null);
+    action?.();
+  };
   return (
     <>
       {!!toast && (
@@ -105,7 +123,7 @@ export function AppOverlays() {
         visible={!!dialog}
         transparent
         animationType="fade"
-        onRequestClose={() => setDialog(null)}
+        onRequestClose={cancel}
       >
         <View style={styles.scrim}>
           <View
@@ -139,54 +157,18 @@ export function AppOverlays() {
                 />
               )}
               <Button
-                label={dialog?.cancelLabel || (dialog?.onConfirm ? "Cancel" : "Got it")}
+                label={
+                  dialog?.cancelLabel ||
+                  (dialog?.onConfirm ? "Cancel" : "Got it")
+                }
                 variant={dialog?.onConfirm ? "outline" : "primary"}
-                onPress={() => setDialog(null)}
+                onPress={cancel}
               />
             </View>
           </View>
         </View>
       </Modal>
     </>
-  );
-}
-export function PracticeBanner() {
-  const { practice, setPractice } = useApp();
-  if (!practice) return null;
-  return (
-    <View
-      style={{
-        backgroundColor: "#C98A2C",
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 10,
-      }}
-    >
-      <T
-        style={{
-          flex: 1,
-          fontFamily: fonts.bold,
-          fontSize: 11,
-          lineHeight: 17,
-          color: "#241A04",
-        }}
-      >
-        PRACTICE MODE — DOES NOT CONTACT 911
-      </T>
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => setPractice(false)}
-        style={{
-          minHeight: 44,
-          justifyContent: "center",
-          paddingHorizontal: 10,
-        }}
-      >
-        <T style={{ fontFamily: fonts.bold, fontSize: 13 }}>Exit</T>
-      </Pressable>
-    </View>
   );
 }
 const styles = StyleSheet.create({

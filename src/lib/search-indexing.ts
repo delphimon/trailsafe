@@ -26,14 +26,9 @@ export type GuideSearchItem = {
 /**
  * Computes a deterministic version string based on article content and versions.
  */
-export function getGuideContentVersion(): string {
-  const versionParts: string[] = [];
-  for (const t of topics) {
-    const art = articles[t.target];
-    versionParts.push(`${t.target}:${art?.contentVersion || "v1"}:${t.title}`);
-  }
+export function getGuideContentVersion(items = formatGuideSearchItems()): string {
   let hash = 0;
-  const str = versionParts.join(";");
+  const str = JSON.stringify(items);
   for (let i = 0; i < str.length; i++) {
     hash = (hash << 5) - hash + str.charCodeAt(i);
     hash |= 0;
@@ -52,7 +47,9 @@ export function formatGuideSearchItems(): GuideSearchItem[] {
       t.sub,
       t.keywords || "",
       ...(art?.blocks || [])
-        .map((b) => [b.title, b.text, ...(b.items || [])].filter(Boolean).join(" "))
+        .map((b) =>
+          [b.title, b.text, ...(b.items || [])].filter(Boolean).join(" "),
+        )
         .filter(Boolean),
     ].join(" ");
 
@@ -63,7 +60,9 @@ export function formatGuideSearchItems(): GuideSearchItem[] {
       .split(/\s+/)
       .filter((w) => w.length >= 3);
 
-    const uniqueKeywords = Array.from(new Set([t.title.toLowerCase(), ...words]));
+    const uniqueKeywords = Array.from(
+      new Set([t.title.toLowerCase(), ...words]),
+    );
 
     return {
       id: t.target,
@@ -81,19 +80,23 @@ export function formatGuideSearchItems(): GuideSearchItem[] {
  */
 export async function indexGuideContent(force = false): Promise<boolean> {
   try {
-    const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
+    const AsyncStorage = (
+      await import("@react-native-async-storage/async-storage")
+    ).default;
     const DeviceSearch = await import("@/modules/device-search");
 
     const currentVersion = getGuideContentVersion();
     if (!force) {
-      const storedVersion = await AsyncStorage.getItem(INDEXED_GUIDE_VERSION_KEY);
+      const storedVersion = await AsyncStorage.getItem(
+        INDEXED_GUIDE_VERSION_KEY,
+      );
       if (storedVersion === currentVersion) {
         return false;
       }
     }
 
     const items = formatGuideSearchItems();
-    await DeviceSearch.indexItems(items);
+    if (!(await DeviceSearch.indexItems(items))) return false;
     await AsyncStorage.setItem(INDEXED_GUIDE_VERSION_KEY, currentVersion);
     return true;
   } catch {
