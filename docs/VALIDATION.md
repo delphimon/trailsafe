@@ -1,4 +1,4 @@
-# Validation — October 13, 2026
+# Validation — October 14, 2026
 
 Current candidate: TrailSafe 0.5.0 (native build 3), SDK 58 next/beta, Router 58, React Native 0.88 RC. Earlier SDK 57 evidence is historical and does not establish native acceptance for this update.
 
@@ -10,11 +10,13 @@ Current candidate: TrailSafe 0.5.0 (native build 3), SDK 58 next/beta, Router 58
 | Dependency graph | Passed | `expo install --check`, `npm ls --depth=0`; SDK 58 map plus a documented RN RC peer override |
 | Expo export, all platforms | Passed | iOS/Android JS assets and static web, 17 routes, SDK 58 server-document hydration nodes |
 | Playwright in Chrome | 17 passed | Home and separate Trips/Prepare access, visible headlamp result on a 440x956 viewport, immediate compass access, quick hiking controls and keyboard slider, one-app-tap intercepted SMS, here/elsewhere drafts, offline loaded-route navigation, plan/profile storage and failures |
+| Browser deployment correction | 18 passed locally | The same flows plus a CSP regression proving background fetch is rejected before transmission while bundled fonts load |
 | iOS simulator Release compilation | Passed | Version 0.5.0 (3), preview channel, embedded JS/assets, iPhone 17 Pro Max target |
 | Signed iPhone Release compilation | Passed | Version 0.5.0 (3), preview channel, code signature verified, existing bundle identifier/team |
 | Native simulator UI | 4 passed, 86.2 seconds | iPhone 17 Pro Max / iOS 26.2: six tabs, Home/current trip, all trip groups, Prepare/guide, synthetic coordinates, visible tool answers, real slider drags/quick choices, native date and water guidance |
-| GitHub CI | Both jobs passed after lockfile correction | [Run 38512304819](https://github.com/delphimon/trailsafe/actions/runs/38512304819); final evidence commit repeats checks before merge |
-| Surge and physical-phone delivery | Pending merge | Replacement installation will preserve the app container and compare private saved-data hashes |
+| GitHub CI | Both jobs passed on the final implementation | [Run 38513088747](https://github.com/delphimon/trailsafe/actions/runs/38513088747), merged in PR #15 |
+| Surge delivery | Published 0.5.0 from merged main; font correction in progress | Live checks caught missing exported fonts, excluded by Surge's default `node_modules` rule |
+| Physical-phone installation | Installed 0.5.0 (3); cold launch passed; saved data preserved | Signed replacement installation; private saved-data SHA-256 matches the fresh pre-install backup. iPhone 17 Pro Max / iOS 27 foreground screenshots show Daylight and Compass results above the fold with six tabs |
 
 Browser tests use fictional data, mocked location/share/clipboard and intercepted `window.open`; the one-tap SMS test captures the URL and sends nothing. Native smoke tests never tap call/SMS transports. No actual 911 call or text is made.
 
@@ -24,7 +26,9 @@ The first browser attempt had no running preview server. After starting port 808
 
 Logs: `/private/tmp/trailsafe-usability-tests.log`, `trailsafe-usability-typecheck.log`, `trailsafe-usability-lint.log`, `trailsafe-usability-export-final.log`, `trailsafe-usability-e2e-final.log`, `trailsafe-sdk58-simulator-build-final.log`, and `trailsafe-sdk58-phone-build.log`. Browser screenshots/traces stay in ignored `test-results/`. Native result: `/private/tmp/trailsafe-sdk58-native-drag-final-2026-10-13.xcresult`; export manifest: `/private/tmp/trailsafe-sdk58-native-drag-final-evidence/manifest.json`; readable screenshot/hierarchy names: `/private/tmp/trailsafe-sdk58-native-evidence-retained/`. See `DEPENDENCIES.md` for beta/RC pins and upstream audit advisories.
 
-Deployment uses `npm run deploy:surge`: production channel, checks and web export, a Surge `200.html` fallback for direct plan links and `deploy-info.json` containing exported version/commit. Native runtime 0.5.0 prevents an older cached OTA from loading into the changed native graph. Phone replacement installation retains bundle identity and data; private backup/hash readback does not publish personal details.
+Deployment uses `npm run deploy:surge`: production channel, checks and web export, a Surge `200.html` fallback for direct plan links and `deploy-info.json` containing exported version/commit. The generated `.surgeignore` includes only Expo's exported `assets/node_modules` subtree, so bundled fonts survive Surge's default exclusion. A successful upload alone is insufficient: read back the receipt and run browser checks against the live site. Native runtime 0.5.0 prevents an older cached OTA from loading into the changed native graph. Phone replacement installation retains bundle identity and data; private backup/hash readback does not publish personal details.
+
+Live checks also observed external Cloudflare/DoubleClick requests added by the custom-domain proxy, absent from the exported HTML. The production browser policy rejects fetch/XHR/beacon connections, external scripts and external images. Static local fonts/assets, route navigation, sharing and explicit external links remain available. The policy is omitted during development for tooling connections. This does not alter proxy access logs or disable its account-wide settings; inspect the final deployed page as well as the source bundle. Physical screenshots are private in `/private/tmp/trailsafe-phone-readonly-2026-10-14/`; no transport controls were tapped.
 
 Physical airplane-mode cold launch after restart, real GPS/permission/staleness, notification delivery/cleanup, voice replay, large text/VoiceOver/TalkBack, sunlight readability and actual production-store diagnostic transmission remain separate acceptance checks. This delivery is a personal preview install and browser preview, not a store submission. Content review is direct in-app review, with no governance registry or expiry subsystem.
 

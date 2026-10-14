@@ -93,6 +93,26 @@ async function ready(page: Page) {
     .toBe(true);
 }
 
+test("browser preview blocks background telemetry requests while bundled fonts load", async ({ page }) => {
+  await setupLocation(page);
+  let sent = 0;
+  await page.route("**/telemetry-probe", async (route) => {
+    sent++;
+    await route.fulfill({ status: 204 });
+  });
+  await page.goto("/");
+  await ready(page);
+  const result = await page.evaluate(async () => {
+    const violation = new Promise<string>((resolve) => {
+      document.addEventListener("securitypolicyviolation", (event) => resolve(event.effectiveDirective), { once: true });
+    });
+    const rejected = await fetch("/telemetry-probe").then(() => false, () => true);
+    return { rejected, directive: await violation };
+  });
+  expect(result).toEqual({ rejected: true, directive: "connect-src" });
+  expect(sent).toBe(0);
+});
+
 test("home landing, automatic coordinates, format persistence, and watcher cleanup", async ({
   page,
 }) => {
