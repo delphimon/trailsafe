@@ -59,7 +59,7 @@
     "test:e2e": "playwright test",
     "export": "expo export --platform all",
     "verify": "npm run typecheck && npm test && npm run export",
-    "deploy:surge": "npm run verify && npx surge dist --domain trailsafe.kass.net",
+    "deploy:surge": "bash scripts/deploy-surge.sh",
     "content:extract": "node scripts/extract-content.cjs && python3 scripts/build-content.py"
   },
   "expo": {

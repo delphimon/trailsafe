@@ -9,10 +9,10 @@ final class TrailSafeSmoke: XCTestCase {
         let app = launch()
         XCTAssertTrue(app.staticTexts["Before You Go"].waitForExistence(timeout: 20))
         for tab in ["Prepare", "Help", "Guide", "Tools"] {
-            XCTAssertTrue(app.buttons[tab].isHittable, "Missing tab: \(tab)")
+            XCTAssertTrue(element(tab, app).isHittable, "Missing tab: \(tab)")
         }
         capture("ios-prepare", app)
-        app.buttons["Guide"].tap()
+        element("Guide", app).tap()
         XCTAssertTrue(app.staticTexts["Safety Guide"].waitForExistence(timeout: 10))
         let search = app.textFields["Search safety topics"]
         XCTAssertTrue(search.waitForExistence(timeout: 10))
@@ -24,23 +24,30 @@ final class TrailSafeSmoke: XCTestCase {
         article.tap()
         XCTAssertTrue(app.staticTexts["Cold & Hypothermia"].waitForExistence(timeout: 10))
         capture("ios-bundled-cold-guide", app)
-        app.buttons["Prepare"].tap()
+        element("Prepare", app).tap()
         XCTAssertTrue(app.staticTexts["Before You Go"].waitForExistence(timeout: 10))
     }
 
     func testNativeDatePickerAndWaterGuidance() {
         let app = launch()
-        app.buttons["Tools"].tap()
+        element("Tools", app).tap()
         XCTAssertTrue(app.staticTexts["Simple estimates and offline guidance"].waitForExistence(timeout: 10))
         let date = app.buttons.matching(NSPredicate(format: "label MATCHES %@", "[0-9]{4}-[0-9]{2}-[0-9]{2}")).firstMatch
         scrollTo(date, app)
+        let initialDate = date.label
         date.tap()
         XCTAssertTrue(app.pickerWheels.firstMatch.waitForExistence(timeout: 10), "Native date spinner did not open")
         XCTAssertGreaterThanOrEqual(app.pickerWheels.count, 3)
-        capture("ios-native-daylight-date-picker", app)
         scrollTo(app.buttons["Done"], app)
+        // The isolated simulator uses the default English month/day/year spinner.
+        let nextDay = initialDate.hasSuffix("-13") ? "14" : "13"
+        app.pickerWheels.element(boundBy: 1).adjust(toPickerWheelValue: nextDay)
+        let selectedDate = String(initialDate.dropLast(2)) + nextDay
+        XCTAssertTrue(app.buttons[selectedDate].waitForExistence(timeout: 10))
+        capture("ios-native-daylight-date-picker", app)
         app.buttons["Done"].tap()
         XCTAssertFalse(app.pickerWheels.firstMatch.exists)
+        XCTAssertTrue(app.buttons[selectedDate].exists, "Done should retain the selected date")
         let guidance = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "phone’s Clock timer")).firstMatch
         scrollTo(guidance, app)
         XCTAssertTrue(guidance.isHittable)
@@ -53,7 +60,7 @@ final class TrailSafeSmoke: XCTestCase {
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         if springboard.buttons["Cancel"].exists { springboard.buttons["Cancel"].tap() }
         let app = launch()
-        app.buttons["Help"].tap()
+        element("Help", app).tap()
         let coordinates = app.descendants(matching: .any).matching(identifier: "coordinates").firstMatch
         XCTAssertTrue(coordinates.waitForExistence(timeout: 20))
         app.buttons["DD"].tap()
@@ -71,8 +78,11 @@ final class TrailSafeSmoke: XCTestCase {
     private func launch() -> XCUIApplication {
         let app = XCUIApplication(bundleIdentifier: "com.appliedinteractions.trailsafe")
         app.launch()
-        XCTAssertTrue(app.buttons["Prepare"].waitForExistence(timeout: 20))
+        XCTAssertTrue(element("Prepare", app).waitForExistence(timeout: 20))
         return app
+    }
+    private func element(_ label: String, _ app: XCUIApplication) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
     }
     private func scrollTo(_ target: XCUIElement, _ app: XCUIApplication) {
         for _ in 0..<12 {

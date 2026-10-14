@@ -18,7 +18,7 @@ npm run ios
 npm run android
 ```
 
-Native builds require the matching Xcode / Android SDK toolchains. On this Mac, Xcode is installed at `/Applications/Xcode-beta.app`; use `DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer npm run ios` if command-line tools point elsewhere. These commands do not publish the app.
+Native builds require the matching Xcode / Android SDK toolchains. On this Mac, Xcode is installed at `/Applications/Xcode.app`; use `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer npm run ios` if command-line tools point elsewhere. These commands do not publish the app.
 
 ### Standalone install on a personal iPhone
 
@@ -27,7 +27,7 @@ A signed **Release** build includes the app code, fonts, and content and runs wi
 With the native iOS project generated (`npx expo prebuild --platform ios` on a fresh checkout), build and install using your phone identifier and Apple team ID:
 
 ```sh
-DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
   bash scripts/install-iphone.sh YOUR_IPHONE_UDID YOUR_APPLE_TEAM_ID
 ```
 
@@ -35,16 +35,7 @@ This uses automatic Apple development signing and installs directly on the selec
 
 ### Over-the-Air Updates (EAS Update)
 
-Because TrailSafe uses `expo-updates`, you can publish changes to the JavaScript code and assets (such as `src/content/library.json`) directly to users' devices without requiring a new native App Store build.
-
-1. Configure EAS (if not already done): `eas update:configure`
-2. Build your native app (e.g., via `eas build` or your local scripts) so it includes the update URL.
-3. To push a new update to all devices instantly, run:
-   ```sh
-   eas update --branch main --message "Your update message"
-   ```
-
-Updates are downloaded in the background when a user opens the app while connected to the internet. Because TrailSafe is offline-first, if there is no connection, the app will smoothly ignore the update check and continue running the cached version. Note: changes to native code, Expo SDK versions, or app icons still require a new native build.
+TrailSafe uses `expo-updates` for optional manual updates. Normal launch does not check for or download updates. About exposes the connected update flow, and applying an update is blocked while a trip is Current. Publishing an EAS update must target the intended release channel and compatible native runtime; it does not instantly replace every installed app. Native-module or SDK changes require a new native build. Version 0.4.0 uses a new runtime for the date-picker and removed modules. Build profiles and diagnostic channels are documented in [Release Diagnostics Policy](docs/RELEASE-DIAGNOSTICS.md).
 
 The local `plugins/with-ios-scenes.cjs` plugin adds the scene lifecycle required on iOS 27 when building with Xcode 27. It preserves Expo startup, lifecycle callbacks, and incoming links and is reapplied by Expo prebuild.
 
@@ -64,16 +55,19 @@ node scripts/serve-preview.cjs
 
 The preview server supports dynamic routes for device-local trip plans and bundled articles. Web geolocation requires localhost or HTTPS. The native installed app includes its content and fonts; web requires the initial app load and does not install an offline service worker.
 
+Publish the browser preview to the existing Surge domain with `npm run deploy:surge`. This checks and exports the production web bundle, supplies direct-link fallback, and publishes a version/commit receipt at `https://trailsafe.kass.net/deploy-info.json`.
+
 ## Implemented
 
-- **Home:** prototype forest-green / orange / paper styling, bundled Public Sans and Barlow Condensed fonts, prominent emergency entry, persistent five-section navigation.
-- **Emergency:** native call/text handoffs, location-first text drafts, no-delivery claims, bounce-back guidance, and a practice mode that blocks all emergency handoffs.
+- **Navigation:** forest-green / orange / paper styling, bundled Public Sans and Barlow Condensed fonts, Prepare landing with a prominent Help entry, and four tabs: Prepare, Help, Guide, Tools.
+- **Emergency:** explicit native call/text handoffs, editable here/elsewhere drafts, no-delivery claims and bounce-back guidance. Missing/overdue drafts ask for the subject's last-known location. Tests inject inert transports; there is no consumer Practice Mode.
 - **Automatic location:** begins when Emergency opens, after the operating system’s required permission prompt. No Get Location button. Foreground-only updates stop when leaving Emergency or backgrounding the app.
 - **Coordinate dropdown:** WGS84 decimal degrees, degrees and decimal minutes (DDM), and UTM. Format persists. Includes uncertainty, real fix timestamp/age, stale and poor-accuracy warnings, copy/share, and Maps handoff. UTM handles Norway/Svalbard exceptions, both hemispheres, and polar exclusions.
 - **Trip plans:** create, edit, save draft, mark current, complete, duplicate, delete, text preview, copy, share, safe return check-in draft, and PDF/print. Explicit start/return/overdue dates support overnight trips. One-tap quick vehicle selection from saved profile cars. Updated plans are labeled. Optional SAR details stay collapsed initially.
 - **Reusable profile:** local name/contact, dual vehicle management (Car 1 and Car 2), equipment, and optional medical considerations prefill new plans. Existing plans retain their original details.
 - **Prepare:** persistent Ten Essentials and phone checklists, trip-type add-ons, an explicit food reminder, reset, and external condition resources.
 - **Guide:** bundled offline articles, missing-versus-overdue branching, full-text search, and source references.
+- **Tools:** offline daylight estimates with explicit location and headlamp buffer, compass declination, rough hiking-time estimates, and water/signaling guidance. Water instructions direct users to the device's Clock timer. Content is reviewed directly in the app before release.
 - **Voice assistant & system integration:** Siri App Intents (`OpenEmergencyIntent`, `CompleteCurrentTripIntent`, `SearchGuideIntent`) and Google Assistant shortcuts (`shortcuts.xml`). Action Button & Lock Screen shortcut trigger. Instant emergency screen launch (`trailsafe://emergency`), hands-free trip completion and start (`trailsafe://plan/current/complete`), and voice search (`trailsafe://guide?search=...`).
 - **On-device search indexing:** Local Expo module (`modules/device-search`) indexing the bundled offline guide into iOS CoreSpotlight (`CSSearchableIndex`) and Android shortcuts (`ShortcutManagerCompat`) with deterministic content hashing (`getGuideContentVersion`) that triggers automated re-indexing across OTA updates.
 - **About:** publisher, privacy, content version, source directory, native build metadata, OTA update status (`expo-updates`), check for updates flow, profile management, and local data deletion.
@@ -121,4 +115,4 @@ Content changes should normally edit `src/content/library.json` directly. `npm r
 
 This is a development implementation. Accessibility on physical devices and real phone/SMS handoffs need validation before public release. Bugsnag may be active in developer, pre-release, and TestFlight builds for crash diagnosis, but must be disabled in the final production store build. Do not send uncoordinated test calls or texts to 911.
 
-The existing Expo owner and EAS project association were preserved. The provisional native identifier is `com.appliedinteractions.trailsafe`; no App Store / Play Store upload or deployment was performed.
+The existing Expo owner, EAS project association and native identifier `com.appliedinteractions.trailsafe` are preserved. Version 0.4.0 (native build 2) is intended for the personal iPhone install and Surge browser preview. No App Store / Play Store submission is part of this delivery.
