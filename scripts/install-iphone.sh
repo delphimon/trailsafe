@@ -18,6 +18,11 @@ if ! /usr/libexec/PlistBuddy -c 'Print :UIApplicationSceneManifest' ios/TrailSaf
   echo "Regenerate iOS with npx expo prebuild --platform ios to include iOS 27 scene support." >&2
   exit 1
 fi
+native_channel=$(/usr/libexec/PlistBuddy -c 'Print :TrailSafeReleaseChannel' ios/TrailSafe/Info.plist 2>/dev/null || true)
+if [[ "$native_channel" != "$EXPO_PUBLIC_RELEASE_CHANNEL" ]]; then
+  echo "Regenerate iOS with EXPO_PUBLIC_RELEASE_CHANNEL=$EXPO_PUBLIC_RELEASE_CHANNEL npx expo prebuild --platform ios before building this channel." >&2
+  exit 1
+fi
 
 device_id="$1"
 team_id="$2"

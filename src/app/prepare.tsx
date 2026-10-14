@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, Linking, Pressable } from "react-native";
 import { router } from "expo-router";
-import { ClipboardList, ExternalLink, Info } from "lucide-react-native";
+import { ExternalLink, Info } from "lucide-react-native";
 import library from "@/content/library.json";
 import { useStore } from "@/state/store";
 import { useApp } from "@/state/app";
@@ -16,7 +16,6 @@ import {
   Note,
   Row,
   Screen,
-  T,
   useThemeStyles,
 } from "@/components/trailsafe/ui";
 export default function Prepare() {
@@ -50,8 +49,8 @@ export default function Prepare() {
 
   return (
     <Screen
-      title="Before You Go"
-      subtitle="Essentials, phone readiness, and trip prep"
+      title="Prepare"
+      subtitle="Ten Essentials and the gear to bring"
       rightAction={
         <Pressable
           accessibilityRole="button"
@@ -63,28 +62,6 @@ export default function Prepare() {
         </Pressable>
       }
     >
-      <Button
-        label="NEED HELP?"
-        variant="orange"
-        onPress={() => router.navigate("/emergency")}
-      />
-      {currentPlan && (
-        <Row
-          title={currentPlan.title || "Your current trip"}
-          subtitle={`Current · Expected back ${currentPlan.returnDate} ${currentPlan.returnTime}`}
-          icon={ClipboardList}
-          onPress={() =>
-            router.push({
-              pathname: "/plans/[id]",
-              params: { id: currentPlan.id },
-            })
-          }
-        />
-      )}
-      <Note>
-        Guides, saved plans and tools work offline. Calls, messages and live
-        conditions need an available connection.
-      </Note>
       {isStale && (
         <View style={{ marginBottom: 12 }}>
           <Callout title="Checklist may be from a previous trip">
@@ -113,12 +90,6 @@ export default function Prepare() {
         </View>
       )}
 
-      <Row
-        title="Leave a Trip Plan"
-        subtitle="Do this before you leave coverage"
-        icon={ClipboardList}
-        onPress={() => router.push("/plans")}
-      />
       <Kicker>Duration</Kicker>
       <View style={s.wrap}>
         <Chip
@@ -250,32 +221,6 @@ export default function Prepare() {
           })
         }
       />
-      <Kicker>Trusted contact</Kicker>
-      <Card style={{ gap: 10 }}>
-        <Heading>Share your plan before you go</Heading>
-        <T style={s.note}>
-          Your trip plan spells out exactly when to worry and when to call 911.
-          Whoever holds it shouldn’t need this app.
-        </T>
-        {currentPlan ? (
-          <Button
-            label={`Share: ${currentPlan.title || "Current Plan"}`}
-            variant="primary"
-            onPress={() =>
-              router.push({
-                pathname: "/plans/[id]",
-                params: { id: currentPlan.id },
-              })
-            }
-          />
-        ) : (
-          <Button
-            label="Create a Trip Plan"
-            variant="outline"
-            onPress={() => router.push("/plans")}
-          />
-        )}
-      </Card>
       <Kicker>Know before you go</Kicker>
       <Card>
         {library.RESOURCES.filter(

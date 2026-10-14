@@ -15,14 +15,17 @@ import { useStore } from "@/state/store";
 import { buildEmergencyDraft } from "@/lib/emergency";
 
 export default function EmergencyMessage() {
-  const { situation = "Describe what happened" } = useLocalSearchParams<{
-    situation?: string;
-  }>();
+  const { situation = "Describe what happened", kind: initialKind } =
+    useLocalSearchParams<{
+      situation?: string;
+      kind?: "here" | "elsewhere";
+    }>();
   const { s } = useThemeStyles();
   const { location, sendEmergencyText, run } = useApp();
   const { data } = useStore();
+  const missingPerson = /missing|overdue/i.test(situation);
   const [kind, setKind] = useState<"here" | "elsewhere" | null>(
-    /missing|overdue/i.test(situation) ? "elsewhere" : null,
+    missingPerson || initialKind === "elsewhere" ? "elsewhere" : "here",
   );
   const [edited, setEdited] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -50,14 +53,16 @@ export default function EmergencyMessage() {
     >
       <T>Where is help needed?</T>
       <View style={[s.wrap, { marginVertical: 16 }]}>
-        <Chip
-          label="At my location"
-          selected={kind === "here"}
-          onPress={() => {
-            setKind("here");
-            setEdited(null);
-          }}
-        />
+        {!missingPerson && (
+          <Chip
+            label="At my location"
+            selected={kind === "here"}
+            onPress={() => {
+              setKind("here");
+              setEdited(null);
+            }}
+          />
+        )}
         <Chip
           label="Someone elsewhere"
           selected={kind === "elsewhere"}

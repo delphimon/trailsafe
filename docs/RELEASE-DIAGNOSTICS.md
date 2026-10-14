@@ -33,3 +33,7 @@ Tracking: see GitHub issue #11.
 `eas.json` explicitly selects the diagnostic channel for development, preview, TestFlight and production profiles. `app.config.ts` embeds that selection in manifest extras and the manual OTA request channel. `scripts/install-iphone.sh` defaults local signed Release installs to preview; set `EXPO_PUBLIC_RELEASE_CHANNEL=production` for a local store-policy build. Production and web initialize no Bugsnag diagnostics, and About renders channel-appropriate privacy wording. Normal app launch does not check for OTA updates; manual update application is blocked while a trip is Current.
 
 Unit checks and JS exports pass. Actual production native-artifact network/crash behavior remains a separate distribution check; configuration alone is not evidence that a shipped artifact was inspected.
+
+## SDK 58 integration
+
+The Expo wrapper is replaced by Bugsnag React Native 9.1.0 because the wrapper only declares SDK 56/57 support. `plugins/with-release-diagnostics.cjs` generates native initialization solely for pre-release channels. Production registers no native initializer; the JS gate still disables production/web. Local iPhone builds check the generated native channel against the requested channel. Change channels by regenerating native projects with the intended environment, rather than reusing a preview project as a production artifact. Sessions, automatic native breadcrumbs and Bugsnag product telemetry are disabled.

@@ -91,12 +91,12 @@ export function initializeDiagnostics(): boolean {
 
   try {
     // Dynamic require so production builds that strip Bugsnag do not fail
-    const BugsnagModule = require("@bugsnag/expo");
+    const BugsnagModule = require("@bugsnag/react-native");
     const Bugsnag = BugsnagModule.default || BugsnagModule;
     Bugsnag.start({
       onError: function (event: any) {
         event.context = "redacted";
-        event.user = {};
+        event.setUser();
         event.addMetadata("device", "id", "redacted");
       },
     });

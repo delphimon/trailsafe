@@ -1,6 +1,13 @@
 import { Modal, Platform, Pressable, StyleSheet, View } from "react-native";
 import { router, usePathname } from "expo-router";
-import { Backpack, BookOpen, Compass, Siren } from "lucide-react-native";
+import {
+  Backpack,
+  BookOpen,
+  Compass,
+  Siren,
+  House,
+  ClipboardList,
+} from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useApp } from "@/state/app";
 import { Button, useThemeStyles, fonts, T } from "./ui";
@@ -10,14 +17,18 @@ export function BottomBar() {
   const path = usePathname(),
     insets = useSafeAreaInsets();
   const tabs = [
+    { label: "Home", path: "/" as const, icon: House },
+    { label: "Trips", path: "/plans" as const, icon: ClipboardList },
     { label: "Prepare", path: "/prepare" as const, icon: Backpack },
     { label: "Help", path: "/emergency" as const, icon: Siren },
     { label: "Guide", path: "/guide" as const, icon: BookOpen },
     { label: "Tools", path: "/tools" as const, icon: Compass },
   ];
   const active =
-    path.startsWith("/plans") || path === "/profile" || path === "/"
-      ? "/prepare"
+    path.startsWith("/plans") ||
+    path === "/profile" ||
+    path.startsWith("/plan/")
+      ? "/plans"
       : path.startsWith("/article")
         ? "/guide"
         : path.startsWith("/tools")

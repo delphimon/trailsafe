@@ -1,4 +1,5 @@
 import * as Notifications from "expo-notifications";
+import { AndroidImportance } from "expo-notifications";
 import { Platform } from "react-native";
 import { type TripPlan } from "./plans";
 import {
@@ -24,7 +25,7 @@ export async function reconcileTripReminders(
   if (Platform.OS === "android")
     await Notifications.setNotificationChannelAsync("trip-check-in", {
       name: "Trip check-in reminders",
-      importance: Notifications.AndroidImportance.DEFAULT,
+      importance: AndroidImportance.DEFAULT,
     });
   return reconcileReminders(
     plans,

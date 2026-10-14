@@ -8,9 +8,9 @@ TrailSafe is a fully offline hiking preparation and emergency-information compan
 
 ## Product rules
 
-- Four primary destinations: Prepare, Help, Guide, Tools. `/` redirects to Prepare; existing emergency/article/plan deep links remain valid.
+- Six primary destinations: Home, Trips, Prepare, Help, Guide, Tools. `/` opens Home with visible trip access; Trips shows Current, Upcoming and Past; Prepare focuses on Ten Essentials and gear. Existing emergency/article/plan deep links remain valid.
 - No consumer Practice Mode. Tests inject inert handoff handlers or intercept browser APIs. Never initiate real 911 calls or texts during tests. Native smoke tests must not tap transport controls.
-- Calls open the phone handoff. Text 911 opens an editable draft after choosing the subject location, then the system composer. The user sends it; composer/share results never establish delivery.
+- Calls open the phone handoff. On Help, Text 911 directly opens the system composer with the caller location in one app tap. A separate someone-elsewhere/edit option opens the editable draft and omits reporter GPS. The user sends it; composer/share results never establish delivery.
 - Never use the reporter's GPS for someone elsewhere. Use the subject's last known location and time instead.
 - TrailSafe does not monitor trips, notify contacts or dispatch help automatically. Completing a trip updates local data only.
 - Water treatment is guidance only. Use the device's Clock timer; do not implement another app timer, notification alarm or countdown.
@@ -20,7 +20,7 @@ TrailSafe is a fully offline hiking preparation and emergency-information compan
 
 ## Architecture
 
-- Expo SDK 57, React Native 0.86, TypeScript. Expo Router routes in `src/app`.
+- Expo SDK 58 (next/beta), Router 58, React Native 0.88 release candidate, React 19.3, TypeScript. Read the v58.0.0 docs for the current target in addition to the required v57.0.0 reference above. Expo Router routes in `src/app`.
 - `src/state/store.tsx`: serialized AsyncStorage writes. Damaged data blocks overwriting. `changeTrip` computes against the latest stored snapshot and returns after a successful write.
 - `src/lib/plans.ts`: plan schema, lifecycle, date/time validation, text/PDF formatting. Plans have explicit IANA time zones. Reject skipped and repeated DST wall times instead of guessing.
 - `src/lib/trip-commands.ts`: shared asynchronous persistence boundary for lifecycle commands.
@@ -28,6 +28,7 @@ TrailSafe is a fully offline hiking preparation and emergency-information compan
 - `src/hooks/use-location.tsx`: shared foreground GPS watcher. Consumers request only while focused; last-known fixes retain age/accuracy warnings.
 - `src/lib/coordinates.ts`: DD/DDM/UTM and WMM declination. Positive declination means magnetic north lies east of true north. Grid north is map-specific.
 - `src/lib/solar.ts`: offline sunrise/sunset/twilight estimates; 0/30/60-minute headlamp planning buffers. No silent location fallback or invented polar sunrise.
+- Tools keeps Daylight, Compass and Hiking one tap away, with answers before settings. Hiking uses native sliders and quick choices; the web uses keyboard-accessible ranges.
 - `src/lib/hiking-tools.ts`: rough hiking-time estimate. No cold-risk calculator, avalanche slope classification, audio whistle, screen strobe or water timer.
 - `src/content/library.json`: editable bundled content and source links. `src/content/regions.ts`: bundled region/preset data for future expansion.
 - Checklist IDs use stable names. `parseStoredData` preserves legacy index-based check meanings when mapping to these names.
@@ -47,7 +48,7 @@ TRAILSAFE_BROWSER="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
 Export outside the filesystem sandbox when needed: Expo traverses parent directories for its workspace. Preview port is 8082. Test screenshots go to ignored `test-results/screenshots`, preserving prior documentation images. Fresh exports validate JS/assets for all platforms; they are not native compilation or device acceptance.
 
-Expo 57 bundles its navigation APIs: do not assume a separate `@react-navigation/*` import shares its context. Typed routes may be stale after adding files; regenerate with the installed Expo tooling. Keep Node-tested domain modules free of React Native imports; use lazy imports at native boundaries.
+Expo Router bundles its navigation APIs: do not assume a separate `@react-navigation/*` import shares its context. Typed routes may be stale after adding files; regenerate with the installed Expo tooling. Keep Node-tested domain modules free of React Native imports; use lazy imports at native boundaries.
 
 For signed iOS deployment, use `scripts/install-iphone.sh <UDID> <team>` only when deployment is requested. Preserve signing settings and installed user data. Device acceptance includes airplane-mode cold launch, permission/accuracy/staleness, native date pickers, reminders/cleanup, voice cancellation, accessibility and diagnostic policy. No live 911 test calls.
 

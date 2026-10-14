@@ -6,7 +6,8 @@ import { router, usePathname } from "expo-router";
 import * as Clipboard from "expo-clipboard";
 import * as SMS from "expo-sms";
 import { useLocation } from "@/hooks/use-location";
-import { performEmergencyAction } from "@/lib/emergency";
+import { performEmergencyAction, buildEmergencyDraft } from "@/lib/emergency";
+import { useStore } from "@/state/store";
 
 /** Generic modal alert/confirmation dialog state. */
 type Dialog = {
@@ -61,6 +62,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const navigate = (action: () => void) =>
     navigationGuard ? navigationGuard(action) : action();
   const location = useLocation();
+  const { data } = useStore();
 
   const requestLocation = location.requestLocation;
   useEffect(() => {
@@ -134,10 +136,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           }
         },
         text: async () => {
-          router.push({
-            pathname: "/emergency-message",
-            params: { situation },
-          });
+          if (/missing|overdue|elsewhere/i.test(situation)) {
+            router.push({
+              pathname: "/emergency-message",
+              params: { situation, kind: "elsewhere" },
+            });
+          } else {
+            await sendEmergencyText(
+              buildEmergencyDraft(
+                location.fix,
+                situation,
+                undefined,
+                data.profile.travelerPhone,
+                "here",
+              ),
+            );
+          }
         },
       });
     });

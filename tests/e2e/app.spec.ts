@@ -93,7 +93,7 @@ async function ready(page: Page) {
     .toBe(true);
 }
 
-test("preparation landing, automatic coordinates, format persistence, and watcher cleanup", async ({
+test("home landing, automatic coordinates, format persistence, and watcher cleanup", async ({
   page,
 }) => {
   await setupLocation(page);
@@ -167,10 +167,15 @@ test("editable emergency drafts distinguish subject location without opening a h
   await page.goto("/emergency");
   await ready(page);
   await expect(page.getByRole("button", { name: /Practice/ })).toHaveCount(0);
-  await page.getByRole("button", { name: "TEXT 911", exact: true }).click();
+  await page
+    .getByRole("button", {
+      name: "Help for someone elsewhere / edit message",
+      exact: true,
+    })
+    .click();
   await expect(
-    page.getByRole("button", { name: "Open Messages to 911" }),
-  ).toHaveCount(0);
+    page.getByRole("textbox", { name: "Emergency message" }),
+  ).not.toContainText("47.42537");
   await page
     .getByRole("button", { name: "At my location", exact: true })
     .click();
@@ -447,42 +452,107 @@ test("about screen displays native build and update info with check for updates 
   ).toBeVisible();
 });
 
-test("tools provide location-based estimates and guidance without countdowns or sensors", async ({
+test("tools put answers above settings and estimates use quick controls", async ({
   page,
 }) => {
   await setupLocation(page);
+  await page.setViewportSize({ width: 440, height: 956 });
   await page.goto("/tools");
   await ready(page);
-  await expect(page.getByText(/Headlamp ready by:/)).toBeVisible();
+  await expect(page.getByTestId("headlamp-result")).not.toContainText(
+    "Waiting",
+  );
+  const box = await page.getByTestId("headlamp-result").boundingBox();
+  expect(box!.y + box!.height).toBeLessThan(650);
+  await expect(
+    page.getByRole("button", { name: "Snoqualmie Pass", exact: true }),
+  ).toHaveCount(0);
+  await page.screenshot({
+    path: "test-results/screenshots/tools-daylight.png",
+  });
+  await page.getByRole("button", { name: "Compass", exact: true }).click();
+  await expect(page.getByTestId("declination-result")).toContainText("E");
   await expect(
     page.getByText(/Magnetic North is .* East of True North/),
   ).toBeVisible();
-  await page.getByRole("button", { name: "60 min", exact: true }).click();
-  await expect(page.getByText(/Estimated duration:/)).toBeVisible();
+  await page.getByRole("button", { name: "Hiking", exact: true }).click();
+  const first = await page.getByTestId("hiking-result").textContent();
+  await page.getByRole("button", { name: "10 mi", exact: true }).click();
+  await expect(page.getByTestId("hiking-result")).not.toHaveText(first!);
+  const slider = page.getByRole("slider", {
+    name: "Total distance",
+    exact: true,
+  });
+  await slider.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(
+    page.getByText("Total distance: 10.5 miles", { exact: true }),
+  ).toBeVisible();
+  await page.screenshot({ path: "test-results/screenshots/tools-hiking.png" });
+  await page.getByRole("button", { name: "More", exact: true }).click();
   await expect(page.getByText(/Use your phone’s Clock timer/)).toBeVisible();
   await expect(
     page.getByRole("button", {
       name: /Start Timer|Whistle Cadence|Strobe|Hazards/,
     }),
   ).toHaveCount(0);
-  await page.screenshot({
-    path: "test-results/screenshots/tools.png",
-    fullPage: true,
-  });
 });
 test("denied tools location never substitutes a preset", async ({ page }) => {
   await setupLocation(page, { denied: true });
   await page.goto("/tools");
   await ready(page);
-  await expect(
-    page.getByText(/No daylight or compass estimate is shown/),
-  ).toBeVisible();
-  await expect(page.getByText(/Headlamp ready by:/)).toHaveCount(0);
+  await expect(page.getByText(/Location unavailable/)).toBeVisible();
+  await expect(page.getByTestId("headlamp-result")).toContainText("Waiting");
+  await page.getByRole("button", { name: /Location: GPS.*Change/ }).click();
   await page
     .getByRole("button", { name: "Snoqualmie Pass", exact: true })
     .click();
-  await expect(page.getByText(/Headlamp ready by:/)).toBeVisible();
-  await expect(page.getByText(/Snoqualmie Pass · 47.4250/)).toBeVisible();
+  await expect(page.getByTestId("headlamp-result")).not.toContainText(
+    "Waiting",
+  );
+  await expect(page.getByText(/Today · Snoqualmie Pass/)).toBeVisible();
+});
+test("Text 911 reaches the intercepted system handoff in one click", async ({
+  page,
+}) => {
+  await setupLocation(page);
+  await page.goto("/emergency");
+  await ready(page);
+  await expect(page.getByTestId("coordinates")).toContainText("47.42537");
+  await page.getByRole("button", { name: "TEXT 911", exact: true }).click();
+  await expect
+    .poll(() => page.evaluate(() => window.externalCalls.length))
+    .toBe(1);
+  const url = await page.evaluate(() => window.externalCalls[0]);
+  expect(url).toMatch(/^sms:911/);
+  expect(decodeURIComponent(url)).toContain("47.42537");
+  expect(decodeURIComponent(url)).toContain("Emergency at my location");
+  await expect(
+    page.getByRole("textbox", { name: "Emergency message" }),
+  ).toHaveCount(0);
+});
+test("Home exposes Trips separately from the packing checklist", async ({
+  page,
+}) => {
+  await seedPlan(page, "current");
+  await page.goto("/");
+  await ready(page);
+  await expect(
+    page.getByRole("button", { name: "Open current trip", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("tab", { name: "Trips", exact: true }).click();
+  for (const name of ["Current", "Upcoming", "Past"])
+    await expect(
+      page.getByRole("heading", { name, exact: true }),
+    ).toBeVisible();
+  await expect(page.getByText("Original trip", { exact: true })).toBeVisible();
+  await page.getByRole("tab", { name: "Prepare", exact: true }).click();
+  await expect(
+    page.getByRole("checkbox", { name: "Water", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "New Trip Plan", exact: true }),
+  ).toHaveCount(0);
 });
 
 async function seedPlan(page: Page, status: "current" | "completed") {
@@ -594,5 +664,7 @@ test("navigation protects unsaved edits", async ({ page }) => {
   await page
     .getByRole("button", { name: "Discard changes", exact: true })
     .click();
-  await expect(page.getByText("Before You Go", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Prepare", exact: true }),
+  ).toBeVisible();
 });

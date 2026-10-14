@@ -20,7 +20,8 @@ export function buildEmergencyDraft(
     ? "elsewhere"
     : "here",
 ): string {
-  const missing = locationKind === "elsewhere";
+  const missing =
+    locationKind === "elsewhere" || /missing|overdue/i.test(situation);
   const where = missing
     ? /missing|overdue/i.test(situation)
       ? "Missing person’s last known location: [enter trail, area, and time last seen]"

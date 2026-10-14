@@ -11,6 +11,7 @@ import {
 } from "lucide-react-native";
 import {
   useThemeStyles,
+  Button,
   Callout,
   fonts,
   Kicker,
@@ -33,6 +34,17 @@ export default function Emergency() {
   return (
     <Screen title="Need Help?" subtitle="Call, text, and share your location">
       <EmergencyActions />
+      <Button
+        label="Help for someone elsewhere / edit message"
+        variant="ghost"
+        small
+        onPress={() =>
+          router.push({
+            pathname: "/emergency-message",
+            params: { kind: "elsewhere" },
+          })
+        }
+      />
       <T
         style={{
           fontSize: 13,
@@ -49,8 +61,8 @@ export default function Emergency() {
         Don’t delay calling 911 because of cost. {WASHINGTON_REGION.sarCostNote}
       </Note>
       <Note>
-        These buttons open your phone’s calling and messaging apps. TrailSafe
-        does not contact anyone directly.
+        Text 911 opens Messages with your location. You can edit it before
+        sending. For someone elsewhere, use the separate message option above.
       </Note>
       <LocationCard />
       <Callout title="If a text bounces back">

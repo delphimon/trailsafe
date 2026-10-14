@@ -44,6 +44,16 @@ test("overdue and missing person drafts never present the caller GPS as the subj
   const missingText = buildEmergencyDraft(fix, "Party Member Missing");
   assert.match(missingText, /Missing person’s last known location/);
   assert.ok(!missingText.includes("47.00000"));
+  // A stale UI parameter or an explicit override cannot substitute reporter GPS.
+  const forcedHere = buildEmergencyDraft(
+    fix,
+    "Overdue Person",
+    undefined,
+    undefined,
+    "here",
+  );
+  assert.ok(!forcedHere.includes("47.00000"));
+  assert.match(forcedHere, /last known location/);
 });
 
 test("explicit third-party location omits caller GPS even for generic incident titles", () => {
