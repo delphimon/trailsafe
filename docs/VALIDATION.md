@@ -1,6 +1,6 @@
 # Validation — October 14, 2026
 
-Current candidate: TrailSafe 0.5.0 (native build 3), SDK 58 next/beta, Router 58, React Native 0.88 RC. Earlier SDK 57 evidence is historical and does not establish native acceptance for this update.
+Delivered application: TrailSafe 0.5.0 (native build 3), SDK 58 next/beta, Router 58, React Native 0.88 RC. Application delivery commit: `0e246e811d66488c2c8f25a4b7ddaf712431312d`, after PRs #15–#18. Earlier SDK 57 evidence is historical and does not establish native acceptance for this update.
 
 | Check | Result | Scope |
 | --- | --- | --- |
@@ -9,14 +9,13 @@ Current candidate: TrailSafe 0.5.0 (native build 3), SDK 58 next/beta, Router 58
 | ESLint | 0 errors, 9 warnings | Lazy native require boundaries, scratch file, generated route declaration |
 | Dependency graph | Passed | `expo install --check`, `npm ls --depth=0`; SDK 58 map plus a documented RN RC peer override |
 | Expo export, all platforms | Passed | iOS/Android JS assets and static web, 17 routes, SDK 58 server-document hydration nodes |
-| Playwright in Chrome | 17 passed | Home and separate Trips/Prepare access, visible headlamp result on a 440x956 viewport, immediate compass access, quick hiking controls and keyboard slider, one-app-tap intercepted SMS, here/elsewhere drafts, offline loaded-route navigation, plan/profile storage and failures |
-| Browser deployment correction | 18 passed locally | The same flows plus a CSP regression proving background fetch is rejected before transmission while bundled fonts load |
+| Playwright in Chrome | 18 passed locally and on the live site | Home and separate Trips/Prepare access, visible headlamp result on a 440x956 viewport, immediate compass access, quick hiking controls and keyboard slider, one-app-tap intercepted SMS, here/elsewhere drafts, offline loaded-route navigation, plan/profile storage and failures; background fetch rejected before transmission while bundled fonts load |
 | iOS simulator Release compilation | Passed | Version 0.5.0 (3), preview channel, embedded JS/assets, iPhone 17 Pro Max target |
 | Signed iPhone Release compilation | Passed | Version 0.5.0 (3), preview channel, code signature verified, existing bundle identifier/team |
 | Native simulator UI | 4 passed, 86.2 seconds | iPhone 17 Pro Max / iOS 26.2: six tabs, Home/current trip, all trip groups, Prepare/guide, synthetic coordinates, visible tool answers, real slider drags/quick choices, native date and water guidance |
-| GitHub CI | Both jobs passed on the final implementation | [Run 38513088747](https://github.com/delphimon/trailsafe/actions/runs/38513088747), merged in PR #15 |
-| Surge delivery | Published 0.5.0 from merged main; font correction in progress | Live checks caught missing exported fonts, excluded by Surge's default `node_modules` rule |
-| Physical-phone installation | Installed 0.5.0 (3); cold launch passed; saved data preserved | Signed replacement installation; private saved-data SHA-256 matches the fresh pre-install backup. iPhone 17 Pro Max / iOS 27 foreground screenshots show Daylight and Compass results above the fold with six tabs |
+| GitHub CI | Both jobs passed on deployed main | [Run 38600401164](https://github.com/delphimon/trailsafe/actions/runs/38600401164), commit `0e246e8`; CI tests the same prepared HTML that is uploaded |
+| Surge delivery | Published 0.5.0; exact delivery commit verified | [Live receipt](https://trailsafe.kass.net/deploy-info.json) matched `0e246e8`; all 18 live browser checks passed in 32.1 seconds after font/proxy corrections |
+| Physical-phone installation | Installed 0.5.0 (3); saved data preserved | Signed replacement installation; private saved-data SHA-256 matches the fresh pre-install backup. iPhone 17 Pro Max / iOS 27 foreground screenshots show Daylight and Compass results above the fold with six tabs. Equivalent application code passed cold launch; the latest replacement's launch check was blocked by the phone lock |
 
 Browser tests use fictional data, mocked location/share/clipboard and intercepted `window.open`; the one-tap SMS test captures the URL and sends nothing. Native smoke tests never tap call/SMS transports. No actual 911 call or text is made.
 
@@ -31,6 +30,8 @@ Deployment uses `npm run deploy:surge`: production channel, checks and web expor
 Live checks also observed external Cloudflare/DoubleClick requests added by the custom-domain proxy, absent from the exported HTML. The production browser policy rejects fetch/XHR/beacon connections, external scripts and external images. Static local fonts/assets, route navigation, sharing and explicit external links remain available. The policy is omitted during development for tooling connections. The proxy misparsed React's entity-encoded CSP quotes and blocked the application despite passing local checks; the deployment preparation writes literal quotes in that attribute and excludes Expo scripts from Rocket Loader rewriting. This does not alter proxy access logs or disable its account-wide settings; inspect the final deployed page as well as the source bundle. Physical screenshots are private in `/private/tmp/trailsafe-phone-readonly-2026-10-14/`; no transport controls were tapped.
 
 Final signed-main installation again retained the saved-data hash. Physical cold launch with a Hiking URL and process termination succeeded; the new process survived a ten-second readback. Its capture showed another foreground app and was discarded, so physical Hiking appearance is unverified. Daylight/Compass physical screenshots and simulator Hiking drag evidence remain the applicable visual checks. Final delivery receipts and live browser results are recorded on the delivery PRs and in ignored `builds/delivery-0.5.0.json` after publication.
+
+The final live browser log is `/private/tmp/trailsafe-delivered-live-e2e.log`; the final signed installation log is `/private/tmp/trailsafe-phone-delivery-final-main.log`. The development provisioning profile expires October 20, 2026 at 15:14 Pacific. A follow-up readback independently confirmed installed version 0.5.0 (3), but the phone remained locked; evidence stays private in `/private/tmp/trailsafe-phone-followup-2026-10-14/`. No reinstall or data reset is needed to finish the remaining launch/appearance checks.
 
 Physical airplane-mode cold launch after restart, real GPS/permission/staleness, notification delivery/cleanup, voice replay, large text/VoiceOver/TalkBack, sunlight readability and actual production-store diagnostic transmission remain separate acceptance checks. This delivery is a personal preview install and browser preview, not a store submission. Content review is direct in-app review, with no governance registry or expiry subsystem.
 
