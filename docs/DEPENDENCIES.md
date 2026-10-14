@@ -10,6 +10,8 @@ The current Bugsnag Expo wrapper declares only SDK 56/57 support. It is replaced
 
 `npm audit` still reports upstream advisories for braces (latest 3.0.3), node-forge (latest 1.4.0) and an older uuid inside Xcode tooling. The report propagates these through Expo/RN dependency chains. No compatible automatic fix is offered. These are retained rather than forcing incompatible major versions; audit evidence is `/private/tmp/trailsafe-sdk58-audit.json`. An update does not mean the dependency graph has no advisories.
 
+The October 14 [Dependabot update run](https://github.com/delphimon/trailsafe/actions/runs/38600423244) independently confirmed no security update exists for braces 3.0.3 or node-forge 1.4.0. It reported uuid 14.0.0 as the first patched version, blocked by Xcode tooling 3.0.1's `^7.0.3` dependency. This updater failure is separate from the successful application CI on delivered main. The compatible shell-quote 1.12.0 update was included through PR #16.
+
 References:
 
 - https://docs.expo.dev/versions/v58.0.0/

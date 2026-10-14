@@ -1,4 +1,4 @@
-# TrailSafe implementation checkpoint — October 13, 2026
+# TrailSafe implementation checkpoint — October 14, 2026
 
 The application review was implemented with the user's two overrides: remove the water timer entirely, and remove the content-governance capability. Content is reviewed directly in the app before release; citations remain available.
 
@@ -31,3 +31,5 @@ Sources used for content corrections:
 See `VALIDATION.md` for fresh evidence and device limits. The review document describes the original defects and is retained as the implementation rationale. Prototype extraction writes an archival file in `/private/tmp` and does not overwrite app-reviewed content.
 
 Dependency update: Router 58 and the SDK 58 next/beta graph, with React 19.3 and Expo-pinned RN 0.88 RC. Bugsnag’s unsupported Expo wrapper is replaced with its current React Native SDK and channel-gated native setup. See `DEPENDENCIES.md` for compatibility pins and outstanding upstream advisories.
+
+Delivered version 0.5.0 (3) from main after PRs #15–#18. Surge's live receipt matched application commit `0e246e811d66488c2c8f25a4b7ddaf712431312d`; all 18 live browser checks passed. The signed standalone iPhone replacement retained the saved-data hash. Export preparation now includes bundled fonts and preserves Expo scripts/CSP through the custom-domain proxy; CI tests that prepared output. Merged branches were removed. See `VALIDATION.md` for the remaining physical-device checks and the development-profile expiry.
