@@ -73,6 +73,7 @@
   },
   "private": true,
   "overrides": {
-    "react-native": "$react-native"
+    "react-native": "$react-native",
+    "react-native-worklets": "$react-native-worklets"
   }
 }

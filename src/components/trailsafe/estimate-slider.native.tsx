@@ -21,7 +21,22 @@ export function EstimateSlider({
     <View style={{ marginVertical: 8 }}>
       <T>{label}</T>
       <Slider
+        accessible
         accessibilityLabel={label.split(":")[0]}
+        accessibilityRole="adjustable"
+        accessibilityValue={{
+          min,
+          max,
+          now: value,
+          text: label.split(": ")[1],
+        }}
+        accessibilityActions={[{ name: "increment" }, { name: "decrement" }]}
+        onAccessibilityAction={({ nativeEvent }) => {
+          if (nativeEvent.actionName === "increment")
+            onChange(Math.min(max, value + step));
+          if (nativeEvent.actionName === "decrement")
+            onChange(Math.max(min, value - step));
+        }}
         value={value}
         minimumValue={min}
         maximumValue={max}

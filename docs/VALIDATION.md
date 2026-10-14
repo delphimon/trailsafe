@@ -13,7 +13,7 @@ Current candidate: TrailSafe 0.5.0 (native build 3), SDK 58 next/beta, Router 58
 | iOS simulator Release compilation | Passed | Version 0.5.0 (3), preview channel, embedded JS/assets, iPhone 17 Pro Max target |
 | Signed iPhone Release compilation | Passed | Version 0.5.0 (3), preview channel, code signature verified, existing bundle identifier/team |
 | Native simulator UI | In progress | Native controls and above-fold layout are reverified for this revision; simulator GPS service recovery/fallback is kept separate from app behavior |
-| GitHub CI | Awaiting current candidate push | Prior SDK 57 run is not acceptance for this dependency graph |
+| GitHub CI | Rerun after lockfile correction | Initial SDK 58 jobs stopped at install due npm-version worklets peer resolution; corrected using npm 10 and a clean-install dry run |
 | Surge and physical-phone delivery | Pending merge | Replacement installation will preserve the app container and compare private saved-data hashes |
 
 Browser tests use fictional data, mocked location/share/clipboard and intercepted `window.open`; the one-tap SMS test captures the URL and sends nothing. Native smoke tests never tap call/SMS transports. No actual 911 call or text is made.
