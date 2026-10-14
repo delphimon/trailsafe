@@ -59,6 +59,9 @@ jobs:
           EXPO_NO_TELEMETRY: '1'
         run: npx expo export --platform web
 
+      - name: Prepare Browser Deployment
+        run: node scripts/prepare-surge.cjs
+
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
 
