@@ -11,6 +11,12 @@ export default function Root({ children }: { children: React.ReactNode }) {
     <html {...htmlAttributes} lang="en">
       <head>
         <meta charSet="utf-8" />
+        {process.env.NODE_ENV === "production" && (
+          <meta
+            httpEquiv="Content-Security-Policy"
+            content="connect-src 'none'; script-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; object-src 'none'; base-uri 'self'"
+          />
+        )}
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta
           name="viewport"
