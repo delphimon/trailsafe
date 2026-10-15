@@ -1,5 +1,28 @@
 # Validation — October 14, 2026
 
+## Review update: 0.5.1 (native build 4)
+
+The October 14 follow-up fixes reused-project native diagnostic cleanup, unsaved Plan/Profile navigation, trip-zone date shortcuts, unnecessary Hiking GPS, and checklist association. Native testing also found a retained scroll offset when entering Edit; both editor and preview now open at the top. Six primary destinations and one-app-tap Text 911 remain intact.
+
+| Check | Result | Scope |
+| --- | --- | --- |
+| Unit tests | 103 passed | New channel-transition/legacy-block tests on both platforms, zoned midnight/year/DST cases, checklist identity; previous domain coverage retained |
+| TypeScript / ESLint | Passed / zero errors, nine existing warnings | Final app and regression source |
+| All-platform Expo export | Passed | Final editor-scroll correction included; 17 static routes |
+| Browser, final prepared export | 23 passed, 30.8 seconds | Browser Back, keep/discard/save/re-edit, profile persistence, trip-zone shortcuts, Hiking zero-watch/Compass cleanup, first-check reload, editor visible without scrolling; prior offline/transport checks retained |
+| iOS simulator Release | Compiled 0.5.1 (4), preview | Existing SDK 58 / Router 58 / RN 0.88 RC graph |
+| Native simulator UI | Eight passed, zero failures, 259.872 seconds | iPhone 17 Pro Max / iOS 26.2, final app: six destinations, guide, real sliders and quick choices, tool answers above fold, coordinates, date picker/water guidance, zoned shortcuts, checklist restart persistence, both editor guards and durable-save navigation, immediate top-of-form visibility |
+| Signed iPhone Release | Compiled 0.5.1 (4), preview; signature verified | Same bundle identifier and signing team; replacement install preserves existing data |
+| Native production transition | Passed | Actual Expo mods on both source fixtures plus production mod compilation on a private temporary generated iOS project; no retained preview initializer/stage |
+
+[PR #21](https://github.com/delphimon/trailsafe/pull/21) records final CI, merge and deployment receipts. Surge publication and the signed iPhone replacement installation follow merge; exact main-commit receipt, live browser results, fresh private saved-data hash comparison and final cold-launch evidence are recorded there and in ignored `builds/delivery-0.5.1.json`. A production store artifact is not part of this personal preview delivery.
+
+Logs: `/private/tmp/trailsafe-review-fixes-{tests-final,typecheck-final,lint-final,export-scroll,e2e-scroll,simulator-scroll-build,phone-final-build}.log`. Native result: `/private/tmp/trailsafe-review-fixes-native-final-2026-10-14.xcresult`; readable screenshots/hierarchies: `/private/tmp/trailsafe-review-fixes-native-final-evidence/`. The initial native run found the scroll defect; XCTest bulk text injection also dropped letters, so the runner waits for the keyboard and types individual events with strict exact-value assertions. Both focused form cases and the complete final eight-case run passed. No native transport control was tapped and all fixture data stayed on the disposable simulator.
+
+Physical airplane-mode launch after restart, real permission/accuracy/staleness, notification delivery/cleanup, voice replay, large text/VoiceOver/TalkBack, sunlight readability and actual production-store diagnostic transmission remain separate hands-on acceptance checks. The previous delivery details below are historical; they do not substitute for the current receipts linked above.
+
+## Previous 0.5.0 delivery
+
 Delivered application: TrailSafe 0.5.0 (native build 3), SDK 58 next/beta, Router 58, React Native 0.88 RC. Application delivery commit: `0e246e811d66488c2c8f25a4b7ddaf712431312d`, after PRs #15–#18. Earlier SDK 57 evidence is historical and does not establish native acceptance for this update.
 
 | Check | Result | Scope |

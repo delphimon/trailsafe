@@ -149,14 +149,37 @@ export function addDays(dateStr: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-/**
- * Returns the current time rounded up to the next 5-minute interval in 24-hour HH:MM format.
- */
-export function currentTimeRounded(now = new Date()): string {
-  const mins = Math.ceil(now.getMinutes() / 5) * 5;
-  const d = new Date(now);
-  d.setMinutes(mins);
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+/** Calendar date and wall time in the trip's zone; invalid zones have no fallback. */
+export function dateTimeInZone(
+  timeZone: string,
+  now = new Date(),
+): { date: string; time: string } | null {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(now);
+    const part = (type: string) => parts.find((p) => p.type === type)!.value;
+    return {
+      date: `${part("year")}-${part("month")}-${part("day")}`,
+      time: `${part("hour")}:${part("minute")}`,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Round the instant up, then convert both date and time, including midnight/DST. */
+export function roundedDateTimeInZone(timeZone: string, now = new Date()) {
+  return dateTimeInZone(
+    timeZone,
+    new Date(Math.ceil(now.getTime() / 300000) * 300000),
+  );
 }
 
 /**

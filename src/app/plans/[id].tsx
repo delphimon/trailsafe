@@ -1,11 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
-import { View, Platform, BackHandler } from "react-native";
-import {
-  router,
-  useLocalSearchParams,
-  useFocusEffect,
-  Stack,
-} from "expo-router";
+import { useState, useCallback } from "react";
+import { View, Platform } from "react-native";
+import { router, useLocalSearchParams, Stack } from "expo-router";
 import {
   ChevronDown,
   ChevronUp,
@@ -24,13 +19,15 @@ import {
   addDays,
   buildPlanText,
   buildSafeReturnDraft,
-  currentTimeRounded,
+  dateTimeInZone,
+  roundedDateTimeInZone,
   localDate,
   newPlan,
   saveTrip,
   suggestOverdue,
   validatePlan,
 } from "@/lib/plans";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { exportPlan } from "@/lib/export-plan";
 import {
   Button,
@@ -97,7 +94,7 @@ function PlanEditor({
 }) {
   const { C, s } = useThemeStyles();
   const { data, changeTrip, reminderStatus } = useStore();
-  const { run, copy, share, notify, setDialog, setNavigationGuard } = useApp();
+  const { run, copy, share, notify, setDialog } = useApp();
   const [plan, setPlan] = useState(initial),
     [editing, setEditing] = useState(editInitially),
     [additional, setAdditional] = useState(false),
@@ -105,50 +102,40 @@ function PlanEditor({
     [busy, setBusy] = useState(false);
   const savedPlan = data.plans.find((p) => p.id === plan.id) ?? initial;
   const dirty = editing && JSON.stringify(plan) !== JSON.stringify(savedPlan);
-  const confirmLeave = useCallback(
-    (leave: () => void) => {
-      if (!dirty) {
-        leave();
-        return;
-      }
-      setDialog({
-        title: "Discard unsaved changes?",
-        message: "Save your plan before leaving to keep these changes.",
-        confirmLabel: "Discard changes",
-        cancelLabel: "Keep editing",
-        onConfirm: () => {
-          setPlan(savedPlan);
-          leave();
-        },
-      });
-    },
-    [dirty, setDialog, savedPlan],
+  const discard = useCallback(() => setPlan(savedPlan), [savedPlan]);
+  const allowNavigation = useUnsavedChanges(
+    dirty,
+    discard,
+    "Save your plan before leaving to keep these changes.",
   );
-  useFocusEffect(
-    useCallback(() => {
-      setNavigationGuard(dirty ? confirmLeave : null);
-      const back = BackHandler.addEventListener("hardwareBackPress", () => {
-        if (!dirty) return false;
-        confirmLeave(() =>
-          router.canGoBack() ? router.back() : router.replace("/plans"),
-        );
-        return true;
-      });
-      return () => {
-        setNavigationGuard(null);
-        back.remove();
+  const today = dateTimeInZone(plan.timeZone)?.date;
+  const changeStart = (date: string, time?: string) => {
+    setPlan((p) => {
+      const returnDate =
+        !p.returnDate || p.returnDate < date ? date : p.returnDate;
+      return {
+        ...p,
+        date,
+        startTime: time ?? p.startTime,
+        returnDate,
+        overdueDate:
+          !p.overdueDate || p.overdueDate < returnDate
+            ? returnDate
+            : p.overdueDate,
       };
-    }, [dirty, confirmLeave, setNavigationGuard]),
-  );
-  useEffect(() => {
-    if (Platform.OS !== "web" || !dirty) return;
-    const warn = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
+    });
+    setErrors([]);
+  };
+  const applyDateShortcut = (days: number, now = false) => {
+    const stamp = now
+      ? roundedDateTimeInZone(plan.timeZone)
+      : dateTimeInZone(plan.timeZone);
+    if (!stamp) {
+      setErrors(["Enter a valid IANA time zone before using date shortcuts."]);
+      return;
+    }
+    changeStart(addDays(stamp.date, days), now ? stamp.time : undefined);
+  };
   const sendSafeReturn = async () => {
     const text = buildSafeReturnDraft(plan);
     const targetPhone = plan.trustedContactPhone
@@ -171,6 +158,7 @@ function PlanEditor({
   const save = async (status = plan.status): Promise<TripPlan | null> => {
     const saved = await changeTrip((plans) => saveTrip(plan, plans, status));
     setPlan(saved);
+    allowNavigation();
     return saved;
   };
   const action = (fn: () => Promise<unknown>) =>
@@ -236,6 +224,7 @@ function PlanEditor({
   );
   return (
     <Screen
+      key={editing ? "editor" : "preview"}
       title={
         isNew
           ? "New Trip Plan"
@@ -482,30 +471,18 @@ function PlanEditor({
             <View style={[s.wrap, { marginTop: -6, marginBottom: 16 }]}>
               <Chip
                 label="Today"
-                selected={plan.date === localDate()}
-                onPress={() => {
-                  const today = localDate();
-                  change("date", today);
-                  if (!plan.returnDate || plan.returnDate < today) {
-                    change("returnDate", today);
-                  }
-                }}
+                selected={plan.date === today}
+                onPress={() => applyDateShortcut(0)}
               />
               <Chip
                 label="Tomorrow"
-                selected={plan.date === addDays(localDate(), 1)}
-                onPress={() => {
-                  const tomorrow = addDays(localDate(), 1);
-                  change("date", tomorrow);
-                  if (!plan.returnDate || plan.returnDate < tomorrow) {
-                    change("returnDate", tomorrow);
-                  }
-                }}
+                selected={!!today && plan.date === addDays(today, 1)}
+                onPress={() => applyDateShortcut(1)}
               />
               <Chip
                 label="Now"
                 selected={false}
-                onPress={() => change("startTime", currentTimeRounded())}
+                onPress={() => applyDateShortcut(0, true)}
               />
               <Chip
                 label="07:00"

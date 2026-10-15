@@ -142,6 +142,166 @@ final class TrailSafeSmoke: XCTestCase {
         // Never tap call/text transports in a native smoke test. Domain tests inject inert handlers.
         XCTAssertFalse(app.buttons["Practice Emergency Mode"].exists)
     }
+
+    func testUnsavedPlanNavigationAndDurableSave() {
+        let app = launch()
+        openCurrentEditor(app)
+        let title = app.textFields["Trip title / destination"]
+        enter("Smoke current hike UNSAVED", in: title, app)
+        element("Guide", app).tap()
+        XCTAssertTrue(app.buttons["Keep editing"].waitForExistence(timeout: 10))
+        capture("ios-plan-unsaved-tab-guard", app)
+        app.buttons["Keep editing"].tap()
+        XCTAssertTrue(app.staticTexts["Edit Trip Plan"].waitForExistence(timeout: 10))
+        XCTAssertEqual(title.value as? String, "Smoke current hike UNSAVED")
+
+        app.buttons["Back"].tap()
+        XCTAssertTrue(app.buttons["Discard changes"].waitForExistence(timeout: 10))
+        capture("ios-plan-unsaved-back-guard", app)
+        app.buttons["Discard changes"].tap()
+        XCTAssertTrue(app.staticTexts["TrailSafe"].waitForExistence(timeout: 10))
+        openCurrentEditor(app)
+        XCTAssertEqual(title.value as? String, "Smoke current hike")
+        enter("Simulator saved hiker", in: app.textFields["Your name"], app)
+        scrollTo(app.buttons["Save and preview"], app)
+        app.buttons["Save and preview"].tap()
+        XCTAssertTrue(app.staticTexts["Your plan, ready to share"].waitForExistence(timeout: 10))
+        element("Trips", app).tap()
+        XCTAssertTrue(app.staticTexts["Current, upcoming and past trip plans"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["Keep editing"].exists, "Durably saved edits must not warn on navigation")
+        element("Home", app).tap()
+        openCurrentEditor(app)
+        XCTAssertEqual(app.textFields["Your name"].value as? String, "Simulator saved hiker")
+        app.buttons["Back"].tap()
+        XCTAssertTrue(app.staticTexts["TrailSafe"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["Keep editing"].exists)
+        capture("ios-plan-saved-navigation", app)
+    }
+
+    func testUnsavedProfileNavigationAndDurableSave() {
+        let app = launch()
+        openProfile(app)
+        let name = app.textFields["Your name"]
+        let original = name.value as? String ?? ""
+        enter("Simulator unsaved profile", in: name, app)
+        element("Home", app).tap()
+        XCTAssertTrue(app.buttons["Keep editing"].waitForExistence(timeout: 10))
+        capture("ios-profile-unsaved-tab-guard", app)
+        app.buttons["Keep editing"].tap()
+        XCTAssertTrue(app.staticTexts["My Profile"].waitForExistence(timeout: 10))
+        XCTAssertEqual(name.value as? String, "Simulator unsaved profile")
+        app.buttons["Back"].tap()
+        XCTAssertTrue(app.buttons["Discard changes"].waitForExistence(timeout: 10))
+        capture("ios-profile-unsaved-back-guard", app)
+        app.buttons["Discard changes"].tap()
+        XCTAssertTrue(app.staticTexts["Current, upcoming and past trip plans"].waitForExistence(timeout: 10))
+        openProfile(app)
+        XCTAssertEqual(name.value as? String, original)
+        enter("Simulator saved profile", in: name, app)
+        scrollTo(app.buttons["Save Profile"], app)
+        app.buttons["Save Profile"].tap()
+        XCTAssertTrue(app.staticTexts["Profile saved on this device"].waitForExistence(timeout: 10))
+        element("Home", app).tap()
+        XCTAssertTrue(app.staticTexts["TrailSafe"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["Keep editing"].exists, "Saved profile must not warn on navigation")
+        openProfile(app)
+        XCTAssertEqual(name.value as? String, "Simulator saved profile")
+        app.buttons["Back"].tap()
+        XCTAssertTrue(app.staticTexts["Current, upcoming and past trip plans"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["Keep editing"].exists)
+        capture("ios-profile-saved-navigation", app)
+    }
+
+    func testTripDateShortcutsUseTripTimeZone() {
+        let app = launch()
+        element("Trips", app).tap()
+        app.buttons["New Trip Plan"].tap()
+        XCTAssertTrue(app.staticTexts["New Trip Plan"].waitForExistence(timeout: 10))
+        let zone = "Pacific/Kiritimati"
+        enter(zone, in: app.textFields["Trip time zone"], app)
+        scrollTo(app.buttons["Today"], app)
+        app.buttons["Today"].tap()
+        let date = app.buttons.matching(NSPredicate(format: "label MATCHES %@", "[0-9]{4}-[0-9]{2}-[0-9]{2}")).firstMatch
+        XCTAssertEqual(date.label, dateString(Date(), in: zone))
+        app.buttons.matching(NSPredicate(format: "label == %@", "Tomorrow")).firstMatch.tap()
+        XCTAssertEqual(date.label, dateString(Date().addingTimeInterval(86400), in: zone))
+        let before = roundedStamp(in: zone)
+        app.buttons["Now"].tap()
+        let after = roundedStamp(in: zone)
+        XCTAssertTrue([before.date, after.date].contains(date.label))
+        let time = app.buttons.matching(NSPredicate(format: "label MATCHES %@", "[0-9]{2}:[0-9]{2}")).firstMatch
+        XCTAssertTrue([before.time, after.time].contains(time.label), "Now must use the trip zone, not the simulator zone")
+        capture("ios-trip-zoned-shortcuts", app)
+        element("Home", app).tap()
+        XCTAssertTrue(app.buttons["Discard changes"].waitForExistence(timeout: 10))
+        app.buttons["Discard changes"].tap()
+        XCTAssertTrue(app.staticTexts["TrailSafe"].waitForExistence(timeout: 10))
+    }
+
+    func testChecklistAssociatesOnFirstCheck() {
+        let app = launch()
+        element("Prepare", app).tap()
+        XCTAssertFalse(app.staticTexts["Checklist may be from a previous trip"].exists)
+        let water = element("Water", app)
+        scrollTo(water, app)
+        water.tap()
+        let progress = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "1/10")).firstMatch
+        XCTAssertTrue(progress.waitForExistence(timeout: 10))
+        XCTAssertFalse(app.staticTexts["Checklist may be from a previous trip"].exists, "First check must associate with the current trip")
+        capture("ios-checklist-first-check", app)
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(element("Prepare", app).waitForExistence(timeout: 20))
+        element("Prepare", app).tap()
+        XCTAssertTrue(progress.waitForExistence(timeout: 10))
+        XCTAssertFalse(app.staticTexts["Checklist may be from a previous trip"].exists, "Checklist association must persist across launch")
+        capture("ios-checklist-persisted-association", app)
+    }
+
+    private func openCurrentEditor(_ app: XCUIApplication) {
+        XCTAssertTrue(app.buttons["Open current trip"].waitForExistence(timeout: 10))
+        app.buttons["Open current trip"].tap()
+        scrollTo(app.buttons["Edit Details"], app)
+        app.buttons["Edit Details"].tap()
+        XCTAssertTrue(app.textFields["Trip title / destination"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.textFields["Trip title / destination"].isHittable, "Edit must open at the top of the form")
+        capture("ios-plan-editor-opens-at-top", app)
+    }
+    private func openProfile(_ app: XCUIApplication) {
+        if !app.staticTexts["Current, upcoming and past trip plans"].exists { element("Trips", app).tap() }
+        let profile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "My reusable profile")).firstMatch
+        scrollTo(profile, app)
+        profile.tap()
+        XCTAssertTrue(app.textFields["Your name"].waitForExistence(timeout: 10))
+    }
+    private func enter(_ value: String, in field: XCUIElement, _ app: XCUIApplication) {
+        scrollTo(field, app)
+        field.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10))
+        let existing = field.value as? String ?? ""
+        if !existing.isEmpty { field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: existing.count)) }
+        // Feed native key events at human speed so controlled TextInput updates
+        // finish between characters instead of racing XCTest's bulk injection.
+        for character in value { field.typeText(String(character)) }
+        field.typeText("\n")
+        XCTAssertEqual(field.value as? String, value)
+    }
+    private func dateString(_ date: Date, in zone: String) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: zone)
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
+    }
+    private func roundedStamp(in zone: String) -> (date: String, time: String) {
+        let rounded = Date(timeIntervalSince1970: ceil(Date().timeIntervalSince1970 / 300) * 300)
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: zone)
+        formatter.dateFormat = "HH:mm"
+        return (dateString(rounded, in: zone), formatter.string(from: rounded))
+    }
+
     private func launch() -> XCUIApplication {
         let app = XCUIApplication(bundleIdentifier: "com.appliedinteractions.trailsafe")
         app.launch()
@@ -181,7 +341,12 @@ final class TrailSafeSmoke: XCTestCase {
     private func scrollTo(_ target: XCUIElement, _ app: XCUIApplication) {
         for _ in 0..<12 {
             if target.exists && target.isHittable { return }
-            app.scrollViews.firstMatch.swipeUp()
+            let viewport = app.scrollViews.firstMatch
+            if target.exists && target.frame.maxY < viewport.frame.minY {
+                viewport.swipeDown()
+            } else {
+                viewport.swipeUp()
+            }
         }
         capture("ios-scroll-target-missing", app)
         print(app.debugDescription)

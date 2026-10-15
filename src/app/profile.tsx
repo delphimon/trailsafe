@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { Stack } from "expo-router";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { View } from "react-native";
 import { useStore } from "@/state/store";
 import { useApp } from "@/state/app";
@@ -27,16 +29,24 @@ export default function Profile() {
 }
 function ProfileEditor({ initial }: { initial: ProfileData }) {
   const { C, s } = useThemeStyles();
-  const { update, ready, error } = useStore();
+  const { data, update, ready, error } = useStore();
   const { run, notify, setDialog } = useApp();
   const [profile, setProfile] = useState(initial);
   const [busy, setBusy] = useState(false);
+  const dirty = JSON.stringify(profile) !== JSON.stringify(data.profile);
+  const discard = useCallback(() => setProfile(data.profile), [data.profile]);
+  useUnsavedChanges(
+    dirty,
+    discard,
+    "Save your profile before leaving to keep these changes.",
+  );
   return (
     <Screen
       title="My Profile"
       subtitle="Reusable details, saved on your device"
       back
     >
+      <Stack.Screen options={{ gestureEnabled: !dirty }} />
       <Note>
         Used to prefill new plans. Existing plans keep their original details.
         All fields are optional.
@@ -58,12 +68,16 @@ function ProfileEditor({ initial }: { initial: ProfileData }) {
           <Field
             label="Contact name"
             value={profile.defaultTrustedContactName}
-            onChangeText={(v) => setProfile((p) => ({ ...p, defaultTrustedContactName: v }))}
+            onChangeText={(v) =>
+              setProfile((p) => ({ ...p, defaultTrustedContactName: v }))
+            }
           />
           <Field
             label="Contact phone"
             value={profile.defaultTrustedContactPhone}
-            onChangeText={(v) => setProfile((p) => ({ ...p, defaultTrustedContactPhone: v }))}
+            onChangeText={(v) =>
+              setProfile((p) => ({ ...p, defaultTrustedContactPhone: v }))
+            }
             keyboardType="phone-pad"
           />
         </View>
