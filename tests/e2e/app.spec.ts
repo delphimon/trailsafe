@@ -560,7 +560,7 @@ test("Text 911 reaches the intercepted system handoff in one click", async ({
     page.getByRole("textbox", { name: "Emergency message" }),
   ).toHaveCount(0);
 });
-test("Home exposes Trips separately from the packing checklist", async ({
+test("Home exposes Plan separately from the packing checklist", async ({
   page,
 }) => {
   await seedPlan(page, "current");
@@ -569,7 +569,7 @@ test("Home exposes Trips separately from the packing checklist", async ({
   await expect(
     page.getByRole("button", { name: "Open current trip", exact: true }),
   ).toBeVisible();
-  await page.getByRole("tab", { name: "Trips", exact: true }).click();
+  await page.getByRole("tab", { name: "Plan", exact: true }).click();
   for (const name of ["Current", "Upcoming", "Past"])
     await expect(
       page.getByRole("heading", { name, exact: true }),
@@ -684,7 +684,7 @@ test("navigation protects unsaved edits", async ({ page }) => {
   await page
     .getByRole("textbox", { name: "Trip title / destination" })
     .fill("Unsaved trip");
-  await page.getByRole("tab", { name: "Prepare", exact: true }).click();
+  await page.getByRole("button", { name: "About", exact: true }).click();
   await expect(
     page.getByText("Discard unsaved changes?", { exact: true }),
   ).toBeVisible();
@@ -740,7 +740,7 @@ test("browser Back protects unsaved plans, and saving bypasses the warning", asy
   await page.getByRole("button", { name: "Edit Details", exact: true }).click();
   await expect(title).toBeInViewport();
   await title.fill("New unsaved edit");
-  await page.getByRole("tab", { name: "Home", exact: true }).click();
+  await page.getByRole("button", { name: "Home", exact: true }).click();
   await expect(
     page.getByText("Discard unsaved changes?", { exact: true }),
   ).toBeVisible();
@@ -756,7 +756,7 @@ test("profile edits are protected on tabs and browser Back, with no warning afte
   await page.getByRole("button", { name: /My reusable profile/ }).click();
   const name = page.getByRole("textbox", { name: "Your name", exact: true });
   await name.fill("Unsaved profile");
-  await page.getByRole("tab", { name: "Home", exact: true }).click();
+  await page.getByRole("button", { name: "Home", exact: true }).click();
   await page.getByRole("button", { name: "Keep editing", exact: true }).click();
   await expect(name).toHaveValue("Unsaved profile");
   await page.goBack();
@@ -766,18 +766,18 @@ test("profile edits are protected on tabs and browser Back, with no warning afte
   await expect(
     page.getByText("Profile saved on this device", { exact: true }),
   ).toBeVisible();
-  await page.getByRole("tab", { name: "Home", exact: true }).click();
+  await page.getByRole("button", { name: "Home", exact: true }).click();
   await expect(
     page.getByText("Discard unsaved changes?", { exact: true }),
   ).toHaveCount(0);
-  await page.getByRole("tab", { name: "Trips", exact: true }).click();
+  await page.getByRole("tab", { name: "Plan", exact: true }).click();
   await page.getByRole("button", { name: /My reusable profile/ }).click();
   await name.fill("Discard this profile edit");
-  await page.getByRole("tab", { name: "Home", exact: true }).click();
+  await page.getByRole("button", { name: "Home", exact: true }).click();
   await page
     .getByRole("button", { name: "Discard changes", exact: true })
     .click();
-  await page.getByRole("tab", { name: "Trips", exact: true }).click();
+  await page.getByRole("tab", { name: "Plan", exact: true }).click();
   await page.getByRole("button", { name: /My reusable profile/ }).click();
   await expect(name).toHaveValue("Unsaved profile");
 });
@@ -857,4 +857,63 @@ test("first packing check for the current trip stays current after reload", asyn
   await expect(
     page.getByText("Checklist may be from a previous trip", { exact: true }),
   ).toHaveCount(0);
+});
+
+test("five roomy tabs keep Home and About beside every tab title", async ({
+  page,
+}) => {
+  await setupLocation(page);
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.goto("/");
+  await ready(page);
+  await expect(page.getByRole("tab")).toHaveCount(5);
+  await expect(
+    page.getByRole("tab", { name: "Home", exact: true }),
+  ).toHaveCount(0);
+  for (const [name, title] of [
+    ["Plan", "Trip Plans"],
+    ["Prepare", "Prepare"],
+    ["Help", "Need Help?"],
+    ["Guide", "Safety Guide"],
+    ["Tools", "Tools"],
+  ]) {
+    const tab = page.getByRole("tab", { name, exact: true });
+    await tab.click();
+    await expect(tab).toHaveAttribute("aria-selected", "true");
+    const home = page.getByRole("button", { name: "Home", exact: true });
+    const about = page.getByRole("button", { name: "About", exact: true });
+    const heading = page.getByRole("heading", { name: title, exact: true });
+    await expect(heading).toBeVisible();
+    const [homeBox, titleBox, infoBox, tabBox] = await Promise.all([
+      home.boundingBox(),
+      heading.boundingBox(),
+      about.boundingBox(),
+      tab.boundingBox(),
+    ]);
+    expect(homeBox!.width).toBeGreaterThanOrEqual(44);
+    expect(homeBox!.height).toBeGreaterThanOrEqual(44);
+    expect(infoBox!.width).toBeGreaterThanOrEqual(44);
+    expect(infoBox!.height).toBeGreaterThanOrEqual(44);
+    expect(homeBox!.x + homeBox!.width).toBeLessThanOrEqual(titleBox!.x);
+    expect(infoBox!.x).toBeGreaterThanOrEqual(titleBox!.x + titleBox!.width);
+    expect(tabBox!.width).toBeGreaterThanOrEqual(63);
+    expect(tabBox!.height).toBeGreaterThanOrEqual(56);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(320);
+    await about.click();
+    await expect(
+      page.getByRole("heading", { name: "About", exact: true }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Back", exact: true }).click();
+    await expect(heading).toBeVisible();
+    await home.click();
+    await expect(
+      page.getByRole("heading", { name: "TrailSafe", exact: true }),
+    ).toBeVisible();
+  }
+  await page.getByRole("tab", { name: "Plan", exact: true }).click();
+  await page.screenshot({
+    path: "test-results/screenshots/five-tabs-small.png",
+  });
 });

@@ -6,11 +6,27 @@ import XCTest
 final class TrailSafeSmoke: XCTestCase {
     override func setUp() { continueAfterFailure = false }
 
-    func testSixDestinationsHomeTripsAndBundledGuide() {
+    func testFiveBottomDestinationsHeaderNavigationAndBundledGuide() {
         let app = launch()
         XCTAssertTrue(app.staticTexts["TrailSafe"].waitForExistence(timeout: 20))
-        for tab in ["Home", "Trips", "Prepare", "Help", "Guide", "Tools"] {
-            XCTAssertTrue(element(tab, app).isHittable, "Missing tab: \(tab)")
+        assertBottomDestinations(app)
+        assertHeaderNavigation("TrailSafe", app)
+        for (tab, title) in [("Plan", "Trip Plans"), ("Prepare", "Prepare"), ("Help", "Need Help?"), ("Guide", "Safety Guide"), ("Tools", "Tools")] {
+            element(tab, app).tap()
+            XCTAssertTrue(app.staticTexts[title].waitForExistence(timeout: 10))
+            assertBottomDestinations(app)
+            assertHeaderNavigation(title, app)
+            capture("ios-root-\(tab.lowercased())-header", app)
+            app.buttons["Home"].tap()
+            XCTAssertTrue(app.staticTexts["TrailSafe"].waitForExistence(timeout: 10))
+            element(tab, app).tap()
+            XCTAssertTrue(app.staticTexts[title].waitForExistence(timeout: 10))
+            app.buttons["About"].tap()
+            XCTAssertTrue(app.staticTexts["About TrailSafe"].waitForExistence(timeout: 10))
+            assertHeaderNavigation("About", app)
+            capture("ios-about-from-\(tab.lowercased())", app)
+            app.buttons["Home"].tap()
+            XCTAssertTrue(app.staticTexts["TrailSafe"].waitForExistence(timeout: 10))
         }
         XCTAssertTrue(app.buttons["Open current trip"].waitForExistence(timeout: 10))
         capture("ios-home-current-trip", app)
@@ -154,6 +170,13 @@ final class TrailSafeSmoke: XCTestCase {
         app.buttons["Keep editing"].tap()
         XCTAssertTrue(app.staticTexts["Edit Trip Plan"].waitForExistence(timeout: 10))
         XCTAssertEqual(title.value as? String, "Smoke current hike UNSAVED")
+        for destination in ["Home", "About"] {
+            app.buttons[destination].tap()
+            XCTAssertTrue(app.buttons["Keep editing"].waitForExistence(timeout: 10))
+            capture("ios-plan-unsaved-\(destination.lowercased())-guard", app)
+            app.buttons["Keep editing"].tap()
+            XCTAssertEqual(title.value as? String, "Smoke current hike UNSAVED")
+        }
 
         app.buttons["Back"].tap()
         XCTAssertTrue(app.buttons["Discard changes"].waitForExistence(timeout: 10))
@@ -166,7 +189,7 @@ final class TrailSafeSmoke: XCTestCase {
         scrollTo(app.buttons["Save and preview"], app)
         app.buttons["Save and preview"].tap()
         XCTAssertTrue(app.staticTexts["Your plan, ready to share"].waitForExistence(timeout: 10))
-        element("Trips", app).tap()
+        element("Plan", app).tap()
         XCTAssertTrue(app.staticTexts["Current, upcoming and past trip plans"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.buttons["Keep editing"].exists, "Durably saved edits must not warn on navigation")
         element("Home", app).tap()
@@ -186,9 +209,14 @@ final class TrailSafeSmoke: XCTestCase {
         enter("Simulator unsaved profile", in: name, app)
         element("Home", app).tap()
         XCTAssertTrue(app.buttons["Keep editing"].waitForExistence(timeout: 10))
-        capture("ios-profile-unsaved-tab-guard", app)
+        capture("ios-profile-unsaved-home-guard", app)
         app.buttons["Keep editing"].tap()
         XCTAssertTrue(app.staticTexts["My Profile"].waitForExistence(timeout: 10))
+        XCTAssertEqual(name.value as? String, "Simulator unsaved profile")
+        app.buttons["About"].tap()
+        XCTAssertTrue(app.buttons["Keep editing"].waitForExistence(timeout: 10))
+        capture("ios-profile-unsaved-about-guard", app)
+        app.buttons["Keep editing"].tap()
         XCTAssertEqual(name.value as? String, "Simulator unsaved profile")
         app.buttons["Back"].tap()
         XCTAssertTrue(app.buttons["Discard changes"].waitForExistence(timeout: 10))
@@ -214,7 +242,7 @@ final class TrailSafeSmoke: XCTestCase {
 
     func testTripDateShortcutsUseTripTimeZone() {
         let app = launch()
-        element("Trips", app).tap()
+        element("Plan", app).tap()
         app.buttons["New Trip Plan"].tap()
         XCTAssertTrue(app.staticTexts["New Trip Plan"].waitForExistence(timeout: 10))
         let zone = "Pacific/Kiritimati"
@@ -268,7 +296,7 @@ final class TrailSafeSmoke: XCTestCase {
         capture("ios-plan-editor-opens-at-top", app)
     }
     private func openProfile(_ app: XCUIApplication) {
-        if !app.staticTexts["Current, upcoming and past trip plans"].exists { element("Trips", app).tap() }
+        if !app.staticTexts["Current, upcoming and past trip plans"].exists { element("Plan", app).tap() }
         let profile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "My reusable profile")).firstMatch
         scrollTo(profile, app)
         profile.tap()
@@ -305,8 +333,37 @@ final class TrailSafeSmoke: XCTestCase {
     private func launch() -> XCUIApplication {
         let app = XCUIApplication(bundleIdentifier: "com.appliedinteractions.trailsafe")
         app.launch()
-        XCTAssertTrue(element("Home", app).waitForExistence(timeout: 20))
+        XCTAssertTrue(app.buttons["Home"].waitForExistence(timeout: 20))
+        app.buttons["Home"].tap()
+        XCTAssertTrue(app.staticTexts["TrailSafe"].waitForExistence(timeout: 10))
         return app
+    }
+    private func assertBottomDestinations(_ app: XCUIApplication) {
+        let labels = ["Plan", "Prepare", "Help", "Guide", "Tools"]
+        let baseline = app.otherElements.matching(NSPredicate(format: "label == %@", "Plan")).firstMatch.frame.minY
+        XCTAssertGreaterThan(baseline, app.frame.height * 0.75, "Plan belongs in the bottom bar")
+        for label in labels {
+            // Root headings repeat Prepare/Tools labels; native tab wrappers are Other.
+            let tab = app.otherElements.matching(NSPredicate(format: "label == %@", label)).firstMatch
+            XCTAssertTrue(tab.isHittable, "Missing bottom tab: \(label)")
+            XCTAssertEqual(tab.frame.minY, baseline, accuracy: 2, "Tabs must share the bottom bar")
+        }
+        XCTAssertFalse(element("Trips", app).exists)
+        XCTAssertLessThan(app.buttons["Home"].frame.maxY, baseline, "Home belongs in the header")
+    }
+    private func assertHeaderNavigation(_ title: String, _ app: XCUIApplication) {
+        let home = app.buttons["Home"]
+        let about = app.buttons["About"]
+        let heading = app.staticTexts[title].firstMatch
+        XCTAssertTrue(home.isHittable)
+        XCTAssertTrue(about.isHittable)
+        for button in [home, about] {
+            XCTAssertGreaterThanOrEqual(button.frame.width, 44)
+            XCTAssertGreaterThanOrEqual(button.frame.height, 44)
+        }
+        XCTAssertLessThanOrEqual(home.frame.maxX, heading.frame.minX)
+        XCTAssertLessThanOrEqual(heading.frame.maxX, about.frame.minX)
+        XCTAssertEqual(home.frame.midY, about.frame.midY, accuracy: 2)
     }
     private func element(_ label: String, _ app: XCUIApplication) -> XCUIElement {
         app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
@@ -322,7 +379,7 @@ final class TrailSafeSmoke: XCTestCase {
     private func assertAboveFold(_ target: XCUIElement, _ app: XCUIApplication) {
         XCTAssertTrue(target.isHittable, "Result must be visible without scrolling")
         XCTAssertGreaterThan(target.frame.height, 0)
-        XCTAssertLessThanOrEqual(target.frame.maxY, element("Home", app).frame.minY, "Result must fit above the bottom tabs")
+        XCTAssertLessThanOrEqual(target.frame.maxY, element("Plan", app).frame.minY, "Result must fit above the bottom tabs")
     }
     private func dragSlider(_ control: XCUIElement, minimum: Double, maximum: Double, to target: Double) {
         // Fabric exposes the named adjustable wrapper as Other in XCTest. Derive

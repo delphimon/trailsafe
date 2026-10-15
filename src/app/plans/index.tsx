@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 import { router } from "expo-router";
-import { ClipboardList, Plus, UserRound } from "lucide-react-native";
+import { Backpack, Plus, UserRound } from "lucide-react-native";
 import { useStore } from "@/state/store";
 import { useApp } from "@/state/app";
 import {
@@ -35,7 +35,7 @@ export default function Plans() {
     return () => clearInterval(timer);
   }, []);
   return (
-    <Screen title="Trips" subtitle="Current, upcoming and past trip plans">
+    <Screen title="Trip Plans" subtitle="Current, upcoming and past trip plans">
       <Button
         label="New Trip Plan"
         icon={Plus}
@@ -70,7 +70,7 @@ export default function Plans() {
       )}
       {ready && !data.plans.length && (
         <View style={{ alignItems: "center", paddingVertical: 40, gap: 16 }}>
-          <ClipboardList size={44} color="#859481" />
+          <Backpack size={44} color="#859481" />
           <Heading>No trip plans yet</Heading>
           <T style={{ textAlign: "center", color: C.muted }}>
             Create one before you head out.{"\n"}A little information can make a

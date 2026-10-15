@@ -1,5 +1,13 @@
 # Validation — October 14, 2026
 
+## Navigation update: 0.5.2 (native build 5)
+
+Five bottom tabs replace the previous six: Plan (backpack), Prepare (clipboard checklist), Help, Guide and Tools. Icons are 24 points, labels 12 points, and each tab has a minimum 56-point height. Home sits to the left of the shared page title and Info/About sits on the right, each with a minimum 44-by-44 touch target. The existing Home page, trip groups and deep links remain available. Header navigation uses the same unsaved-edit guard as tabs and Back.
+
+103 unit tests, TypeScript and all-platform export pass; lint has zero errors and nine existing warnings. All 24 local browser checks pass, including a 320-pixel layout check for five tabs, Home/Info placement and targets, active tab state, header navigation from every primary destination, and unsaved edits through the new header actions. All four targeted native checks passed on the 0.5.2 (5) iPhone 17 Pro Max / iOS 26.2 simulator: destination/header navigation, tool answers/sliders, and unsaved Plan/Profile navigation. The signed iPhone Release build also passed. Native logs and screenshots are retained in `/private/tmp/trailsafe-five-tabs-native-run.log`, `/private/tmp/trailsafe-five-tabs-native-2026-10-14.xcresult` and `/private/tmp/trailsafe-five-tabs-native-evidence/`. Final CI and delivery receipts are recorded on the navigation PR and in ignored `builds/delivery-0.5.2.json`.
+
+The sections below preserve earlier release evidence and do not establish validation of this navigation update. Physical/store acceptance limits remain as previously listed.
+
 ## Review update: 0.5.1 (native build 4)
 
 The October 14 follow-up fixes reused-project native diagnostic cleanup, unsaved Plan/Profile navigation, trip-zone date shortcuts, unnecessary Hiking GPS, and checklist association. Native testing also found a retained scroll offset when entering Edit; both editor and preview now open at the top. Six primary destinations and one-app-tap Text 911 remain intact.

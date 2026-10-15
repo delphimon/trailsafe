@@ -1,6 +1,5 @@
 import { useRouter } from "expo-router";
-import { ClipboardList, Compass, Backpack, Info } from "lucide-react-native";
-import { Pressable } from "react-native";
+import { ClipboardList, Compass, Backpack } from "lucide-react-native";
 import { useStore } from "@/state/store";
 import {
   Button,
@@ -10,27 +9,15 @@ import {
   Row,
   Screen,
   T,
-  useThemeStyles,
 } from "@/components/trailsafe/ui";
 export default function Home() {
   const router = useRouter();
-  const { C } = useThemeStyles();
   const { data, ready, error } = useStore();
   const current = data.plans.find((p) => p.status === "current");
   return (
     <Screen
       title="TrailSafe"
       subtitle="Ready for the trail. Help when you need it."
-      rightAction={
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="About"
-          style={{ padding: 12 }}
-          onPress={() => router.push("/about")}
-        >
-          <Info size={24} color={C.headerText} />
-        </Pressable>
-      }
     >
       <Button
         label="NEED HELP?"
@@ -66,7 +53,7 @@ export default function Home() {
               ? `${data.plans.length} saved · Create, review and share`
               : "Loading saved trips…"
           }
-          icon={ClipboardList}
+          icon={Backpack}
           onPress={() => router.navigate("/plans")}
         />
         {error && <Note>{error}</Note>}
@@ -74,7 +61,7 @@ export default function Home() {
       <Row
         title="Pack the essentials"
         subtitle="Ten Essentials and gear for your trip"
-        icon={Backpack}
+        icon={ClipboardList}
         onPress={() => router.navigate("/prepare")}
       />
       <Heading>Useful on the trail</Heading>

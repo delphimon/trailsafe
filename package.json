@@ -1,7 +1,7 @@
 {
   "name": "trailsafe",
   "main": "expo-router/entry",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "dependencies": {
     "@expo-google-fonts/barlow-condensed": "^0.4.1",
     "@expo-google-fonts/public-sans": "^0.4.2",
