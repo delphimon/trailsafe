@@ -264,6 +264,8 @@ final class TrailSafeSmoke: XCTestCase {
         scrollTo(app.buttons["Edit Details"], app)
         app.buttons["Edit Details"].tap()
         XCTAssertTrue(app.textFields["Trip title / destination"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.textFields["Trip title / destination"].isHittable, "Edit must open at the top of the form")
+        capture("ios-plan-editor-opens-at-top", app)
     }
     private func openProfile(_ app: XCUIApplication) {
         if !app.staticTexts["Current, upcoming and past trip plans"].exists { element("Trips", app).tap() }
@@ -274,10 +276,14 @@ final class TrailSafeSmoke: XCTestCase {
     }
     private func enter(_ value: String, in field: XCUIElement, _ app: XCUIApplication) {
         scrollTo(field, app)
-        field.tap()
+        field.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10))
         let existing = field.value as? String ?? ""
         if !existing.isEmpty { field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: existing.count)) }
-        field.typeText(value + "\n")
+        // Feed native key events at human speed so controlled TextInput updates
+        // finish between characters instead of racing XCTest's bulk injection.
+        for character in value { field.typeText(String(character)) }
+        field.typeText("\n")
         XCTAssertEqual(field.value as? String, value)
     }
     private func dateString(_ date: Date, in zone: String) -> String {
@@ -288,11 +294,7 @@ final class TrailSafeSmoke: XCTestCase {
         return formatter.string(from: date)
     }
     private func roundedStamp(in zone: String) -> (date: String, time: String) {
-        let now = Date()
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
-        let minute = calendar.component(.minute, from: now)
-        let rounded = now.addingTimeInterval(TimeInterval((5 - minute % 5) % 5) * 60)
+        let rounded = Date(timeIntervalSince1970: ceil(Date().timeIntervalSince1970 / 300) * 300)
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = TimeZone(identifier: zone)
@@ -339,7 +341,12 @@ final class TrailSafeSmoke: XCTestCase {
     private func scrollTo(_ target: XCUIElement, _ app: XCUIApplication) {
         for _ in 0..<12 {
             if target.exists && target.isHittable { return }
-            app.scrollViews.firstMatch.swipeUp()
+            let viewport = app.scrollViews.firstMatch
+            if target.exists && target.frame.maxY < viewport.frame.minY {
+                viewport.swipeDown()
+            } else {
+                viewport.swipeUp()
+            }
         }
         capture("ios-scroll-target-missing", app)
         print(app.debugDescription)
