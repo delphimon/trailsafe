@@ -738,6 +738,7 @@ test("browser Back protects unsaved plans, and saving bypasses the warning", asy
     page.getByText("Discard unsaved changes?", { exact: true }),
   ).toHaveCount(0);
   await page.getByRole("button", { name: "Edit Details", exact: true }).click();
+  await expect(title).toBeInViewport();
   await title.fill("New unsaved edit");
   await page.getByRole("tab", { name: "Home", exact: true }).click();
   await expect(

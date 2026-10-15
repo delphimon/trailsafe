@@ -10,6 +10,8 @@ The second review found five defects in 0.5.0. The 0.5.1 (4) update resolves the
 | P2: Hiking started a GPS watcher | Request GPS only for Daylight and Compass | Fresh Hiking visit starts zero watches; switching to Compass starts one and returning releases it |
 | P2: first check got a false previous-trip warning | Bind genuinely empty checklist progress to the latest Current trip; retain older nonempty progress identity | Domain identity cases plus browser check/persistence/reload |
 
+Native follow-up also found that switching from a scrolled trip preview into Edit retained the old scroll offset. The form now opens at the top, and a browser viewport assertion covers that transition.
+
 103 unit tests and all 23 browser checks passed. TypeScript and all-platform export passed; lint has zero errors and nine pre-existing warnings. Initial browser attempts used incorrect profile-entry selectors; corrected tests pass without an app change. Browser fixtures remain isolated and transports inert. See VALIDATION.md for final native and delivery evidence and outstanding physical/store acceptance checks.
 
 Optional later polish from this review: common named trip time-zone choices instead of typing an IANA identifier, and stable names for regional/seasonal add-on checklist IDs. Neither requires a new mode or subsystem.

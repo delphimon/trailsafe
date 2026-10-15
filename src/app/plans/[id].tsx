@@ -224,6 +224,7 @@ function PlanEditor({
   );
   return (
     <Screen
+      key={editing ? "editor" : "preview"}
       title={
         isNew
           ? "New Trip Plan"
