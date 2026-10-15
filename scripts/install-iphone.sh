@@ -4,12 +4,29 @@ set -euo pipefail
 # Local signed installs are internal builds. Store builds must explicitly select production.
 export EXPO_PUBLIC_RELEASE_CHANNEL="${EXPO_PUBLIC_RELEASE_CHANNEL:-preview}"
 
-if [[ $# -ne 2 ]]; then
-  echo "Usage: bash scripts/install-iphone.sh <iPhone-UDID> <Apple-team-ID>" >&2
+cd "$(dirname "$0")/.."
+if [[ $# -eq 0 && -f .iphone-device.local.json ]]; then
+  device_defaults=$(node -e '
+    try {
+      const config = JSON.parse(require("node:fs").readFileSync(".iphone-device.local.json", "utf8"));
+      if (!/^[A-Za-z0-9-]+$/.test(config.udid || "") || !/^[A-Z0-9]{10}$/.test(config.teamId || ""))
+        throw new Error("Expected a device udid and 10-character teamId.");
+      process.stdout.write(`${config.udid} ${config.teamId}`);
+    } catch (error) {
+      console.error(`Invalid .iphone-device.local.json: ${error.message}`);
+      process.exit(1);
+    }
+  ')
+  read -r device_id team_id <<< "$device_defaults"
+elif [[ $# -eq 2 ]]; then
+  device_id="$1"
+  team_id="$2"
+else
+  echo "Usage: bash scripts/install-iphone.sh [<iPhone-UDID> <Apple-team-ID>]" >&2
+  echo "No arguments uses .iphone-device.local.json (udid and teamId)." >&2
   exit 2
 fi
 
-cd "$(dirname "$0")/.."
 if [[ ! -d ios/TrailSafe.xcworkspace ]]; then
   echo "Run npx expo prebuild --platform ios before installing." >&2
   exit 1
@@ -24,8 +41,6 @@ if [[ "$native_channel" != "$EXPO_PUBLIC_RELEASE_CHANNEL" ]]; then
   exit 1
 fi
 
-device_id="$1"
-team_id="$2"
 build_dir="$PWD/builds/iphone"
 
 # Release embeds the JavaScript bundle and assets; Metro is not required.

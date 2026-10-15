@@ -50,6 +50,8 @@ Export outside the filesystem sandbox when needed: Expo traverses parent directo
 
 Expo Router bundles its navigation APIs: do not assume a separate `@react-navigation/*` import shares its context. Typed routes may be stale after adding files; regenerate with the installed Expo tooling. Keep Node-tested domain modules free of React Native imports; use lazy imports at native boundaries.
 
-For signed iOS deployment, use `scripts/install-iphone.sh <UDID> <team>` only when deployment is requested. Preserve signing settings and installed user data. Device acceptance includes airplane-mode cold launch, permission/accuracy/staleness, native date pickers, reminders/cleanup, voice cancellation, accessibility and diagnostic policy. No live 911 test calls.
+The default physical iPhone is Andrew's iPhone 18 Pro Max. Use it for deployments and device checks unless the user explicitly selects another phone; do not pick the still-paired iPhone 17 Pro Max. Its UDID and the project's signing team are stored privately in ignored `.iphone-device.local.json` as `udid` and `teamId`.
+
+For signed iOS deployment, use `scripts/install-iphone.sh` with no arguments for that default, or `scripts/install-iphone.sh <UDID> <team>` for an explicit override, only when deployment is requested. Preserve signing settings and installed user data. Device acceptance includes airplane-mode cold launch, permission/accuracy/staleness, native date pickers, reminders/cleanup, voice cancellation, accessibility and diagnostic policy. No live 911 test calls.
 
 Reference prototypes in `docs/reference` are historical, not current requirements. Current user instructions and this guide supersede their Practice Mode, timers and governance sections.
