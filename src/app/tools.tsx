@@ -66,7 +66,9 @@ export default function ToolsScreen() {
       setNow(Date.now());
       const timer = setInterval(() => setNow(Date.now()), 30000);
       const release =
-        locationId === "gps" && tool !== "more" ? requestLocation() : undefined;
+        locationId === "gps" && (tool === "daylight" || tool === "compass")
+          ? requestLocation()
+          : undefined;
       return () => {
         clearInterval(timer);
         release?.();

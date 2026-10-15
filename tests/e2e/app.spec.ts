@@ -93,7 +93,9 @@ async function ready(page: Page) {
     .toBe(true);
 }
 
-test("browser preview blocks background telemetry requests while bundled fonts load", async ({ page }) => {
+test("browser preview blocks background telemetry requests while bundled fonts load", async ({
+  page,
+}) => {
   await setupLocation(page);
   let sent = 0;
   await page.route("**/telemetry-probe", async (route) => {
@@ -104,9 +106,16 @@ test("browser preview blocks background telemetry requests while bundled fonts l
   await ready(page);
   const result = await page.evaluate(async () => {
     const violation = new Promise<string>((resolve) => {
-      document.addEventListener("securitypolicyviolation", (event) => resolve(event.effectiveDirective), { once: true });
+      document.addEventListener(
+        "securitypolicyviolation",
+        (event) => resolve(event.effectiveDirective),
+        { once: true },
+      );
     });
-    const rejected = await fetch("/telemetry-probe").then(() => false, () => true);
+    const rejected = await fetch("/telemetry-probe").then(
+      () => false,
+      () => true,
+    );
     return { rejected, directive: await violation };
   });
   expect(result).toEqual({ rejected: true, directive: "connect-src" });
@@ -597,7 +606,10 @@ async function seedPlan(page: Page, status: "current" | "completed") {
     timeZone: "America/Los_Angeles",
   };
   await page.addInitScript(
-    (data) => localStorage.setItem("trailsafe.local.v1", JSON.stringify(data)),
+    (data) => {
+      if (!localStorage.getItem("trailsafe.local.v1"))
+        localStorage.setItem("trailsafe.local.v1", JSON.stringify(data));
+    },
     { ...initialData, plans: [plan] },
   );
 }
@@ -687,4 +699,161 @@ test("navigation protects unsaved edits", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "Prepare", exact: true }),
   ).toBeVisible();
+});
+
+test("browser Back protects unsaved plans, and saving bypasses the warning", async ({
+  page,
+}) => {
+  await setupLocation(page);
+  await page.goto("/plans");
+  await ready(page);
+  await page
+    .getByRole("button", { name: "New Trip Plan", exact: true })
+    .click();
+  const title = page.getByRole("textbox", {
+    name: "Trip title / destination",
+    exact: true,
+  });
+  await title.fill("Unsaved route");
+  await page.goBack();
+  await expect(
+    page.getByText("Discard unsaved changes?", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Keep editing", exact: true }).click();
+  await expect(title).toHaveValue("Unsaved route");
+  await page.goBack();
+  await page
+    .getByRole("button", { name: "Discard changes", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "New Trip Plan", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "New Trip Plan", exact: true })
+    .click();
+  await title.fill("Saved draft");
+  await page.getByRole("button", { name: "Save Draft", exact: true }).click();
+  await expect(page.getByTestId("plan-preview")).toContainText("Saved draft");
+  await expect(
+    page.getByText("Discard unsaved changes?", { exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "Edit Details", exact: true }).click();
+  await title.fill("New unsaved edit");
+  await page.getByRole("tab", { name: "Home", exact: true }).click();
+  await expect(
+    page.getByText("Discard unsaved changes?", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Keep editing", exact: true }).click();
+  await expect(title).toHaveValue("New unsaved edit");
+});
+
+test("profile edits are protected on tabs and browser Back, with no warning after save", async ({
+  page,
+}) => {
+  await page.goto("/plans");
+  await ready(page);
+  await page.getByRole("button", { name: /My reusable profile/ }).click();
+  const name = page.getByRole("textbox", { name: "Your name", exact: true });
+  await name.fill("Unsaved profile");
+  await page.getByRole("tab", { name: "Home", exact: true }).click();
+  await page.getByRole("button", { name: "Keep editing", exact: true }).click();
+  await expect(name).toHaveValue("Unsaved profile");
+  await page.goBack();
+  await page.getByRole("button", { name: "Keep editing", exact: true }).click();
+  await expect(name).toHaveValue("Unsaved profile");
+  await page.getByRole("button", { name: "Save Profile", exact: true }).click();
+  await expect(
+    page.getByText("Profile saved on this device", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("tab", { name: "Home", exact: true }).click();
+  await expect(
+    page.getByText("Discard unsaved changes?", { exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("tab", { name: "Trips", exact: true }).click();
+  await page.getByRole("button", { name: /My reusable profile/ }).click();
+  await name.fill("Discard this profile edit");
+  await page.getByRole("tab", { name: "Home", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Discard changes", exact: true })
+    .click();
+  await page.getByRole("tab", { name: "Trips", exact: true }).click();
+  await page.getByRole("button", { name: /My reusable profile/ }).click();
+  await expect(name).toHaveValue("Unsaved profile");
+});
+
+test("Hiking needs no location watcher; Compass starts one and releases it on return", async ({
+  page,
+}) => {
+  await setupLocation(page);
+  await page.goto("/tools?tool=hiking");
+  await ready(page);
+  await expect(page.getByTestId("hiking-result")).toBeVisible();
+  expect(await page.evaluate(() => window.locationWatches)).toBe(0);
+  await page.getByRole("button", { name: "Compass", exact: true }).click();
+  await expect(page.getByTestId("declination-result")).toContainText("E");
+  expect(await page.evaluate(() => window.locationWatches)).toBe(1);
+  await page.getByRole("button", { name: "Hiking", exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.locationClears)).toBe(1);
+});
+
+test("trip Today, Tomorrow and Now respect the selected zone and midnight rollover", async ({
+  page,
+}) => {
+  await page.clock.setFixedTime(new Date("2026-10-15T06:58:00Z"));
+  await page.goto("/plans/new");
+  await ready(page);
+  const zone = page.getByRole("textbox", {
+    name: "Trip time zone",
+    exact: true,
+  });
+  const date = page.getByRole("textbox", { name: "Start date", exact: true });
+  const time = page.getByRole("textbox", { name: "Start time", exact: true });
+  await zone.fill("America/New_York");
+  await page.getByRole("button", { name: "Today", exact: true }).click();
+  await expect(date).toHaveValue("2026-10-15");
+  await page
+    .getByRole("button", { name: "Tomorrow", exact: true })
+    .first()
+    .click();
+  await expect(date).toHaveValue("2026-10-16");
+  await page.getByRole("button", { name: "Now", exact: true }).click();
+  await expect(date).toHaveValue("2026-10-15");
+  await expect(time).toHaveValue("03:00");
+  await zone.fill("America/Los_Angeles");
+  await page.getByRole("button", { name: "Today", exact: true }).click();
+  await expect(date).toHaveValue("2026-10-14");
+  await page.getByRole("button", { name: "Now", exact: true }).click();
+  await expect(date).toHaveValue("2026-10-15");
+  await expect(time).toHaveValue("00:00");
+});
+
+test("first packing check for the current trip stays current after reload", async ({
+  page,
+}) => {
+  await seedPlan(page, "current");
+  await page.goto("/prepare");
+  await ready(page);
+  await page.getByRole("checkbox", { name: "Water", exact: true }).click();
+  await expect(
+    page.getByRole("checkbox", { name: "Water", exact: true }),
+  ).toBeChecked();
+  await expect(
+    page.getByText("Checklist may be from a previous trip", { exact: true }),
+  ).toHaveCount(0);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          JSON.parse(localStorage.getItem("trailsafe.local.v1")!).checklist
+            .planId,
+      ),
+    )
+    .toBe("review-plan");
+  await page.reload();
+  await expect(
+    page.getByRole("checkbox", { name: "Water", exact: true }),
+  ).toBeChecked();
+  await expect(
+    page.getByText("Checklist may be from a previous trip", { exact: true }),
+  ).toHaveCount(0);
 });

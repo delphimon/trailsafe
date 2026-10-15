@@ -5,6 +5,7 @@ import { ExternalLink, Info } from "lucide-react-native";
 import library from "@/content/library.json";
 import { useStore } from "@/state/store";
 import { useApp } from "@/state/app";
+import { toggleChecklist } from "@/lib/checklist";
 import {
   Button,
   Callout,
@@ -27,13 +28,7 @@ export default function Prepare() {
     void run(() =>
       update((d) => ({
         ...d,
-        checklist: {
-          ...d.checklist,
-          checks: d.checklist.checks.includes(key)
-            ? d.checklist.checks.filter((k) => k !== key)
-            : [...d.checklist.checks, key],
-          updatedAt: Date.now(),
-        },
+        checklist: toggleChecklist(d, key),
       })),
     );
 
@@ -79,7 +74,7 @@ export default function Prepare() {
                         checks: [],
                         startedAt: Date.now(),
                         updatedAt: Date.now(),
-                        planId: currentPlan?.id,
+                        planId: d.plans.find((p) => p.status === "current")?.id,
                       },
                     })),
                   )
@@ -215,7 +210,7 @@ export default function Prepare() {
                   checks: [],
                   startedAt: Date.now(),
                   updatedAt: Date.now(),
-                  planId: currentPlan?.id,
+                  planId: d.plans.find((p) => p.status === "current")?.id,
                 },
               })),
           })

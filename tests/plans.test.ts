@@ -8,7 +8,8 @@ import {
   planHTML,
   isOverdue,
   addDays,
-  currentTimeRounded,
+  dateTimeInZone,
+  roundedDateTimeInZone,
   buildSafeReturnDraft,
   parseDateTimeInTimeZone,
   activateTrip,
@@ -157,9 +158,50 @@ test("suggestOverdue with custom hours calculates correct deadline", () => {
     overdueTime: "02:00",
   });
 });
-test("currentTimeRounded rounds to five minutes in 24-hour format", () => {
-  const d = new Date("2026-09-13T14:12:00");
-  assert.equal(currentTimeRounded(d), "14:15");
+test("date shortcuts use the trip zone and rounding carries midnight and year end", () => {
+  const instant = new Date("2026-10-15T06:58:00Z");
+  assert.deepEqual(dateTimeInZone("America/Los_Angeles", instant), {
+    date: "2026-10-14",
+    time: "23:58",
+  });
+  assert.deepEqual(roundedDateTimeInZone("America/Los_Angeles", instant), {
+    date: "2026-10-15",
+    time: "00:00",
+  });
+  assert.deepEqual(roundedDateTimeInZone("America/New_York", instant), {
+    date: "2026-10-15",
+    time: "03:00",
+  });
+  assert.deepEqual(
+    roundedDateTimeInZone(
+      "America/Los_Angeles",
+      new Date("2027-01-01T07:58:30Z"),
+    ),
+    { date: "2027-01-01", time: "00:00" },
+  );
+  assert.equal(dateTimeInZone("invalid"), null);
+});
+test("rounded shortcuts cross DST using the real instant instead of invented wall time", () => {
+  assert.deepEqual(
+    roundedDateTimeInZone(
+      "America/Los_Angeles",
+      new Date("2026-03-08T09:58:00Z"),
+    ),
+    { date: "2026-03-08", time: "03:00" },
+  );
+  const repeated = roundedDateTimeInZone(
+    "America/Los_Angeles",
+    new Date("2026-11-01T08:58:00Z"),
+  )!;
+  assert.deepEqual(repeated, { date: "2026-11-01", time: "01:00" });
+  assert.equal(
+    parseDateTimeInTimeZone(
+      repeated.date,
+      repeated.time,
+      "America/Los_Angeles",
+    ),
+    null,
+  );
 });
 
 test("parseDateTimeInTimeZone correctly parses PDT, PST, and EDT without timezone corruption", () => {
