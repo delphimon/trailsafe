@@ -8,7 +8,7 @@ TrailSafe is a fully offline hiking preparation and emergency-information compan
 
 ## Product rules
 
-- Six primary destinations: Home, Trips, Prepare, Help, Guide, Tools. `/` opens Home with visible trip access; Trips shows Current, Upcoming and Past; Prepare focuses on Ten Essentials and gear. Existing emergency/article/plan deep links remain valid.
+- Five bottom tabs: Plan (backpack), Prepare (clipboard checklist), Help, Guide, Tools. The shared title bar has a Home button to the left of the title and an Info/About button on the right. `/` still opens the existing Home page with visible trip access; Plan shows Current, Upcoming and Past; Prepare focuses on Ten Essentials and gear. Existing emergency/article/plan deep links remain valid.
 - No consumer Practice Mode. Tests inject inert handoff handlers or intercept browser APIs. Never initiate real 911 calls or texts during tests. Native smoke tests must not tap transport controls.
 - Calls open the phone handoff. On Help, Text 911 directly opens the system composer with the caller location in one app tap. A separate someone-elsewhere/edit option opens the editable draft and omits reporter GPS. The user sends it; composer/share results never establish delivery.
 - Never use the reporter's GPS for someone elsewhere. Use the subject's last known location and time instead.

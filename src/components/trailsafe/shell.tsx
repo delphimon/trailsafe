@@ -5,7 +5,6 @@ import {
   BookOpen,
   Compass,
   Siren,
-  House,
   ClipboardList,
 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,9 +16,8 @@ export function BottomBar() {
   const path = usePathname(),
     insets = useSafeAreaInsets();
   const tabs = [
-    { label: "Home", path: "/" as const, icon: House },
-    { label: "Trips", path: "/plans" as const, icon: ClipboardList },
-    { label: "Prepare", path: "/prepare" as const, icon: Backpack },
+    { label: "Plan", path: "/plans" as const, icon: Backpack },
+    { label: "Prepare", path: "/prepare" as const, icon: ClipboardList },
     { label: "Help", path: "/emergency" as const, icon: Siren },
     { label: "Guide", path: "/guide" as const, icon: BookOpen },
     { label: "Tools", path: "/tools" as const, icon: Compass },
@@ -66,25 +64,25 @@ export function BottomBar() {
             onPress={() => navigate(() => router.navigate(tab.path))}
             style={({ pressed }) => ({
               flex: 1,
-              minHeight: 52,
-              padding: 2,
+              minHeight: 56,
+              padding: 4,
               alignItems: "center",
               justifyContent: "center",
-              gap: 2,
+              gap: 3,
               opacity: pressed ? 0.6 : 1,
               borderRadius: 8,
               backgroundColor: selected ? C.checkBg : "transparent",
             })}
           >
             <tab.icon
-              size={20}
+              size={24}
               color={tab.path === "/emergency" ? C.orange : color}
             />
             <T
               style={{
                 fontFamily: fonts.bold,
-                fontSize: 10,
-                lineHeight: 14,
+                fontSize: 12,
+                lineHeight: 16,
                 color,
               }}
             >

@@ -4,7 +4,7 @@ The application review was implemented with the user's two overrides: remove the
 
 Implemented:
 
-- Following usability feedback, restored Home and added a dedicated Trips destination alongside Prepare, Help, Guide and Tools. Home exposes trip access; Trips groups Current/Upcoming/Past; Prepare focuses on essentials and gear.
+- Following the latest usability feedback, five larger bottom tabs expose Plan (backpack), Prepare (clipboard checklist), Help, Guide and Tools. Home and Info/About are shared title-bar buttons; the existing Home page still exposes current and all trip plans. Plan groups Current/Upcoming/Past; Prepare focuses on essentials and gear.
 - Removed consumer Practice Mode. Help Text 911 directly opens the system composer for help at the caller location in one app tap. A separate someone-elsewhere/edit path keeps the subject location explicit and omits reporter GPS. Tests supply inert handlers; native smoke tests never tap transports.
 - Replaced cold-risk scoring and exact cooling/temperature claims with concise cold/wet symptom/action guidance.
 - Tools now has always-visible Daylight, Compass and Hiking selectors, with the headlamp time and compass answer ahead of expandable settings. Hiking has a prominent duration, native sliders and restored quick choices; water and signaling guidance remain under More. Removed slope classification, audio/beacon modes, roadmap copy and all water countdown code/product presets.

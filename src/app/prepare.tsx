@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { View, Linking, Pressable } from "react-native";
-import { router } from "expo-router";
-import { ExternalLink, Info } from "lucide-react-native";
+import { View, Linking } from "react-native";
+import { ExternalLink } from "lucide-react-native";
 import library from "@/content/library.json";
 import { useStore } from "@/state/store";
 import { useApp } from "@/state/app";
@@ -20,7 +19,7 @@ import {
   useThemeStyles,
 } from "@/components/trailsafe/ui";
 export default function Prepare() {
-  const { C, s } = useThemeStyles();
+  const { s } = useThemeStyles();
   const [mountedAt] = useState(() => Date.now());
   const { data, update, ready, error } = useStore(),
     { run, setDialog } = useApp();
@@ -43,20 +42,7 @@ export default function Prepare() {
         mountedAt - data.checklist.updatedAt > 7 * 24 * 60 * 60 * 1000));
 
   return (
-    <Screen
-      title="Prepare"
-      subtitle="Ten Essentials and the gear to bring"
-      rightAction={
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="About"
-          onPress={() => router.push("/about")}
-          style={{ padding: 12 }}
-        >
-          <Info color={C.headerText} size={24} />
-        </Pressable>
-      }
-    >
+    <Screen title="Prepare" subtitle="Ten Essentials and the gear to bring">
       {isStale && (
         <View style={{ marginBottom: 12 }}>
           <Callout title="Checklist may be from a previous trip">
