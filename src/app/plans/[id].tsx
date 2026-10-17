@@ -8,7 +8,7 @@ import {
   FileDown,
   MessageSquare,
   Share2,
-} from "lucide-react-native";
+} from "@/components/trailsafe/icons";
 import { DateTimeField } from "@/components/trailsafe/date-time-field";
 import * as SMS from "expo-sms";
 import { useStore } from "@/state/store";

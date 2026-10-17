@@ -25,7 +25,7 @@ export async function reconcileTripReminders(
   if (Platform.OS === "android")
     await Notifications.setNotificationChannelAsync("trip-check-in", {
       name: "Trip check-in reminders",
-      importance: AndroidImportance.DEFAULT,
+      importance: AndroidImportance.HIGH,
     });
   return reconcileReminders(
     plans,
@@ -49,6 +49,8 @@ export async function reconcileTripReminders(
             title: intent.title,
             body: intent.body,
             sound: true,
+            threadIdentifier: "trip-check-in",
+            interruptionLevel: "timeSensitive",
             data: {
               owner: "trailsafe",
               planId: intent.planId,
@@ -59,6 +61,7 @@ export async function reconcileTripReminders(
             type: Notifications.SchedulableTriggerInputTypes.DATE,
             date: intent.triggerDate,
             channelId: "trip-check-in",
+            delivery: "alarmClock",
           },
         });
       },

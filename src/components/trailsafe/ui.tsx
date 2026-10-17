@@ -22,7 +22,7 @@ import {
   Check,
   ChevronRight,
   type LucideIcon,
-} from "lucide-react-native";
+} from "./icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColorScheme } from "react-native";
@@ -316,12 +316,23 @@ export function Screen({
   const { C, s } = useThemeStyles();
   const { navigate } = useApp();
   const insets = useSafeAreaInsets();
+  const padLeft = Math.max(insets.left, 20);
+  const padRight = Math.max(insets.right, 20);
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={{ flex: 1 }}
     >
-      <View style={[s.header, { paddingTop: Math.max(insets.top, 14) + 6 }]}>
+      <View
+        style={[
+          s.header,
+          {
+            paddingTop: Math.max(insets.top, 14) + 6,
+            paddingLeft: padLeft,
+            paddingRight: padRight,
+          },
+        ]}
+      >
         {back && (
           <Pressable
             accessibilityRole="button"
@@ -394,7 +405,10 @@ export function Screen({
       </View>
       <ScrollView
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={s.content}
+        contentContainerStyle={[
+          s.content,
+          { paddingLeft: padLeft, paddingRight: padRight },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {children}
@@ -425,6 +439,7 @@ export const getStyles = (C: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
     borderColor: C.line,
     borderRadius: 10,
+    borderCurve: "continuous",
     padding: 16,
     marginBottom: 14,
   },
@@ -433,6 +448,7 @@ export const getStyles = (C: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
     borderColor: C.calloutBorder,
     borderRadius: 10,
+    borderCurve: "continuous",
     padding: 14,
     marginBottom: 16,
   },
@@ -449,6 +465,7 @@ export const getStyles = (C: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
     borderColor: "transparent",
     borderRadius: 10,
+    borderCurve: "continuous",
     padding: 15,
     backgroundColor: C.btnPrimaryBg,
     flexDirection: "row",
@@ -469,6 +486,7 @@ export const getStyles = (C: ThemeColors) => StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 9,
+    borderCurve: "continuous",
     backgroundColor: C.stone,
     alignItems: "center",
     justifyContent: "center",
@@ -489,6 +507,7 @@ export const getStyles = (C: ThemeColors) => StyleSheet.create({
     borderWidth: 1.5,
     borderColor: C.checkBorder,
     borderRadius: 5,
+    borderCurve: "continuous",
     justifyContent: "center",
     alignItems: "center",
     marginTop: 1,
@@ -512,6 +531,7 @@ export const getStyles = (C: ThemeColors) => StyleSheet.create({
     borderWidth: 1.5,
     borderColor: C.line,
     borderRadius: 6,
+    borderCurve: "continuous",
     backgroundColor: C.cardBg,
   },
   header: {

@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { View } from "react-native";
-import { Compass } from "lucide-react-native";
+import { Compass } from "@/components/trailsafe/icons";
 import { useRouter, useFocusEffect, useLocalSearchParams } from "expo-router";
 import {
   Button,
@@ -187,9 +187,11 @@ export default function ToolsScreen() {
           <Card>
             <Heading>When will I need a headlamp?</Heading>
             <T
+              selectable
               testID="headlamp-result"
               style={{
                 fontFamily: fonts.display,
+                fontVariant: ["tabular-nums"],
                 fontSize: 44,
                 lineHeight: 52,
                 color: C.green,
@@ -276,9 +278,11 @@ export default function ToolsScreen() {
           <Card>
             <Heading>Compass declination</Heading>
             <T
+              selectable
               testID="declination-result"
               style={{
                 fontFamily: fonts.display,
+                fontVariant: ["tabular-nums"],
                 fontSize: 44,
                 lineHeight: 52,
                 color: C.green,
@@ -310,9 +314,11 @@ export default function ToolsScreen() {
           <Card>
             <Heading>Estimated hiking time</Heading>
             <T
+              selectable
               testID="hiking-result"
               style={{
                 fontFamily: fonts.display,
+                fontVariant: ["tabular-nums"],
                 fontSize: 40,
                 lineHeight: 48,
                 color: C.green,

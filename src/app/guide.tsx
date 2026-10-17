@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { BookOpen, ExternalLink } from "lucide-react-native";
+import { BookOpen, ExternalLink } from "@/components/trailsafe/icons";
 import { topicGroups } from "@/content";
 import { searchGuideTopics } from "@/lib/search-indexing";
 import {

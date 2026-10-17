@@ -8,7 +8,7 @@ import {
   Info,
   Mountain,
   Users,
-} from "lucide-react-native";
+} from "@/components/trailsafe/icons";
 import {
   useThemeStyles,
   Button,

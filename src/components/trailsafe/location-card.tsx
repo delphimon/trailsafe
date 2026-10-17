@@ -6,7 +6,7 @@ import {
   MapPin,
   Share2,
   Settings,
-} from "lucide-react-native";
+} from "./icons";
 import { useApp } from "@/state/app";
 import { useStore } from "@/state/store";
 import {
@@ -56,6 +56,7 @@ export function LocationCard() {
         borderWidth: 1,
         borderColor: C.locationCardBorder,
         borderRadius: 10,
+        borderCurve: "continuous",
         padding: 17,
         marginVertical: 16,
       }}
@@ -87,6 +88,7 @@ export function LocationCard() {
             style={{
               backgroundColor: "#5C3527",
               borderRadius: 6,
+              borderCurve: "continuous",
               padding: 10,
               marginBottom: 12,
             }}
@@ -96,6 +98,30 @@ export function LocationCard() {
             </T>
           </View>
         ))}
+      {location.reducedAccuracy && Platform.OS !== "web" && (
+        <View
+          style={{
+            backgroundColor: "#5C3527",
+            borderRadius: 6,
+            borderCurve: "continuous",
+            padding: 10,
+            marginBottom: 12,
+            gap: 8,
+          }}
+        >
+          <T style={{ fontSize: 12, lineHeight: 19, color: "#FFDED1" }}>
+            Precise Location is turned off in Settings. Turn on Precise Location
+            for emergency GPS accuracy.
+          </T>
+          <Button
+            label="Enable Precise Location"
+            small
+            variant="light"
+            icon={Settings}
+            onPress={() => void run(async () => Linking.openSettings())}
+          />
+        </View>
+      )}
       <View
         accessibilityRole="radiogroup"
         accessibilityLabel="Coordinate format toggle"

@@ -43,9 +43,11 @@ export type LocationStatus =
 export function useAutomaticLocation(enabled: boolean): {
   fix: Fix | null;
   status: LocationStatus;
+  reducedAccuracy: boolean;
 } {
   const [fix, setFix] = useState<Fix | null>(null),
-    [status, setStatus] = useState<LocationStatus>("idle");
+    [status, setStatus] = useState<LocationStatus>("idle"),
+    [reducedAccuracy, setReducedAccuracy] = useState(false);
   const [active, setActive] = useState(AppState.currentState === "active"),
     [retry, setRetry] = useState(0);
   useEffect(() => {
@@ -110,6 +112,7 @@ export function useAutomaticLocation(enabled: boolean): {
       setStatus("locating");
       try {
         if (Platform.OS === "web") {
+          setReducedAccuracy(false);
           if (!navigator.geolocation) {
             unavailable();
             return;
@@ -156,9 +159,14 @@ export function useAutomaticLocation(enabled: boolean): {
 
         if (cancelled) return;
         if (permission.status !== "granted") {
+          setReducedAccuracy(false);
           setStatus("denied");
           return;
         }
+        setReducedAccuracy(
+          permission.ios?.accuracy === "reduced" ||
+            permission.android?.accuracy === "coarse",
+        );
         timeout = setTimeout(unavailable, 15000);
 
         // Query last-known position first without cancelling live-fix timeout
@@ -193,12 +201,13 @@ export function useAutomaticLocation(enabled: boolean): {
       clearTimeout(recovery);
     };
   }, [enabled, active, retry]);
-  return { fix, status };
+  return { fix, status, reducedAccuracy };
 }
 
 type LocationContextType = {
   fix: Fix | null;
   status: LocationStatus;
+  reducedAccuracy: boolean;
   requestLocation: () => () => void;
 };
 
@@ -209,7 +218,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   const enabled = requests > 0;
 
   // The existing hook handles the watch automatically when enabled is true
-  const { fix, status } = useAutomaticLocation(enabled);
+  const { fix, status, reducedAccuracy } = useAutomaticLocation(enabled);
 
   const requestLocation = useCallback(() => {
     setRequests((n) => n + 1);
@@ -217,8 +226,8 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ fix, status, requestLocation }),
-    [fix, status, requestLocation],
+    () => ({ fix, status, reducedAccuracy, requestLocation }),
+    [fix, status, reducedAccuracy, requestLocation],
   );
 
   return (

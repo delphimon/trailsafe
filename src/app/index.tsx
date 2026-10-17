@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { ClipboardList, Compass, Backpack } from "lucide-react-native";
+import { ClipboardList, Compass, Backpack } from "@/components/trailsafe/icons";
 import { useStore } from "@/state/store";
 import {
   Button,

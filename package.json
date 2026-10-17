@@ -11,11 +11,9 @@
     "@react-native-community/slider": "5.2.1",
     "device-search": "file:./modules/device-search",
     "expo": "~58.0.14",
-    "expo-app-intents": "~0.5.9",
     "expo-clipboard": "~58.0.3",
     "expo-constants": "~58.0.12",
     "expo-font": "~58.0.8",
-    "expo-linear-gradient": "~58.0.3",
     "expo-linking": "~58.0.13",
     "expo-location": "~58.0.17",
     "expo-notifications": "~58.1.5",
@@ -32,13 +30,10 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-native": "0.88.0",
-    "react-native-gesture-handler": "~3.3.0",
-    "react-native-reanimated": "4.7.1",
     "react-native-safe-area-context": "~5.10.1",
     "react-native-screens": "~4.30.0",
     "react-native-svg": "15.16.0",
-    "react-native-web": "~0.21.4",
-    "react-native-worklets": "0.13.0"
+    "react-native-web": "~0.21.4"
   },
   "devDependencies": {
     "@expo/agent-cli": "^1.0.19",
@@ -61,9 +56,12 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
     "test:e2e": "playwright test",
-    "export": "expo export --platform all",
+    "export": "EXPO_NO_METRO_WORKSPACE_ROOT=1 EXPO_NO_TELEMETRY=1 expo export --platform all",
     "verify": "npm run typecheck && npm test && npm run export",
     "deploy:surge": "bash scripts/deploy-surge.sh",
+    "update:preview": "EXPO_PUBLIC_RELEASE_CHANNEL=preview eas update --channel preview --environment preview",
+    "update:testflight": "EXPO_PUBLIC_RELEASE_CHANNEL=testflight eas update --channel testflight --environment preview",
+    "update:production": "EXPO_PUBLIC_RELEASE_CHANNEL=production eas update --channel production --environment production",
     "content:extract": "node scripts/extract-content.cjs && python3 scripts/build-content.py",
     "skills:sync": "expo-agent-cli skills:sync --agent gemini-cli"
   },
@@ -76,7 +74,6 @@
   },
   "private": true,
   "overrides": {
-    "react-native": "$react-native",
-    "react-native-worklets": "$react-native-worklets"
+    "react-native": "$react-native"
   }
 }

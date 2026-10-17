@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 import { router } from "expo-router";
-import { Backpack, Plus, UserRound } from "lucide-react-native";
+import { Backpack, Plus, UserRound } from "@/components/trailsafe/icons";
 import { useStore } from "@/state/store";
 import { useApp } from "@/state/app";
 import {

@@ -22,7 +22,7 @@ import {
   RefreshCw,
   Trash2,
   UserRound,
-} from "lucide-react-native";
+} from "@/components/trailsafe/icons";
 import { useState } from "react";
 import { Linking, Platform, View } from "react-native";
 import { shouldInitializeCrashDiagnostics } from "@/lib/diagnostics";

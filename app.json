@@ -11,6 +11,9 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "TrailSafe shows your GPS coordinates so you can read or share them with emergency responders. Your location is not monitored or saved.",
+        "NSLocationTemporaryUsageDescriptionDictionary": {
+          "ExpoLocationFullAccuracy": "TrailSafe needs precise GPS coordinates so you can share an accurate location with 911 and search-and-rescue responders."
+        },
         "ITSAppUsesNonExemptEncryption": false
       },
       "bundleIdentifier": "org.adventureleader.trailsafe",
@@ -42,6 +45,17 @@
       "./plugins/with-ios-scenes.cjs",
       "./plugins/with-app-intents.cjs",
       "./plugins/with-release-diagnostics.cjs",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./node_modules/@expo-google-fonts/barlow-condensed/600SemiBold/BarlowCondensed_600SemiBold.ttf",
+            "./node_modules/@expo-google-fonts/public-sans/400Regular/PublicSans_400Regular.ttf",
+            "./node_modules/@expo-google-fonts/public-sans/500Medium/PublicSans_500Medium.ttf",
+            "./node_modules/@expo-google-fonts/public-sans/700Bold/PublicSans_700Bold.ttf"
+          ]
+        }
+      ],
       [
         "expo-router",
         {

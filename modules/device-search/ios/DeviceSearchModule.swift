@@ -24,6 +24,7 @@ public class DeviceSearchModule: Module {
         let contentType = UTType.text
         let attributeSet = CSSearchableItemAttributeSet(contentType: contentType)
         attributeSet.title = title
+        attributeSet.displayName = title
         if let description = item["description"] as? String {
           attributeSet.contentDescription = description
         }
@@ -33,6 +34,7 @@ public class DeviceSearchModule: Module {
         attributeSet.relatedUniqueIdentifier = id
 
         let uniqueId = (item["url"] as? String) ?? "trailsafe://article/\(id)"
+        attributeSet.contentURL = URL(string: uniqueId)
         let searchableItem = CSSearchableItem(
           uniqueIdentifier: uniqueId,
           domainIdentifier: "org.adventureleader.trailsafe.guide",

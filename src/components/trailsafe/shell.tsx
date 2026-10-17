@@ -6,7 +6,7 @@ import {
   Compass,
   Siren,
   ClipboardList,
-} from "lucide-react-native";
+} from "./icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useApp } from "@/state/app";
 import { Button, useThemeStyles, fonts, T } from "./ui";
@@ -44,7 +44,8 @@ export function BottomBar() {
         borderTopColor: C.line,
         paddingTop: 8,
         paddingBottom: Math.max(insets.bottom, 10),
-        paddingHorizontal: 2,
+        paddingLeft: Math.max(insets.left, 2),
+        paddingRight: Math.max(insets.right, 2),
       }}
     >
       {tabs.map((tab) => {
@@ -71,6 +72,7 @@ export function BottomBar() {
               gap: 3,
               opacity: pressed ? 0.6 : 1,
               borderRadius: 8,
+              borderCurve: "continuous",
               backgroundColor: selected ? C.checkBg : "transparent",
             })}
           >
@@ -176,6 +178,7 @@ const styles = StyleSheet.create({
     left: 24,
     right: 24,
     borderRadius: 20,
+    borderCurve: "continuous",
     padding: 13,
     zIndex: 20,
   },
@@ -191,6 +194,7 @@ const styles = StyleSheet.create({
     maxWidth: 460,
     padding: 24,
     borderRadius: 16,
+    borderCurve: "continuous",
     maxHeight: "90%",
     ...Platform.select({ web: { overflow: "auto" as "scroll" } }),
   },

@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 import { Linking } from "react-native";
-import { ExternalLink } from "lucide-react-native";
+import { ExternalLink } from "@/components/trailsafe/icons";
 import { WASHINGTON_REGION } from "@/content/regions";
 import { useApp } from "@/state/app";
 import { Card, Kicker, Note, Row, Screen } from "@/components/trailsafe/ui";

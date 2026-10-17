@@ -1,6 +1,6 @@
 import { View, Linking } from "react-native";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { Clock, Users, ExternalLink } from "lucide-react-native";
+import { Clock, Users, ExternalLink } from "@/components/trailsafe/icons";
 import { articles } from "@/content";
 import { WASHINGTON_REGION } from "@/content/regions";
 import { ArticleBody } from "@/components/trailsafe/article-body";

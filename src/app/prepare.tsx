@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, Linking } from "react-native";
-import { ExternalLink } from "lucide-react-native";
+import { ExternalLink } from "@/components/trailsafe/icons";
 import library from "@/content/library.json";
 import { WASHINGTON_REGION } from "@/content/regions";
 import { useStore } from "@/state/store";

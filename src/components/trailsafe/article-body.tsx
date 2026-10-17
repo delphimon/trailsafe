@@ -1,5 +1,5 @@
 import { Linking, View } from "react-native";
-import { ExternalLink } from "lucide-react-native";
+import { ExternalLink } from "./icons";
 import { Block } from "@/content";
 import { useApp } from "@/state/app";
 import { Callout, useThemeStyles, fonts, Kicker, Note, Row, T } from "./ui";

@@ -1,6 +1,6 @@
 import { View } from "react-native";
 import { router } from "expo-router";
-import { LocateFixed, MessageSquare, Phone } from "lucide-react-native";
+import { LocateFixed, MessageSquare, Phone } from "./icons";
 import { useApp } from "@/state/app";
 import { useLocation } from "@/hooks/use-location";
 import { Button, Note, useThemeStyles } from "./ui";
