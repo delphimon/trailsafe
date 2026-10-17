@@ -127,7 +127,8 @@ export function parseStoredData(raw: string): StoredData {
     !v.checklist.checks.every((x: unknown) => typeof x === "string")
   )
     throw new Error("Saved data is damaged. It has been preserved.");
-  // Stable checklist IDs preserve legacy checks when Food replaces Communications in the named ten.
+  // Stable checklist IDs preserve legacy checks when Food replaces Communications in the named ten,
+  // and migrate legacy index-based add-on and phone-readiness keys to semantic names.
   const legacyEssentials = [
     "Water",
     "Navigation",
@@ -140,6 +141,30 @@ export function parseStoredData(raw: string): StoredData {
     "Emergency shelter",
     "First aid",
   ];
+  const legacyOvernight = [
+    "Sleep system for expected conditions",
+    "Extra food",
+    "Water treatment",
+    "Any overnight medications",
+  ];
+  const legacyWinter = [
+    "Traction — microspikes or crampons",
+    "Insulating layers",
+    "Waterproof outer layers",
+    "Emergency shelter",
+    "Winter-capable communication",
+    "Avalanche gear — only in avalanche terrain, and only with training",
+  ];
+  const legacyPhone = [
+    "Phone fully charged before I leave",
+    "Portable battery pack carried",
+    "Dedicated headlamp or flashlight carried — not just my phone",
+    "Offline maps downloaded in my normal navigation app",
+    "A trusted person knows my plan",
+    "I know how my satellite messenger or PLB works, if I’m carrying one",
+    "My phone’s emergency features (Medical ID, Emergency SOS) are set up",
+    "I understand that little or no cellular service is normal in the backcountry",
+  ];
   v.checklist.checks = [
     ...new Set(
       v.checklist.checks.map((key: string) => {
@@ -149,6 +174,18 @@ export function parseStoredData(raw: string): StoredData {
           return name === "Communication"
             ? "communication"
             : `essential:${name}`;
+        }
+        const overnightIdx = /^overnight-(\d+)$/.exec(key);
+        if (overnightIdx && legacyOvernight[Number(overnightIdx[1])]) {
+          return `addon:overnight:${legacyOvernight[Number(overnightIdx[1])]}`;
+        }
+        const winterIdx = /^winter-(\d+)$/.exec(key);
+        if (winterIdx && legacyWinter[Number(winterIdx[1])]) {
+          return `addon:winter:${legacyWinter[Number(winterIdx[1])]}`;
+        }
+        const phoneIdx = /^phone-(\d+)$/.exec(key);
+        if (phoneIdx && legacyPhone[Number(phoneIdx[1])]) {
+          return `phone:${legacyPhone[Number(phoneIdx[1])]}`;
         }
         return key === "food" ? "essential:Food" : key;
       }),

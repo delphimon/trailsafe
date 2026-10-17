@@ -18,6 +18,9 @@ import {
   saveCurrentTrip,
   saveTripDraft,
   saveTrip,
+  isValidTimeZone,
+  localDate,
+  normalizeTimeInput,
 } from "../src/lib/plans";
 import { initialData, parseStoredData } from "../src/lib/persistence";
 const p = {
@@ -437,4 +440,65 @@ test("relative overdue suggestions add elapsed hours across DST changes", () => 
     suggestOverdue("2026-11-01", "00:30", 3, "America/Los_Angeles"),
     { overdueDate: "2026-11-01", overdueTime: "02:30" },
   );
+});
+
+test("invalid time zones are rejected by validatePlan and saveTrip and sanitized by saveTripDraft", () => {
+  assert.equal(isValidTimeZone("America/Los_Angeles"), true);
+  assert.equal(isValidTimeZone("America/Phoenix"), true);
+  assert.equal(isValidTimeZone(""), false);
+  assert.equal(isValidTimeZone("America/Seattle"), false);
+
+  const badZonePlan = { ...p, timeZone: "America/Seattle", startTime: "" };
+  const issues = validatePlan(badZonePlan);
+  assert.ok(issues.some((e) => e.includes("IANA time zone")));
+
+  const draftRes = saveTrip({ ...p, status: "draft", timeZone: "bad-zone" }, []);
+  assert.equal(draftRes.ok, false);
+
+  const completedRes = saveTrip(
+    { ...p, status: "completed", timeZone: "bad-zone" },
+    [],
+  );
+  assert.equal(completedRes.ok, false);
+
+  const directDraft = saveTripDraft({ ...p, timeZone: "bad-zone" }, [p]);
+  assert.equal(directDraft.plan.timeZone, "America/Los_Angeles");
+  assert.doesNotThrow(() =>
+    parseStoredData(
+      JSON.stringify({ ...initialData, plans: directDraft.plans }),
+    ),
+  );
+});
+
+test("single-digit 24-hour times normalize and validate cleanly", () => {
+  assert.equal(normalizeTimeInput("8:05"), "08:05");
+  assert.equal(normalizeTimeInput(" 9:30 "), "09:30");
+  assert.deepEqual(validatePlan({ ...p, startTime: "8:00" }), []);
+  const saved = saveTripDraft({ ...p, startTime: "7:15" }, []);
+  assert.equal(saved.plan.startTime, "07:15");
+  assert.equal(
+    localDate(new Date("2026-10-15T06:58:00Z"), "America/Los_Angeles"),
+    "2026-10-14",
+  );
+  assert.equal(
+    localDate(new Date("2026-10-15T06:58:00Z"), "America/New_York"),
+    "2026-10-15",
+  );
+});
+
+test("legacy positional add-on and phone checklist keys migrate to stable semantic IDs", () => {
+  const parsed = parseStoredData(
+    JSON.stringify({
+      ...initialData,
+      checklist: {
+        ...initialData.checklist,
+        checks: ["overnight-0", "winter-0", "phone-1"],
+      },
+    }),
+  );
+  assert.deepEqual(parsed.checklist.checks, [
+    "addon:overnight:Sleep system for expected conditions",
+    "addon:winter:Traction — microspikes or crampons",
+    "phone:Portable battery pack carried",
+  ]);
 });

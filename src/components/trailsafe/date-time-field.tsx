@@ -4,6 +4,7 @@ export type DateTimeFieldProps = {
   value: string;
   mode: "date" | "time";
   timeZone: string;
+  referenceDate?: string;
   onChange: (value: string) => void;
 };
 /** Browser fallback: explicit calendar date / 24-hour time. */

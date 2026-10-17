@@ -3,17 +3,21 @@ import { router, useLocalSearchParams } from "expo-router";
 import { Button, Note, Screen, T } from "@/components/trailsafe/ui";
 import { useStore } from "@/state/store";
 import { useApp } from "@/state/app";
-import { activateTrip, completeTrip } from "@/lib/plans";
+import { activateTrip, completeTrip, validatePlan } from "@/lib/plans";
 
 export default function CurrentPlanActionScreen() {
   const { action } = useLocalSearchParams<{ action: string }>();
-  const { data, ready, changeTrip } = useStore();
+  const { data, ready, error, changeTrip } = useStore();
   const { notify, setDialog } = useApp();
   const processed = useRef<string | null>(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     if (!ready || processed.current === action) return;
     processed.current = action;
+    if (error) {
+      router.replace("/plans");
+      return;
+    }
     const target =
       action === "complete"
         ? data.plans.find((p) => p.status === "current")
@@ -29,6 +33,17 @@ export default function CurrentPlanActionScreen() {
           : "No draft trip to start.",
       );
       router.replace("/plans");
+      return;
+    }
+    if (
+      action === "start" &&
+      validatePlan({ ...target, status: "current" }).length > 0
+    ) {
+      notify("Complete required trip details before starting.");
+      router.replace({
+        pathname: "/plans/[id]",
+        params: { id: target.id, edit: "1" },
+      });
       return;
     }
     const returnToPlan = () =>
@@ -57,7 +72,7 @@ export default function CurrentPlanActionScreen() {
         }
       },
     });
-  }, [action, ready, data.plans, changeTrip, notify, setDialog]);
+  }, [action, ready, error, data.plans, changeTrip, notify, setDialog]);
   return (
     <Screen title="Trip action">
       <T>

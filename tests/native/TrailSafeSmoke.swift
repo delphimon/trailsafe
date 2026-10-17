@@ -186,8 +186,8 @@ final class TrailSafeSmoke: XCTestCase {
         openCurrentEditor(app)
         XCTAssertEqual(title.value as? String, "Smoke current hike")
         enter("Simulator saved hiker", in: app.textFields["Your name"], app)
-        scrollTo(app.buttons["Save and preview"], app)
-        app.buttons["Save and preview"].tap()
+        scrollTo(app.buttons["Save Changes"], app)
+        app.buttons["Save Changes"].tap()
         XCTAssertTrue(app.staticTexts["Your plan, ready to share"].waitForExistence(timeout: 10))
         element("Plan", app).tap()
         XCTAssertTrue(app.staticTexts["Current, upcoming and past trip plans"].waitForExistence(timeout: 10))
@@ -331,7 +331,7 @@ final class TrailSafeSmoke: XCTestCase {
     }
 
     private func launch() -> XCUIApplication {
-        let app = XCUIApplication(bundleIdentifier: "com.appliedinteractions.trailsafe")
+        let app = XCUIApplication(bundleIdentifier: "org.adventureleader.trailsafe")
         app.launch()
         XCTAssertTrue(app.buttons["Home"].waitForExistence(timeout: 20))
         app.buttons["Home"].tap()

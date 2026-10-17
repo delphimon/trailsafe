@@ -107,13 +107,13 @@ function withAndroidShortcuts(config) {
     <capability android:name="actions.intent.OPEN_APP_FEATURE">
         <intent
             android:action="android.intent.action.VIEW"
-            android:targetPackage="com.appliedinteractions.trailsafe"
+            android:targetPackage="org.adventureleader.trailsafe"
             android:data="trailsafe://emergency" />
     </capability>
     <capability android:name="actions.intent.GET_THING">
         <intent
             android:action="android.intent.action.VIEW"
-            android:targetPackage="com.appliedinteractions.trailsafe"
+            android:targetPackage="org.adventureleader.trailsafe"
             android:data="trailsafe://guide?search={thing}">
             <parameter
                 android:name="thing.name"
@@ -128,7 +128,7 @@ function withAndroidShortcuts(config) {
         android:longLabel="@string/shortcut_emergency_long">
         <intent
             android:action="android.intent.action.VIEW"
-            android:targetPackage="com.appliedinteractions.trailsafe"
+            android:targetPackage="org.adventureleader.trailsafe"
             android:data="trailsafe://emergency" />
         <capability-binding android:key="actions.intent.OPEN_APP_FEATURE" />
     </shortcut>
@@ -140,7 +140,7 @@ function withAndroidShortcuts(config) {
         android:longLabel="@string/shortcut_complete_long">
         <intent
             android:action="android.intent.action.VIEW"
-            android:targetPackage="com.appliedinteractions.trailsafe"
+            android:targetPackage="org.adventureleader.trailsafe"
             android:data="trailsafe://plan/current/complete" />
     </shortcut>
 </shortcuts>

@@ -1,4 +1,4 @@
-package com.appliedinteractions.trailsafe.devicesearch
+package org.adventureleader.trailsafe.devicesearch
 
 import android.content.Context
 import android.content.Intent
@@ -37,7 +37,7 @@ class DeviceSearchModule : Module() {
           .setShortLabel(title.take(25))
           .setLongLabel("$title: $description".take(50))
           .setIntent(intent)
-          .setCategories(setOf("com.appliedinteractions.trailsafe.GUIDE"))
+          .setCategories(setOf("org.adventureleader.trailsafe.GUIDE"))
           .build()
 
         shortcuts.add(shortcut)

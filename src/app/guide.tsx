@@ -2,7 +2,8 @@ import { useState } from "react";
 import { View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { BookOpen, ExternalLink } from "lucide-react-native";
-import { articles, topics, topicGroups } from "@/content";
+import { topicGroups } from "@/content";
+import { searchGuideTopics } from "@/lib/search-indexing";
 import {
   Card,
   Field,
@@ -23,18 +24,7 @@ export default function Guide() {
   const [userQuery, setUserQuery] = useState<string | null>(null);
   const query = userQuery ?? deepLinkQuery;
 
-  const q = query.trim().toLowerCase();
-  const results = topics.filter((t) =>
-    [
-      t.title,
-      t.sub,
-      t.keywords,
-      JSON.stringify(articles[t.target]?.blocks || []),
-    ]
-      .join(" ")
-      .toLowerCase()
-      .includes(q),
-  );
+  const results = searchGuideTopics(query);
   return (
     <Screen title="Safety Guide" subtitle="Short, offline reference articles">
       <T style={{ marginBottom: 18 }}>

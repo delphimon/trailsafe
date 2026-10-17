@@ -240,10 +240,32 @@ test("checklist, search, and articles work offline after launch", async ({
   await page.getByRole("tab", { name: "Guide", exact: true }).click();
   await page
     .getByRole("textbox", { name: "Search safety topics", exact: true })
+    .fill("water boil");
+  await expect(
+    page.getByRole("button", { name: /Water treatment/ }),
+  ).toBeVisible();
+  await page
+    .getByRole("textbox", { name: "Search safety topics", exact: true })
     .fill("hypothermia");
   await page.getByRole("button", { name: /Cold & hypothermia/ }).click();
   await expect(
     page.getByText("Watch for changes", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("tab", { name: "Guide", exact: true }).click();
+  await page
+    .getByRole("textbox", { name: "Search safety topics", exact: true })
+    .fill("calling");
+  await page.getByRole("button", { name: /Calling for help/ }).click();
+  await expect(
+    page.getByText("Regional SAR policy (Washington and nearby PNW)", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      "In Washington State, search-and-rescue response does not bill rescued persons.",
+      { exact: true },
+    ),
   ).toBeVisible();
   await context.setOffline(false);
   await page.goto("/prepare");
@@ -313,7 +335,7 @@ test("trip creation, midnight buffer, persistence, editing, and deletion", async
     .getByRole("textbox", { name: "Planned route", exact: true })
     .fill("Changed route\nStay on main trail");
   await page
-    .getByRole("button", { name: "Save and preview", exact: true })
+    .getByRole("button", { name: "Save Changes", exact: true })
     .click();
   await expect(page.getByTestId("plan-preview")).toContainText("Changed route");
   await page
@@ -624,7 +646,7 @@ test("completed edits persist and preserve completed status", async ({
     .getByRole("textbox", { name: "Trip title / destination" })
     .fill("Edited completed trip");
   await page
-    .getByRole("button", { name: "Save and preview", exact: true })
+    .getByRole("button", { name: "Save Changes", exact: true })
     .click();
   await expect(page.getByTestId("plan-preview")).toContainText(
     "Edited completed trip",
@@ -746,6 +768,10 @@ test("browser Back protects unsaved plans, and saving bypasses the warning", asy
   ).toBeVisible();
   await page.getByRole("button", { name: "Keep editing", exact: true }).click();
   await expect(title).toHaveValue("New unsaved edit");
+  await page.getByRole("button", { name: "Save Draft", exact: true }).click();
+  await expect(page.getByTestId("plan-preview")).toContainText(
+    "New unsaved edit",
+  );
 });
 
 test("profile edits are protected on tabs and browser Back, with no warning after save", async ({
@@ -809,7 +835,8 @@ test("trip Today, Tomorrow and Now respect the selected zone and midnight rollov
   });
   const date = page.getByRole("textbox", { name: "Start date", exact: true });
   const time = page.getByRole("textbox", { name: "Start time", exact: true });
-  await zone.fill("America/New_York");
+  await page.getByRole("button", { name: "Eastern", exact: true }).click();
+  await expect(zone).toHaveValue("America/New_York");
   await page.getByRole("button", { name: "Today", exact: true }).click();
   await expect(date).toHaveValue("2026-10-15");
   await page
@@ -820,12 +847,18 @@ test("trip Today, Tomorrow and Now respect the selected zone and midnight rollov
   await page.getByRole("button", { name: "Now", exact: true }).click();
   await expect(date).toHaveValue("2026-10-15");
   await expect(time).toHaveValue("03:00");
-  await zone.fill("America/Los_Angeles");
+  await page.getByRole("button", { name: "Pacific", exact: true }).click();
+  await expect(zone).toHaveValue("America/Los_Angeles");
   await page.getByRole("button", { name: "Today", exact: true }).click();
   await expect(date).toHaveValue("2026-10-14");
   await page.getByRole("button", { name: "Now", exact: true }).click();
   await expect(date).toHaveValue("2026-10-15");
   await expect(time).toHaveValue("00:00");
+  await zone.fill("America/Invalid_Zone");
+  await page.getByRole("button", { name: "Save Draft", exact: true }).click();
+  await expect(
+    page.getByText(/Enter a valid IANA time zone/),
+  ).toBeVisible();
 });
 
 test("first packing check for the current trip stays current after reload", async ({

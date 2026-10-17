@@ -53,7 +53,7 @@ export default function About() {
           Constants.expoConfig?.runtimeVersion as
             { policy?: string } | undefined
         )?.policy) ||
-    "v57.0.0";
+    appVersion;
 
   const isOtaEnabled = Platform.OS !== "web" && Updates.isEnabled;
   const updateStatusText = !isOtaEnabled

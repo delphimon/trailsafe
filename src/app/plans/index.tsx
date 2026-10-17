@@ -81,17 +81,22 @@ export default function Plans() {
       <View style={{ marginTop: 18 }}>
         {(["Current", "Upcoming", "Past"] as const).map((group) => {
           const plans = data.plans
-            .filter((p) =>
-              group === "Current"
+            .filter((p) => {
+              const planToday = localDate(now, p.timeZone);
+              const endDate = p.returnDate || p.date;
+              const isPastDraft =
+                p.status === "draft" && Boolean(endDate) && endDate < planToday;
+              return group === "Current"
                 ? p.status === "current"
                 : group === "Past"
-                  ? p.status !== "current" &&
-                    (p.status === "completed" || p.date < localDate(now))
-                  : p.status === "draft" && p.date >= localDate(now),
-            )
+                  ? p.status === "completed" || isPastDraft
+                  : p.status === "draft" && !isPastDraft;
+            })
             .sort((a, b) =>
               group === "Upcoming"
-                ? a.date.localeCompare(b.date)
+                ? (a.date || "9999-99-99").localeCompare(
+                    b.date || "9999-99-99",
+                  )
                 : b.updatedAt - a.updatedAt,
             );
           return (

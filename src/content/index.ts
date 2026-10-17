@@ -54,6 +54,6 @@ export const topicGroups: TopicGroup[] = [
   },
   {
     label: "🎒 Preparation",
-    topics: topics.filter(t => ["ten-essentials", "clothing-layering", "phone-smart", "unexpected-overnight", "children-family", "lessons-learned"].includes(t.target)),
+    topics: topics.filter(t => ["ten-essentials", "water-treatment", "clothing-layering", "phone-smart", "unexpected-overnight", "children-family", "lessons-learned"].includes(t.target)),
   },
 ];

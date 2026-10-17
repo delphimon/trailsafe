@@ -130,8 +130,12 @@ export const emptyProfile: Profile = {
   comms: [],
 };
 
-/** Returns today's date formatted as a YYYY-MM-DD calendar string. */
-export function localDate(date = new Date()): string {
+/** Returns today's date formatted as a YYYY-MM-DD calendar string (optionally in a specific IANA time zone). */
+export function localDate(date = new Date(), timeZone?: string): string {
+  if (timeZone) {
+    const dt = dateTimeInZone(timeZone, date);
+    if (dt) return dt.date;
+  }
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
@@ -147,6 +151,25 @@ export function addDays(dateStr: string, days: number): string {
   const d = new Date(`${dateStr}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
+}
+
+/** Validates that a string is a supported IANA time zone identifier. */
+export function isValidTimeZone(tz: string): boolean {
+  const trimmed = tz.trim();
+  if (!trimmed) return false;
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: trimmed });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Pads single-digit 24-hour times (e.g. "8:00" -> "08:00") while trimming whitespace. */
+export function normalizeTimeInput(s: string): string {
+  const trimmed = s.trim();
+  const match = /^(\d):([0-5]\d)$/.exec(trimmed);
+  return match ? `0${match[1]}:${match[2]}` : trimmed;
 }
 
 /** Calendar date and wall time in the trip's zone; invalid zones have no fallback. */
@@ -236,7 +259,7 @@ export function validDate(s: string): boolean {
 
 /** Validates that a string is a 24-hour time in HH:MM format (00:00 to 23:59). */
 export const validTime = (s: string): boolean =>
-  /^([01]\d|2[0-3]):[0-5]\d$/.test(s);
+  /^([01]\d|2[0-3]):[0-5]\d$/.test(normalizeTimeInput(s));
 
 /**
  * Validates plan data for generation and marking current.
@@ -244,6 +267,7 @@ export const validTime = (s: string): boolean =>
  * Rules:
  * - Title, Trailhead, Route, Name, and Phone are required non-empty strings.
  * - Party size must be an integer >= 1.
+ * - Time zone must be a valid IANA time zone identifier.
  * - Dates must be valid YYYY-MM-DD.
  * - Times must be valid HH:MM.
  * - Return datetime must be strictly after start datetime.
@@ -264,21 +288,25 @@ export function validatePlan(p: TripPlan): string[] {
     if (!value.trim()) errors.push(`${label} is required.`);
   if (!/^\d+$/.test(p.partySize) || Number(p.partySize) < 1)
     errors.push("Party size must be a whole number of at least 1.");
+  if (!isValidTimeZone(p.timeZone))
+    errors.push("Enter a valid IANA time zone (for example, America/Los_Angeles).");
   if (![p.date, p.returnDate, p.overdueDate].every(validDate))
     errors.push("Enter valid dates as YYYY-MM-DD.");
   if (![p.startTime, p.returnTime, p.overdueTime].every(validTime))
     errors.push("Enter times in 24-hour HH:MM format.");
-  if (!errors.some((e) => e.includes("dates") || e.includes("times"))) {
-    const start = parseDateTimeInTimeZone(p.date, p.startTime, p.timeZone);
-    const back = parseDateTimeInTimeZone(
-      p.returnDate,
-      p.returnTime,
-      p.timeZone,
-    );
+  if (
+    !errors.some(
+      (e) =>
+        e.includes("dates") || e.includes("times") || e.includes("time zone"),
+    )
+  ) {
+    const zone = p.timeZone.trim();
+    const start = parseDateTimeInTimeZone(p.date, p.startTime, zone);
+    const back = parseDateTimeInTimeZone(p.returnDate, p.returnTime, zone);
     const overdue = parseDateTimeInTimeZone(
       p.overdueDate,
       p.overdueTime,
-      p.timeZone,
+      zone,
     );
     if (!start || !back || !overdue)
       errors.push(
@@ -314,10 +342,11 @@ export function suggestOverdue(
   hours = 2,
   timeZone?: string,
 ) {
-  if (!validDate(date) || !validTime(time)) return null;
+  const normTime = normalizeTimeInput(time);
+  if (!validDate(date) || !validTime(normTime)) return null;
   const d = timeZone
-    ? parseDateTimeInTimeZone(date, time, timeZone)
-    : new Date(`${date}T${time}:00Z`);
+    ? parseDateTimeInTimeZone(date, normTime, timeZone)
+    : new Date(`${date}T${normTime}:00Z`);
   if (!d || !Number.isFinite(hours)) return null;
   d.setTime(d.getTime() + hours * 3600000);
   if (timeZone) {
@@ -356,10 +385,11 @@ export function parseDateTimeInTimeZone(
   timeStr: string,
   timeZone: string,
 ): Date | null {
-  if (!validDate(dateStr) || !validTime(timeStr) || !timeZone) return null;
+  const normTime = normalizeTimeInput(timeStr);
+  if (!validDate(dateStr) || !validTime(normTime) || !timeZone) return null;
   try {
     const [y, m, d] = dateStr.split("-").map(Number);
-    const [hr, min] = timeStr.split(":").map(Number);
+    const [hr, min] = normTime.split(":").map(Number);
     if (!y || !m || !d || hr === undefined || min === undefined) return null;
 
     let utc = Date.UTC(y, m - 1, d, hr, min, 0);
@@ -528,7 +558,7 @@ export function duplicateTrip(
 }
 
 /**
- * Saves a trip plan as a draft.
+ * Saves a trip plan as a draft, normalizing time inputs and ensuring a valid IANA time zone.
  */
 export function saveTripDraft(
   plan: TripPlan,
@@ -536,8 +566,19 @@ export function saveTripDraft(
 ): { plans: TripPlan[]; plan: TripPlan } {
   const existing = plans.find((p) => p.id === plan.id);
   const now = Date.now();
+  const tz = plan.timeZone.trim();
+  const validZone = isValidTimeZone(tz)
+    ? tz
+    : existing && isValidTimeZone(existing.timeZone)
+      ? existing.timeZone.trim()
+      : Intl.DateTimeFormat().resolvedOptions().timeZone ||
+        "America/Los_Angeles";
   const saved: TripPlan = {
     ...plan,
+    timeZone: validZone,
+    startTime: normalizeTimeInput(plan.startTime),
+    returnTime: normalizeTimeInput(plan.returnTime),
+    overdueTime: normalizeTimeInput(plan.overdueTime),
     status: "draft",
     updatedAt: now,
     revision: existing ? existing.revision + 1 : 1,
@@ -557,7 +598,14 @@ export function saveCurrentTrip(
   plan: TripPlan,
   plans: TripPlan[],
 ): LifecycleResult<TripPlan> {
-  const candidate: TripPlan = { ...plan, status: "current" };
+  const candidate: TripPlan = {
+    ...plan,
+    timeZone: plan.timeZone.trim(),
+    startTime: normalizeTimeInput(plan.startTime),
+    returnTime: normalizeTimeInput(plan.returnTime),
+    overdueTime: normalizeTimeInput(plan.overdueTime),
+    status: "current",
+  };
   const errors = validatePlan(candidate);
   if (errors.length > 0) return { ok: false, errors };
 
@@ -755,6 +803,14 @@ export function saveTrip(
   status = plan.status,
 ): LifecycleResult<TripPlan> {
   if (status === "current") return saveCurrentTrip(plan, plans);
+  if (!isValidTimeZone(plan.timeZone)) {
+    return {
+      ok: false,
+      errors: [
+        "Enter a valid IANA time zone (for example, America/Los_Angeles).",
+      ],
+    };
+  }
   const draft = saveTripDraft(plan, plans);
   if (status === "draft") return { ok: true, ...draft };
   const saved = { ...draft.plan, status: "completed" as const };

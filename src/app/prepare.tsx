@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Linking } from "react-native";
 import { ExternalLink } from "lucide-react-native";
 import library from "@/content/library.json";
+import { WASHINGTON_REGION } from "@/content/regions";
 import { useStore } from "@/state/store";
 import { useApp } from "@/state/app";
 import { toggleChecklist } from "@/lib/checklist";
@@ -136,16 +137,17 @@ export default function Prepare() {
         {baseAddon.items.length > 0 && (
           <>
             <Heading>{baseAddon.title}</Heading>
-            {baseAddon.items.map((item, i) => (
-              <Checkbox
-                key={item}
-                label={item}
-                checked={data.checklist.checks.includes(
-                  `${data.tripDuration}-${i}`,
-                )}
-                onPress={() => toggle(`${data.tripDuration}-${i}`)}
-              />
-            ))}
+            {baseAddon.items.map((item) => {
+              const key = `addon:${data.tripDuration}:${item}`;
+              return (
+                <Checkbox
+                  key={item}
+                  label={item}
+                  checked={data.checklist.checks.includes(key)}
+                  onPress={() => toggle(key)}
+                />
+              );
+            })}
           </>
         )}
         {winterAddon && (
@@ -153,14 +155,17 @@ export default function Prepare() {
             <View style={{ marginTop: 16 }}>
               <Heading>{winterAddon.title}</Heading>
             </View>
-            {winterAddon.items.map((item, i) => (
-              <Checkbox
-                key={item}
-                label={item}
-                checked={data.checklist.checks.includes(`winter-${i}`)}
-                onPress={() => toggle(`winter-${i}`)}
-              />
-            ))}
+            {winterAddon.items.map((item) => {
+              const key = `addon:winter:${item}`;
+              return (
+                <Checkbox
+                  key={item}
+                  label={item}
+                  checked={data.checklist.checks.includes(key)}
+                  onPress={() => toggle(key)}
+                />
+              );
+            })}
           </>
         )}
         <Checkbox
@@ -171,14 +176,17 @@ export default function Prepare() {
       </Card>
       <Kicker>Phone & communications readiness</Kicker>
       <Card style={{ paddingVertical: 0 }}>
-        {library.PHONE_CHECKLIST.map((item, i) => (
-          <Checkbox
-            key={item}
-            label={item}
-            checked={data.checklist.checks.includes(`phone-${i}`)}
-            onPress={() => toggle(`phone-${i}`)}
-          />
-        ))}
+        {library.PHONE_CHECKLIST.map((item) => {
+          const key = `phone:${item}`;
+          return (
+            <Checkbox
+              key={item}
+              label={item}
+              checked={data.checklist.checks.includes(key)}
+              onPress={() => toggle(key)}
+            />
+          );
+        })}
       </Card>
       <Button
         label="Reset checklist for a new trip"
@@ -204,17 +212,17 @@ export default function Prepare() {
       />
       <Kicker>Know before you go</Kicker>
       <Card>
-        {library.RESOURCES.filter(
-          (r) => r.cat === "conditions" || r.cat === "wildlife",
-        ).map((r) => (
-          <Row
-            key={r.url}
-            title={r.name}
-            subtitle={r.note}
-            icon={ExternalLink}
-            onPress={() => void run(() => Linking.openURL(r.url))}
-          />
-        ))}
+        {WASHINGTON_REGION.resources
+          .filter((r) => r.cat === "conditions" || r.cat === "wildlife")
+          .map((r) => (
+            <Row
+              key={r.url}
+              title={r.name}
+              subtitle={r.note}
+              icon={ExternalLink}
+              onPress={() => void run(() => Linking.openURL(r.url))}
+            />
+          ))}
       </Card>
       <Note>
         These links need Internet and open your browser. TrailSafe doesn’t fetch

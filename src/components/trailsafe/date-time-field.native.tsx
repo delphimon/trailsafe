@@ -2,28 +2,37 @@ import { useState } from "react";
 import { Platform, View } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Button, Note, T } from "./ui";
-import { localDate, parseDateTimeInTimeZone } from "@/lib/plans";
+import {
+  isValidTimeZone,
+  localDate,
+  parseDateTimeInTimeZone,
+  validDate,
+} from "@/lib/plans";
 import type { DateTimeFieldProps } from "./date-time-field";
 export function DateTimeField({
   label,
   value,
   mode,
   timeZone,
+  referenceDate,
   onChange,
 }: DateTimeFieldProps) {
   const [open, setOpen] = useState(false);
-  let zone = timeZone;
-  try {
-    new Intl.DateTimeFormat("en", { timeZone: zone });
-  } catch {
-    zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  }
+  const [pendingDate, setPendingDate] = useState<Date | null>(null);
+  const zone = isValidTimeZone(timeZone)
+    ? timeZone.trim()
+    : Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const targetDate =
+    mode === "date"
+      ? value
+      : referenceDate && validDate(referenceDate)
+        ? referenceDate
+        : localDate(new Date(), zone);
+  const targetTime = mode === "time" ? value || "08:00" : "12:00";
   const reference =
-    parseDateTimeInTimeZone(
-      mode === "date" ? value : localDate(),
-      mode === "time" ? value : "12:00",
-      zone,
-    ) ?? new Date();
+    parseDateTimeInTimeZone(targetDate, targetTime, zone) ??
+    parseDateTimeInTimeZone(targetDate, "12:00", zone) ??
+    new Date();
   const update = (date: Date) => {
     const parts = new Intl.DateTimeFormat("en-CA", {
       timeZone: zone,
@@ -49,16 +58,24 @@ export function DateTimeField({
       <Button
         label={value || (mode === "date" ? "Choose date" : "Choose time")}
         variant="outline"
-        onPress={() => setOpen(!open)}
+        onPress={() => {
+          setPendingDate(null);
+          setOpen(!open);
+        }}
       />
       {open && (
         <DateTimePicker
-          value={reference}
+          value={pendingDate ?? reference}
           mode={mode}
           timeZoneName={zone}
           is24Hour
           display={Platform.OS === "ios" ? "spinner" : "default"}
-          onValueChange={(_, date) => update(date)}
+          onValueChange={(_, date) => {
+            if (date) {
+              setPendingDate(date);
+              update(date);
+            }
+          }}
           onDismiss={() => setOpen(false)}
         />
       )}
@@ -67,7 +84,7 @@ export function DateTimeField({
           label="Done"
           variant="ghost"
           onPress={() => {
-            update(reference);
+            update(pendingDate ?? reference);
             setOpen(false);
           }}
         />

@@ -2,10 +2,12 @@ import { View, Linking } from "react-native";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Clock, Users, ExternalLink } from "lucide-react-native";
 import { articles } from "@/content";
+import { WASHINGTON_REGION } from "@/content/regions";
 import { ArticleBody } from "@/components/trailsafe/article-body";
 import { EmergencyActions } from "@/components/trailsafe/emergency-actions";
 import {
   Button,
+  Callout,
   Card,
   Kicker,
   Note,
@@ -83,6 +85,11 @@ export default function ArticleScreen() {
         </Note>
       )}
       <ArticleBody blocks={article.blocks} />
+      {id === "calling-help" && (
+        <Callout title={`Regional SAR policy (${WASHINGTON_REGION.name})`}>
+          {WASHINGTON_REGION.sarCostNote}
+        </Callout>
+      )}
       <Kicker>Content & sources</Kicker>
       <Card>
         <Note>

@@ -20,7 +20,7 @@ TrailSafe is a fully offline hiking preparation and emergency-information compan
 
 ## Architecture
 
-- Expo SDK 58 (next/beta), Router 58, React Native 0.88 release candidate, React 19.3, TypeScript. Read the v58.0.0 docs for the current target in addition to the required v57.0.0 reference above. Expo Router routes in `src/app`.
+- Expo SDK 58, Router 58, React Native 0.88.0, React 19.3, TypeScript. Read the v58.0.0 docs for the current target in addition to the required v57.0.0 reference above. Expo Router routes in `src/app`.
 - `src/state/store.tsx`: serialized AsyncStorage writes. Damaged data blocks overwriting. `changeTrip` computes against the latest stored snapshot and returns after a successful write.
 - `src/lib/plans.ts`: plan schema, lifecycle, date/time validation, text/PDF formatting. Plans have explicit IANA time zones. Reject skipped and repeated DST wall times instead of guessing.
 - `src/lib/trip-commands.ts`: shared asynchronous persistence boundary for lifecycle commands.
@@ -52,6 +52,6 @@ Expo Router bundles its navigation APIs: do not assume a separate `@react-naviga
 
 The default physical iPhone is Andrew's iPhone 18 Pro Max. Use it for deployments and device checks unless the user explicitly selects another phone; do not pick the still-paired iPhone 17 Pro Max. Its UDID and the project's signing team are stored privately in ignored `.iphone-device.local.json` as `udid` and `teamId`.
 
-For signed iOS deployment, use `scripts/install-iphone.sh` with no arguments for that default, or `scripts/install-iphone.sh <UDID> <team>` for an explicit override, only when deployment is requested. Preserve signing settings and installed user data. Device acceptance includes airplane-mode cold launch, permission/accuracy/staleness, native date pickers, reminders/cleanup, voice cancellation, accessibility and diagnostic policy. No live 911 test calls.
+For signed iOS deployment, use `scripts/install-iphone.sh` with no arguments for that default, or `scripts/install-iphone.sh <UDID> <team>` for an explicit override. At every stable checkpoint, commit all changes, deploy to Surge (`npm run deploy:surge`), and deploy to the default iPhone (`bash scripts/install-iphone.sh`) if available before continuing. Preserve signing settings and installed user data. Device acceptance includes airplane-mode cold launch, permission/accuracy/staleness, native date pickers, reminders/cleanup, voice cancellation, accessibility and diagnostic policy. No live 911 test calls.
 
 Reference prototypes in `docs/reference` are historical, not current requirements. Current user instructions and this guide supersede their Practice Mode, timers and governance sections.

@@ -4,6 +4,6 @@
     "modules": ["DeviceSearchModule"]
   },
   "android": {
-    "modules": ["com.appliedinteractions.trailsafe.devicesearch.DeviceSearchModule"]
+    "modules": ["org.adventureleader.trailsafe.devicesearch.DeviceSearchModule"]
   }
 }

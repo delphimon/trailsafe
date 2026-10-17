@@ -20,6 +20,7 @@ import {
   buildPlanText,
   buildSafeReturnDraft,
   dateTimeInZone,
+  isValidTimeZone,
   roundedDateTimeInZone,
   localDate,
   newPlan,
@@ -27,6 +28,7 @@ import {
   suggestOverdue,
   validatePlan,
 } from "@/lib/plans";
+import { US_TIME_ZONES } from "@/content/regions";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { exportPlan } from "@/lib/export-plan";
 import {
@@ -217,6 +219,7 @@ function PlanEditor({
           value={plan[timeKey]}
           mode="time"
           timeZone={plan.timeZone}
+          referenceDate={plan[dateKey] || plan.date}
           onChange={(value) => change(timeKey, value)}
         />
       </View>
@@ -460,8 +463,18 @@ function PlanEditor({
             "Trip time zone",
             "America/Los_Angeles",
             false,
-            "IANA zone for the trip, such as America/Los_Angeles or America/Denver",
+            "Select a US time zone below or enter any IANA zone (e.g. America/Los_Angeles)",
           )}
+          <View style={[s.wrap, { marginTop: -6, marginBottom: 10 }]}>
+            {US_TIME_ZONES.map((tz) => (
+              <Chip
+                key={tz.id}
+                label={tz.label}
+                selected={plan.timeZone.trim() === tz.id}
+                onPress={() => change("timeZone", tz.id)}
+              />
+            ))}
+          </View>
           <Note>
             All times are in {plan.timeZone}. Dates are explicit so overnight
             trips and overdue times stay unambiguous.
@@ -839,7 +852,9 @@ function PlanEditor({
               </Callout>
             )}
             <Button
-              label="Save and preview"
+              label={
+                plan.status === "draft" ? "Save and preview" : "Save Changes"
+              }
               disabled={busy}
               onPress={() => {
                 const issues = validatePlan(plan);
@@ -859,29 +874,43 @@ function PlanEditor({
               }}
             />
             <View style={{ marginTop: 10 }}>
-              <Button
-                label={
-                  busy
-                    ? "Saving…"
-                    : plan.status === "draft"
-                      ? "Save Draft"
-                      : "Save Changes"
-                }
-                variant="outline"
-                disabled={busy}
-                onPress={() =>
-                  action(async () => {
-                    const saved = await save();
-                    if (saved) {
-                      notify("Plan saved on this device");
-                      router.replace({
-                        pathname: "/plans/[id]",
-                        params: { id: saved.id },
-                      });
+              {plan.status === "draft" ? (
+                <Button
+                  label={busy ? "Saving…" : "Save Draft"}
+                  variant="outline"
+                  disabled={busy}
+                  onPress={() => {
+                    if (!isValidTimeZone(plan.timeZone)) {
+                      setErrors([
+                        "Enter a valid IANA time zone (for example, America/Los_Angeles).",
+                      ]);
+                      return;
                     }
-                  })
-                }
-              />
+                    action(async () => {
+                      const saved = await save();
+                      if (saved) {
+                        setEditing(false);
+                        notify("Plan saved on this device");
+                        router.replace({
+                          pathname: "/plans/[id]",
+                          params: { id: saved.id },
+                        });
+                      }
+                    });
+                  }}
+                />
+              ) : (
+                <Button
+                  label="Cancel"
+                  variant="outline"
+                  disabled={busy}
+                  onPress={() => {
+                    setPlan(savedPlan);
+                    setErrors([]);
+                    setEditing(false);
+                  }}
+                />
+              )}
             </View>
           </View>
         </>

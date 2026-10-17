@@ -84,9 +84,12 @@ export default function ToolsScreen() {
       : (preset ?? null);
   const warnings = locationId === "gps" && fix ? fixWarnings(fix, now) : [];
   const timeZone = preset
-    ? WASHINGTON_REGION.timeZone
+    ? preset.timeZone
     : Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const reference = parseDateTimeInTimeZone(date, "12:00", timeZone);
+  const isToday = date === localDate(new Date(now), timeZone);
+  const reference = isToday
+    ? new Date(now)
+    : parseDateTimeInTimeZone(date, "12:00", timeZone);
   const solar =
     coords && reference
       ? calculateSolarTimes(
@@ -196,8 +199,7 @@ export default function ToolsScreen() {
               {solar ? time(solar.forestDusk) : "Waiting for location"}
             </T>
             <Note>
-              {date === localDate() ? "Today" : date} · {coords?.name ?? "GPS"}{" "}
-              · {timeZone}
+              {isToday ? "Today" : date} · {coords?.name ?? "GPS"} · {timeZone}
             </Note>
             <View style={[s.wrap, { marginVertical: 10 }]}>
               {(
@@ -217,12 +219,14 @@ export default function ToolsScreen() {
             </View>
             {solar && (
               <T>
-                Sunset {time(solar.sunset)} · Civil dusk {time(solar.civilDusk)}
+                Sunrise {time(solar.sunrise)} · Sunset {time(solar.sunset)} ·
+                Civil dusk {time(solar.civilDusk)}
               </T>
             )}
             <Note>
-              Have it ready by this time. Trees, terrain and weather can make it
-              dark sooner.
+              {isToday && solar?.headlampStatusHeadline
+                ? `${solar.headlampStatusHeadline}. Trees, terrain and weather can make it dark sooner.`
+                : "Have it ready by this time. Trees, terrain and weather can make it dark sooner."}
             </Note>
           </Card>
           {locationControl}
@@ -446,6 +450,16 @@ export default function ToolsScreen() {
               radioactive contamination. Choose another water source if
               contamination is suspected.
             </Note>
+            <Button
+              label="Read water treatment guide"
+              variant="outline"
+              onPress={() =>
+                router.push({
+                  pathname: "/article/[id]",
+                  params: { id: "water-treatment" },
+                })
+              }
+            />
           </Card>
           <Kicker>Signaling</Kicker>
           <Card>

@@ -336,6 +336,7 @@ export function Screen({
               alignItems: "center",
               gap: 4,
               minHeight: 44,
+              marginBottom: -4,
               alignSelf: "flex-start",
             }}
           >
@@ -399,15 +400,6 @@ export function Screen({
         {children}
       </ScrollView>
     </KeyboardAvoidingView>
-  );
-}
-export function FooterNote() {
-  const { s } = useThemeStyles();
-  return (
-    <T style={s.footer}>
-      Center for Adventure Leadership{"\n"}This app is not monitored.
-      Emergencies: call 911.
-    </T>
   );
 }
 export const getStyles = (C: ThemeColors) => StyleSheet.create({
@@ -535,16 +527,6 @@ export const getStyles = (C: ThemeColors) => StyleSheet.create({
   },
   headerSub: { fontSize: 13, lineHeight: 20, color: C.headerSub, marginTop: 2 },
   content: { padding: 20, paddingBottom: 32 },
-  footer: {
-    textAlign: "center",
-    fontSize: 11.5,
-    lineHeight: 19,
-    color: C.muted,
-    marginTop: 22,
-    paddingTop: 18,
-    borderTopWidth: 1,
-    borderTopColor: C.line,
-  },
   flexRow: { flexDirection: "row", gap: 10 },
   wrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
 });

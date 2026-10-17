@@ -11,7 +11,7 @@ class AppDelegate {
   }
 }
 `;
-const android = `package com.appliedinteractions.trailsafe
+const android = `package org.adventureleader.trailsafe
 class MainApplication {
   override fun onCreate() {
     super.onCreate()

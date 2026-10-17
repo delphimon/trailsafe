@@ -8,7 +8,7 @@ target = project.new_target(:ui_test_bundle, 'TrailSafeSmoke', :ios, '16.4')
 file = project.main_group.new_file(File.expand_path('../tests/native/TrailSafeSmoke.swift', __dir__))
 target.source_build_phase.add_file_reference(file)
 target.build_configurations.each do |config|
-  config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.appliedinteractions.trailsafe.smoke'
+  config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'org.adventureleader.trailsafe.smoke'
   config.build_settings['GENERATE_INFOPLIST_FILE'] = 'YES'
   config.build_settings['SWIFT_VERSION'] = '5.0'
   config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'

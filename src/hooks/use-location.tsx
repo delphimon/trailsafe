@@ -60,15 +60,24 @@ export function useAutomaticLocation(enabled: boolean): {
     let subscription: Location.LocationSubscription | undefined;
     let timeout: ReturnType<typeof setTimeout> | undefined;
     let recovery: ReturnType<typeof setTimeout> | undefined;
-    const unavailable = () => {
-      if (cancelled) return;
+    let hasCachedFix = false;
+    const scheduleRecovery = () => {
       clearTimeout(recovery);
-      setStatus("unavailable");
       recovery = setTimeout(() => {
         if (!cancelled) setRetry((n) => n + 1);
       }, 30000);
     };
-    const receive = (position: Location.LocationObject) => {
+    const unavailable = () => {
+      if (cancelled) return;
+      if (!hasCachedFix) {
+        setStatus("unavailable");
+      }
+      scheduleRecovery();
+    };
+    const receive = (
+      position: Location.LocationObject,
+      options?: { cached?: boolean },
+    ) => {
       if (
         cancelled ||
         !validCoordinates(
@@ -78,8 +87,12 @@ export function useAutomaticLocation(enabled: boolean): {
         !Number.isFinite(position.timestamp)
       )
         return;
-      clearTimeout(timeout);
-      clearTimeout(recovery);
+      if (options?.cached) {
+        hasCachedFix = true;
+      } else {
+        clearTimeout(timeout);
+        clearTimeout(recovery);
+      }
       const { latitude, longitude, accuracy, altitude, altitudeAccuracy } =
         position.coords;
       setFix({
@@ -113,7 +126,7 @@ export function useAutomaticLocation(enabled: boolean): {
           }
           timeout = setTimeout(unavailable, 15000);
           const watchId = navigator.geolocation.watchPosition(
-            receive,
+            (pos) => receive(pos),
             (error) => {
               if (cancelled) return;
               if (error.code === 1) {
@@ -132,9 +145,7 @@ export function useAutomaticLocation(enabled: boolean): {
         if (!(await Location.hasServicesEnabledAsync())) {
           if (!cancelled) {
             setStatus("disabled");
-            recovery = setTimeout(() => {
-              if (!cancelled) setRetry((n) => n + 1);
-            }, 30000);
+            scheduleRecovery();
           }
           return;
         }
@@ -150,13 +161,13 @@ export function useAutomaticLocation(enabled: boolean): {
         }
         timeout = setTimeout(unavailable, 15000);
 
-        // Query last-known position first
+        // Query last-known position first without cancelling live-fix timeout
         try {
           const last = await Location.getLastKnownPositionAsync({
             maxAge: 10 * 60 * 1000,
           });
           if (!cancelled && last) {
-            receive(last);
+            receive(last, { cached: true });
           }
         } catch {}
 
@@ -166,7 +177,7 @@ export function useAutomaticLocation(enabled: boolean): {
             timeInterval: 5000,
             distanceInterval: 0,
           },
-          receive,
+          (pos) => receive(pos),
           unavailable,
         );
         if (cancelled) subscription.remove();

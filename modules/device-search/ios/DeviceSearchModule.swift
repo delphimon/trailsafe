@@ -35,7 +35,7 @@ public class DeviceSearchModule: Module {
         let uniqueId = (item["url"] as? String) ?? "trailsafe://article/\(id)"
         let searchableItem = CSSearchableItem(
           uniqueIdentifier: uniqueId,
-          domainIdentifier: "com.appliedinteractions.trailsafe.guide",
+          domainIdentifier: "org.adventureleader.trailsafe.guide",
           attributeSet: attributeSet
         )
         searchableItem.expirationDate = Date.distantFuture
@@ -57,7 +57,7 @@ public class DeviceSearchModule: Module {
     AsyncFunction("clearItems") { () in
       guard CSSearchableIndex.isIndexingAvailable() else { return }
       return try await withCheckedThrowingContinuation { continuation in
-        CSSearchableIndex.default().deleteSearchableItems(withDomainIdentifiers: ["com.appliedinteractions.trailsafe.guide"]) { error in
+        CSSearchableIndex.default().deleteSearchableItems(withDomainIdentifiers: ["org.adventureleader.trailsafe.guide"]) { error in
           if let error = error {
             continuation.resume(throwing: error)
           } else {

@@ -1,7 +1,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
-group = 'com.appliedinteractions.trailsafe.devicesearch'
+group = 'org.adventureleader.trailsafe.devicesearch'
 version = '0.1.0'
 
 android {

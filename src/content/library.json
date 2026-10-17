@@ -279,6 +279,13 @@
       "keywords": "wildlife bear cougar snake goat tick encounter"
     },
     {
+      "title": "Water treatment",
+      "sub": "Boiling, filtration, and chemical disinfection on trail",
+      "kind": "article",
+      "target": "water-treatment",
+      "keywords": "water treatment boil boiling filter filtration tablets chlorine iodine uv giardia cryptosporidium hydration purify"
+    },
+    {
       "title": "Lessons from real rescues",
       "sub": "Patterns search-and-rescue volunteers see again and again",
       "kind": "article",
@@ -293,7 +300,7 @@
       "blocks": [
         {
           "type": "paragraph",
-          "text": "Across every kind of trouble, these are the moments KCSAR and King County 911 say it’s time to call."
+          "text": "Across every kind of trouble, these are the moments search-and-rescue teams and 911 dispatchers say it’s time to call."
         },
         {
           "type": "list",
@@ -321,8 +328,8 @@
         },
         {
           "type": "callout",
-          "title": "SAR is free",
-          "text": "Don't delay calling 911 because of cost. In Washington State, search-and-rescue response does not bill rescued persons."
+          "title": "Don’t delay because of cost",
+          "text": "Don't delay calling 911 because of cost. Public search-and-rescue teams respond to wilderness emergencies."
         }
       ],
       "id": "calling-help",
@@ -1313,6 +1320,56 @@
       "sources": [
         "https://kingcountysar.org/wilderness-safety/",
         "https://kingcountysar.org/when-how-to-call-for-help/"
+      ]
+    },
+    "water-treatment": {
+      "title": "Water Treatment",
+      "subtitle": "Safe drinking water in the backcountry",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Even clear mountain streams and snowmelt can carry Giardia, Cryptosporidium, bacteria, and viruses. Always treat backcountry water before drinking."
+        },
+        {
+          "type": "heading",
+          "text": "Boiling (most reliable)"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Bring clear water to a rolling boil for 1 full minute (or 3 minutes above 6,500 feet / 2,000 meters).",
+            "Boiling kills bacteria, viruses, and protozoan cysts including Cryptosporidium.",
+            "Let water cool in a clean, covered container before drinking."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Filtration, chemical treatment & UV"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Hollow-fiber and ceramic filters (0.1–0.2 micron absolute) remove bacteria and protozoa (Giardia and Cryptosporidium), but standard microfilters do not remove viruses. Protect hollow-fiber filters from freezing — ice crystals crack the fibers silently.",
+            "Chemical disinfectants (chlorine dioxide or iodine) require exact dosing and contact time. Cold or murky water increases required wait times, and iodine does not reliably kill Cryptosporidium.",
+            "UV purifiers require pre-filtering cloudy water and working batteries."
+          ]
+        },
+        {
+          "type": "callout",
+          "title": "Timing chemical treatments",
+          "text": "Follow your product's exact instructions for dose, water temperature, clarity, and contact time. Use your phone's built-in Clock timer for any required waiting period; TrailSafe does not run a water timer.",
+          "critical": false
+        },
+        {
+          "type": "note",
+          "text": "Boiling, filters, and disinfectants do not remove fuel, heavy metals, toxic algae toxins, or agricultural runoff. Choose a cleaner upstream source if chemical contamination is suspected."
+        }
+      ],
+      "id": "water-treatment",
+      "contentVersion": "2026.10.17",
+      "sources": [
+        "https://www.cdc.gov/healthywater/drinking/travel/backcountry_water_treatment.html",
+        "https://www.nps.gov/articles/10essentials.htm"
       ]
     }
   }

@@ -18,7 +18,7 @@ Bugsnag is explicitly channel-gated. EAS profiles select development, preview, T
 
 Help Text 911 directly opens an editable system composer for the caller location; a separate someone-elsewhere draft omits reporter GPS. Tests inject inert emergency handlers. Browser tests intercept phone/SMS browser APIs, including the one-tap handoff; they never send messages. Native smoke tests never tap transports. Build/export evidence is separate from physical-device acceptance.
 
-SDK 58 / Router 58 uses React 19.3 and Expo’s React Native 0.88 release candidate. Static HTML includes the new server document head/body nodes. Web async routes are explicitly disabled so loaded route navigation remains offline. Native scene startup is supplied by Expo; TrailSafe extends it only for Spotlight cold/warm links. Native crash initialization is generated only for pre-release channels. Local build scripts reject a native/JS channel mismatch.
+SDK 58 / Router 58 uses React 19.3 and React Native 0.88.0. Static HTML includes the new server document head/body nodes. Web async routes are explicitly disabled so loaded route navigation remains offline. Native scene startup is supplied by Expo; TrailSafe extends it only for Spotlight cold/warm links. Native crash initialization is generated only for pre-release channels. Local build scripts reject a native/JS channel mismatch.
 
 Tools exposes Daylight, Compass and Hiking selectors at the top. Headlamp time precedes location/date settings; location presets expand only on request. Hiking duration precedes native distance/gain sliders and quick choices. Native sliders and accessible web ranges share the same estimate state.
 

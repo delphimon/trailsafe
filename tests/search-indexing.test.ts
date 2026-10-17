@@ -4,6 +4,7 @@ import {
   formatGuideSearchItems,
   getGuideContentVersion,
   INDEXED_GUIDE_VERSION_KEY,
+  searchGuideTopics,
 } from "../src/lib/search-indexing";
 import { topics } from "../src/content";
 import { newPlan, type TripPlan } from "../src/lib/plans";
@@ -56,6 +57,28 @@ test("formatGuideSearchItems extracts rich keywords for critical medical/surviva
     ),
     "Injured topic must include injury/first aid keywords",
   );
+
+  const water = items.find((i) => i.id === "water-treatment");
+  assert.ok(water, "water-treatment must exist");
+  assert.ok(
+    water.keywords.includes("boil") && water.keywords.includes("giardia"),
+    "Water treatment topic must include boil and giardia keywords",
+  );
+});
+
+test("searchGuideTopics supports multi-word non-adjacent queries and ignores JSON schema keys", () => {
+  const streamCrossing = searchGuideTopics("stream crossing");
+  assert.ok(streamCrossing.some((t) => t.target === "river-crossings"));
+
+  const waterBoil = searchGuideTopics("water boil giardia");
+  assert.ok(waterBoil.some((t) => t.target === "water-treatment"));
+
+  const bearCougar = searchGuideTopics("bear cougar");
+  assert.ok(bearCougar.some((t) => t.target === "wildlife"));
+
+  // JSON schema keys ("paragraph", "callout") must not match articles
+  assert.equal(searchGuideTopics("paragraph").length, 0);
+  assert.equal(searchGuideTopics("callout").length, 0);
 });
 
 test("getGuideContentVersion is deterministic and prefixed with guide-", () => {

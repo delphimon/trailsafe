@@ -12,6 +12,7 @@
  */
 
 import { articles, topics } from "@/content";
+import { WASHINGTON_REGION } from "@/content/regions";
 
 export const INDEXED_GUIDE_VERSION_KEY = "@trailsafe_indexed_guide_version";
 
@@ -37,25 +38,56 @@ export function getGuideContentVersion(items = formatGuideSearchItems()): string
 }
 
 /**
+ * Extracts all searchable plain text for a guide topic without including JSON property names.
+ */
+export function extractTopicPlainText(t: (typeof topics)[number]): string {
+  const art = articles[t.target];
+  return [
+    t.title,
+    t.sub,
+    t.keywords || "",
+    art?.title || "",
+    art?.subtitle || "",
+    ...(art?.blocks || [])
+      .map((b) =>
+        [b.title, b.text, ...(b.items || [])].filter(Boolean).join(" "),
+      )
+      .filter(Boolean),
+    t.target === "calling-help" ? WASHINGTON_REGION.sarCostNote : "",
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
+/**
+ * Filters guide topics using tokenized plain-text matching (all query words must match).
+ */
+export function searchGuideTopics(
+  query: string,
+  topicList = topics,
+): typeof topics {
+  const tokens = query
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (tokens.length === 0) return topicList;
+  return topicList.filter((t) => {
+    const text = extractTopicPlainText(t);
+    return tokens.every((token) => text.includes(token));
+  });
+}
+
+/**
  * Transforms topics and bundled article content into search index items.
  */
 export function formatGuideSearchItems(): GuideSearchItem[] {
   return topics.map((t) => {
     const art = articles[t.target];
-    const rawKeywords = [
-      t.title,
-      t.sub,
-      t.keywords || "",
-      ...(art?.blocks || [])
-        .map((b) =>
-          [b.title, b.text, ...(b.items || [])].filter(Boolean).join(" "),
-        )
-        .filter(Boolean),
-    ].join(" ");
+    const rawKeywords = extractTopicPlainText(t);
 
     // Extract unique words of length >= 3
     const words = rawKeywords
-      .toLowerCase()
       .replace(/[^a-z0-9\s-]/g, " ")
       .split(/\s+/)
       .filter((w) => w.length >= 3);
