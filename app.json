@@ -77,6 +77,7 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "TrailSafe shows your GPS coordinates so you can read or share them with emergency responders. Your location is not monitored or saved.",
+          "locationFullAccuracyPermission": "TrailSafe needs precise GPS coordinates so you can share an accurate location with 911 and search-and-rescue responders.",
           "locationAlwaysPermission": false,
           "locationAlwaysAndWhenInUsePermission": false,
           "isIosBackgroundLocationEnabled": false,
