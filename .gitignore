@@ -49,3 +49,6 @@ test-results/
 playwright-report/
 builds/
 /scratch/
+# @generated expo skills start
+.agents/skills/expo-app-intents
+# @generated expo skills end

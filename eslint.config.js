@@ -11,6 +11,7 @@ module.exports = defineConfig([
       "android/**",
       "test-results/**",
       "playwright-report/**",
+      ".agents/**",
     ],
   },
 ]);
