@@ -3,6 +3,7 @@ set -euo pipefail
 
 # Local signed installs are internal builds. Store builds must explicitly select production.
 export EXPO_PUBLIC_RELEASE_CHANNEL="${EXPO_PUBLIC_RELEASE_CHANNEL:-preview}"
+export EXPO_NO_METRO_WORKSPACE_ROOT=1
 
 cd "$(dirname "$0")/.."
 if [[ $# -eq 0 && -f .iphone-device.local.json ]]; then
