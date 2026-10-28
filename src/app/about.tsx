@@ -166,6 +166,12 @@ export default function About() {
           icon={UserRound}
           onPress={() => router.push("/profile")}
         />
+        <Row
+          title="Privacy policy"
+          subtitle="Offline policy & adventureleader.org/privacy link"
+          icon={ExternalLink}
+          onPress={() => router.push("/privacy")}
+        />
       </Card>
       {error && (
         <Callout critical title="Saved data unavailable">
