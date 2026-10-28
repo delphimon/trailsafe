@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 16.0.0"
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -20,6 +21,7 @@
     },
     "testflight": {
       "distribution": "store",
+      "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_RELEASE_CHANNEL": "testflight"
       },
@@ -36,6 +38,11 @@
   },
   "submit": {
     "production": {
+      "ios": {
+        "appleTeamId": "WF244Y4N2C"
+      }
+    },
+    "testflight": {
       "ios": {
         "appleTeamId": "WF244Y4N2C"
       }
