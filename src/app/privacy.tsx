@@ -20,15 +20,17 @@ export default function PrivacyScreen() {
       title="Privacy Policy"
       subtitle="Center for Adventure Leadership"
     >
-      <Kicker>Online policy</Kicker>
+      <Kicker>Organization policy</Kicker>
       <Card>
         <T>
-          This policy is hosted online at adventureleader.org. You can review the
-          offline summary below or visit the live webpage.
+          The Center for Adventure Leadership (CAL) is committed to protecting
+          your privacy across our website, training programs, and all mobile
+          applications we build. Read the complete organization policy online or
+          review the TrailSafe disclosures below.
         </T>
         <Row
           title="adventureleader.org/privacy"
-          subtitle="Hosted online policy · Internet required"
+          subtitle="Hosted CAL policy · Internet required"
           icon={ExternalLink}
           onPress={() =>
             void run(() =>
@@ -38,14 +40,13 @@ export default function PrivacyScreen() {
         />
       </Card>
 
-      <Kicker>1. Privacy Commitment</Kicker>
+      <Kicker>1. CAL Privacy Commitment</Kicker>
       <Card>
-        <Heading>Offline-First & Local-Only</Heading>
+        <Heading>Privacy by Architecture</Heading>
         <T>
-          TrailSafe is built as an offline-first hiking preparation and emergency
-          companion. You do not need an account, your activity is not tracked,
-          and your personal data never leaves your device unless you explicitly
-          choose to share it.
+          Across all our apps, we minimize data collection, default to local
+          on-device storage, never sell personal data, and never employ
+          commercial advertising or behavioral tracking.
         </T>
       </Card>
 
